@@ -1,0 +1,86 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // --- Helper Functions ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Retrieves user profile from the technical registry in Firestore
+    function getUserData() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isStaff() {
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && role in ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Mechanic', 'Inventory Officer', 'Accountant'];
+    }
+
+    function isManager() {
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && (role == 'Workshop Manager' || role == 'Makros System Owner');
+    }
+
+    function isAccountant() {
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && (role == 'Accountant' || role == 'Workshop Manager' || role == 'Makros System Owner');
+    }
+
+    function isCustomer() {
+      return isAuthenticated() && getUserData().get('role', '') == 'Customer';
+    }
+
+    // --- Validation Helpers ---
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isPDFOrImage() {
+      return request.resource.contentType.matches('application/pdf|image/.*');
+    }
+
+    // --- FOLDERS ---
+
+    // Workshop Assets: Public read for logo rendering in PDFs and portals
+    match /workshop/{allPaths=**} {
+      allow read: if true;
+      allow write: if isManager() && isValidSize() && isImage();
+    }
+
+    // Vehicle Photos: Staff manage, Customers view their own assets
+    match /vehicle-photos/{vehicleId}/{allPaths=**} {
+      allow read: if isStaff() || (isCustomer() && firestore.get(/databases/(default)/documents/vehicles/$(vehicleId)).data.customerId == request.auth.uid);
+      allow write: if isStaff() && isValidSize() && isImage();
+    }
+
+    // Job Card Photos: Mechanics upload for assigned jobs, Managers control lifecycle
+    match /job-card-photos/{jobCardId}/{allPaths=**} {
+      allow read: if isStaff() || (isCustomer() && firestore.get(/databases/(default)/documents/jobCards/$(jobCardId)).data.customerId == request.auth.uid);
+      allow create: if isStaff() && isValidSize() && isImage() && 
+                    (getUserData().role != 'Mechanic' || firestore.get(/databases/(default)/documents/jobCards/$(jobCardId)).data.assignedMechanicId == request.auth.uid);
+      allow update, delete: if isManager();
+    }
+
+    // Customer Documents: Staff manage, Customers view their own record
+    match /customer-documents/{customerId}/{allPaths=**} {
+      allow read: if isStaff() || (isCustomer() && request.auth.uid == customerId);
+      allow write: if isManager() && isValidSize() && isPDFOrImage();
+    }
+
+    // Invoice Files: Accountants/Managers manage, Customers view their own billing
+    match /invoice-files/{invoiceId}/{allPaths=**} {
+      allow read: if isStaff() || (isCustomer() && firestore.get(/databases/(default)/documents/invoices/$(invoiceId)).data.customerId == request.auth.uid);
+      allow write: if isAccountant() && isValidSize() && isPDFOrImage();
+    }
+
+    // Staff Profile Photos: All authenticated view, User or Manager updates
+    match /staff-profile-photos/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if (isManager() || request.auth.uid == userId) && isValidSize() && isImage();
+    }
+  }
+}

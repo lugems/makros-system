@@ -1,0 +1,40 @@
+import { Vehicle } from '@/types/vehicle';
+
+export const mockVehicles: Vehicle[] = [
+  {
+    vehicleId: 'V001',
+    customerId: 'C001',
+    make: 'Toyota',
+    model: 'Camry',
+    year: 2020,
+    numberPlate: 'ABC-123',
+    vin: '1234567890',
+    status: 'Active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    vehicleId: 'V002',
+    customerId: 'C002',
+    make: 'Honda',
+    model: 'Accord',
+    year: 2018,
+    numberPlate: 'XYZ-789',
+    vin: '0987654321',
+    status: 'Active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    vehicleId: 'V003',
+    customerId: 'C001',
+    make: 'Ford',
+    model: 'Mustang',
+    year: 2022,
+    numberPlate: 'LEG-END',
+    vin: '1357924680',
+    status: 'Active',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];

@@ -1,0 +1,70 @@
+'use client';
+
+import * as React from 'react';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+import { DateRange } from 'react-day-picker';
+
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+
+interface DatePickerWithRangeProps extends React.HTMLAttributes<HTMLDivElement> {
+  date: DateRange | undefined;
+  setDate: (date: DateRange | undefined) => void;
+}
+
+/**
+ * @fileOverview A robust date range picker that prevents UI compression.
+ */
+export function DatePickerWithRange({ className, date, setDate }: DatePickerWithRangeProps) {
+  return (
+    <div className={cn('grid gap-2', className)}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            id="date"
+            variant={"outline"}
+            className={cn(
+              'w-[300px] justify-start text-left font-normal h-11 rounded-xl',
+              !date && 'text-muted-foreground'
+            )}
+          >
+            <CalendarIcon className="mr-2 h-4 w-4 opacity-50" />
+            <span className="truncate">
+              {date?.from ? (
+                date.to ? (
+                  <>
+                    {format(date.from, 'LLL dd, y')} - {' '}
+                    {format(date.to, 'LLL dd, y')}
+                  </>
+                ) : (
+                  format(date.from, 'LLL dd, y')
+                )
+              ) : (
+                "Select Date Interval"
+              )}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto min-w-[280px] p-0 rounded-2xl shadow-2xl border-border/50" align="start">
+          <Calendar
+            initialFocus
+            mode="range"
+            defaultMonth={date?.from}
+            selected={date}
+            onSelect={setDate}
+            numberOfMonths={2}
+          />
+        </PopoverContent>
+      </Popover>
+    </div>
+  );
+}
+
+export { DatePickerWithRange as DateRangePicker };
