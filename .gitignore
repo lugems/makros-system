@@ -4,4 +4,5 @@ node_modules
 *.json
 !package.json
 !package-lock.json
+!src/lib/placeholder-images.json
 !tsconfig.json

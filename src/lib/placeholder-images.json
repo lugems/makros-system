@@ -1,0 +1,10 @@
+{
+  "placeholderImages": [
+    {
+      "id": "login-bg",
+      "description": "High-end automotive workshop with technical lighting",
+      "imageUrl": "/images/Makros Login Image.jpg",
+      "imageHint": "mechanic workshop"
+    }
+  ]
+}
