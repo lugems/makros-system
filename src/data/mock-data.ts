@@ -52,6 +52,28 @@ export const mockUsers: StaffMember[] = [
     currentWorkload: 3,
     address: "Kampala, Uganda"
   },
+  {
+    userId: "user-004",
+    fullName: "Achieng Mercy",
+    phone: "+256 702 111 333",
+    email: "mercy@makros.ug",
+    role: "Receptionist",
+    status: "Active",
+    createdAt: "2026-05-02T08:00:00Z",
+    updatedAt: "2026-05-20T08:00:00Z",
+    address: "Kampala, Uganda"
+  },
+  {
+    userId: "user-006",
+    fullName: "Nabirye Grace",
+    phone: "+256 703 444 555",
+    email: "grace@makros.ug",
+    role: "Accountant",
+    status: "Active",
+    createdAt: "2026-05-03T08:00:00Z",
+    updatedAt: "2026-05-20T08:00:00Z",
+    address: "Kampala, Uganda"
+  },
 ];
 
 export const mockCustomers: Customer[] = [
@@ -123,7 +145,7 @@ export const mockJobCards: JobCard[] = [
     receivedAt: "2026-05-28T09:10:00Z",
     createdAt: "2026-05-28T09:10:00Z",
     updatedAt: "2026-05-28T10:30:00Z",
-    createdBy: "user-004",
+    createdBy: "user-003",
   },
 ];
 
@@ -175,7 +197,7 @@ export const mockPayments: Payment[] = [
     status: "Completed",
     paidAt: "2026-05-28T17:00:00Z",
     createdAt: "2026-05-28T17:00:00Z",
-    createdBy: "user-006",
+    createdBy: "7fxmTIFPAnb5h6ZAyol4",
   },
 ];
 
@@ -283,7 +305,7 @@ export const mockNotifications: Notification[] = [
     isInternalOnly: false,
     createdAt: "2026-05-28T09:15:00Z",
     updatedAt: "2026-05-28T09:15:00Z",
-    createdBy: "user-004",
+    createdBy: "user-002",
   },
 ];
 

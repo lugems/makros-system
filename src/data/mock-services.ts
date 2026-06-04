@@ -1,43 +1,36 @@
-import { Service } from '@/types/makros-service';
+import { MakrosService } from '@/types/makros-service';
 
-export const mockServices: Service[] = [
+export const mockServices: MakrosService[] = [
   {
     serviceId: 'S001',
-    name: 'Oil Change',
+    serviceName: 'Oil Change',
     description: 'Basic oil and filter change.',
-    estimatedTime: 30, // in minutes
+    category: 'General Service',
     defaultLaborCost: 50,
-    isActive: true,
+    estimatedDuration: '30 minutes',
+    status: 'Active',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
     serviceId: 'S002',
-    name: 'Tire Rotation',
+    serviceName: 'Tire Rotation',
     description: 'Tire rotation and pressure check.',
-    estimatedTime: 45,
+    category: 'General Service',
     defaultLaborCost: 75,
-    isActive: true,
+    estimatedDuration: '45 minutes',
+    status: 'Active',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
   {
     serviceId: 'S003',
-    name: 'Full Inspection',
+    serviceName: 'Full Inspection',
     description: 'Complete vehicle inspection.',
-    estimatedTime: 120,
+    category: 'Diagnostics',
     defaultLaborCost: 200,
-    isActive: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-    {
-    serviceId: 'S004',
-    name: 'Engine Diagnostic',
-    description: 'Advanced engine diagnostic service',
-    estimatedTime: 90,
-    defaultLaborCost: 150,
-    isActive: false,
+    estimatedDuration: '2 hours',
+    status: 'Active',
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   },
