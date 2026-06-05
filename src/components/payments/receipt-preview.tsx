@@ -124,7 +124,7 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
                         <Button asChild className="h-10 px-6 rounded-xl font-black uppercase tracking-widest text-[9px] shadow-xl shadow-primary/20 cursor-pointer">
                             <PDFDownloadLink 
                                 document={<ReceiptPDFDocument payment={payment} customer={customer} invoice={invoice} recorder={recorder} settings={settings} />} 
-                                fileName={`PAY-${id.slice(-6).toUpperCase()}.pdf`}
+                                fileName={`${payment.receiptNumber || `REC-${id.toUpperCase().slice(-8)}`}.pdf`}
                             >
                                 {({ loading }) => (
                                     <>
@@ -155,7 +155,7 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
                                 <Button asChild className="h-10 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl shadow-primary/20 cursor-pointer text-white">
                                     <PDFDownloadLink 
                                         document={<ReceiptPDFDocument payment={payment} customer={customer} invoice={invoice} recorder={recorder} settings={settings} />} 
-                                        fileName={`PAY-${id.slice(-6).toUpperCase()}.pdf`}
+                                        fileName={`${payment.receiptNumber || `REC-${id.toUpperCase().slice(-8)}`}.pdf`}
                                     >
                                         {({ loading }) => (
                                             <>

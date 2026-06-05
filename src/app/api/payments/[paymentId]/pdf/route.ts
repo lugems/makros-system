@@ -45,7 +45,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename=PAY-${paymentId.slice(-6).toUpperCase()}.pdf`,
+        'Content-Disposition': `attachment; filename=Receipt-${paymentId.toUpperCase().slice(-8)}.pdf`,
       },
     });
   } catch (error: any) {

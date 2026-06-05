@@ -30,22 +30,39 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
   const db = useFirestore();
   
   // Real-time technical streams
-  const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'workshop') as DocumentReference<WorkshopSettings>, [db]);
-  const custRef = useMemoFirebase(() => doc(db, 'customers', invoice.customerId), [db, invoice.customerId]);
-  const jobRef = useMemoFirebase(() => doc(db, 'jobCards', invoice.jobCardId), [db, invoice.jobCardId]);
+  const settingsRef = useMemoFirebase(() => {
+      if (!db) return null;
+      return doc(db, 'settings', 'workshop') as DocumentReference<WorkshopSettings>;
+  }, [db]);
+
+  const custRef = useMemoFirebase(() => {
+      if (!db || !invoice?.customerId) return null;
+      return doc(db, 'customers', invoice.customerId);
+  }, [db, invoice?.customerId]);
+  
+  const jobRef = useMemoFirebase(() => {
+      if (!db || !invoice?.jobCardId) return null;
+      return doc(db, 'jobCards', invoice.jobCardId);
+  }, [db, invoice?.jobCardId]);
   
   const { data: settings } = useDoc<WorkshopSettings>(settingsRef);
   const { data: customer } = useDoc<Customer>(custRef as any);
   const { data: jobCard } = useDoc<any>(jobRef as any);
 
-  const vehRef = useMemoFirebase(() => jobCard ? doc(db, 'vehicles', jobCard.vehicleId) : null, [db, jobCard]);
+  const vehRef = useMemoFirebase(() => {
+      if (!db || !jobCard?.vehicleId) return null;
+      return doc(db, 'vehicles', jobCard.vehicleId);
+  }, [db, jobCard]);
   const { data: vehicle } = useDoc<Vehicle>(vehRef as any);
 
   // Fetch detailed parts for the line-item breakdown
-  const partsQuery = useMemoFirebase(() => query(
-      collection(db, 'jobCards', invoice.jobCardId, 'partsUsed'),
-      orderBy('createdAt', 'asc')
-  ), [db, invoice.jobCardId]);
+  const partsQuery = useMemoFirebase(() => {
+      if (!db || !invoice?.jobCardId) return null;
+      return query(
+          collection(db, 'jobCards', invoice.jobCardId, 'partsUsed'),
+          orderBy('createdAt', 'asc')
+      );
+  }, [db, invoice?.jobCardId]);
   const { data: parts } = useCollection<JobPart>(partsQuery as any);
 
   const handlePrint = () => {
@@ -63,7 +80,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
   };
 
   return (
-    <div className="bg-white p-8 md:p-16 rounded-3xl shadow-2xl max-w-5xl mx-auto my-6 print:m-0 print:p-10 print:shadow-none print:rounded-none text-slate-900 border border-slate-100 print:border-none relative overflow-hidden">
+    <div className="bg-white p-8 md:p-16 rounded-3xl shadow-2xl max-w-5xl mx-auto my-6 print-container text-slate-900 border border-slate-100 print:border-none relative overflow-hidden">
         <div className="absolute top-0 right-0 p-20 opacity-[0.02] rotate-12 pointer-events-none print:hidden">
             <FileText className="h-96 w-96" />
         </div>
@@ -81,7 +98,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
                 <Button asChild className="h-10 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl shadow-primary/20 cursor-pointer">
                     <PDFDownloadLink 
                         document={<InvoicePDFDocument invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
-                        fileName={`INV-${invoice.invoiceNumber || invoice.invoiceId.slice(-6)}.pdf`}
+                        fileName={`${invoice.invoiceNumber || `INV-${invoice.invoiceId.toUpperCase().slice(-8)}`}.pdf`}
                     >
                         {({ loading }) => (
                             <>

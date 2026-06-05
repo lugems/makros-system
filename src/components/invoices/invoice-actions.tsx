@@ -40,21 +40,38 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
     const db = useFirestore();
 
     // Context for PDF Generation
-    const custRef = useMemoFirebase(() => doc(db, 'customers', invoice.customerId), [db, invoice.customerId]);
-    const jobRef = useMemoFirebase(() => doc(db, 'jobCards', invoice.jobCardId), [db, invoice.jobCardId]);
-    const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'workshop') as DocumentReference<WorkshopSettings>, [db]);
+    const custRef = useMemoFirebase(() => {
+        if (!db || !invoice?.customerId) return null;
+        return doc(db, 'customers', invoice.customerId);
+    }, [db, invoice.customerId]);
+
+    const jobRef = useMemoFirebase(() => {
+        if (!db || !invoice?.jobCardId) return null;
+        return doc(db, 'jobCards', invoice.jobCardId);
+    }, [db, invoice.jobCardId]);
+
+    const settingsRef = useMemoFirebase(() => {
+        if (!db) return null;
+        return doc(db, 'settings', 'workshop') as DocumentReference<WorkshopSettings>;
+    }, [db]);
     
     const { data: customer } = useDoc<Customer>(custRef as any);
     const { data: jobCard } = useDoc<any>(jobRef as any);
     const { data: settings } = useDoc<WorkshopSettings>(settingsRef);
 
-    const vehRef = useMemoFirebase(() => jobCard ? doc(db, 'vehicles', jobCard.vehicleId) : null, [db, jobCard]);
+    const vehRef = useMemoFirebase(() => {
+        if (!db || !jobCard?.vehicleId) return null;
+        return doc(db, 'vehicles', jobCard.vehicleId);
+    }, [db, jobCard]);
     const { data: vehicle } = useDoc<Vehicle>(vehRef as any);
 
-    const partsQuery = useMemoFirebase(() => query(
-        collection(db, 'jobCards', invoice.jobCardId, 'partsUsed'),
-        orderBy('createdAt', 'asc')
-    ), [db, invoice.jobCardId]);
+    const partsQuery = useMemoFirebase(() => {
+        if (!db || !invoice?.jobCardId) return null;
+        return query(
+            collection(db, 'jobCards', invoice.jobCardId, 'partsUsed'),
+            orderBy('createdAt', 'asc')
+        );
+    }, [db, invoice.jobCardId]);
     const { data: parts } = useCollection<JobPart>(partsQuery as any);
 
     const hasPermission = (allowedRoles: string[]) => {
@@ -107,7 +124,7 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
                     <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
                         <PDFDownloadLink 
                             document={<InvoicePDFDocument invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
-                            fileName={`INV-${invoice.invoiceNumber || invoice.invoiceId.slice(-6)}.pdf`}
+                            fileName={`${invoice.invoiceNumber || `INV-${invoice.invoiceId.toUpperCase().slice(-8)}`}.pdf`}
                         >
                             {({ loading }) => (
                                 <div className="flex items-center gap-3">

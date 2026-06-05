@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/request';
 import puppeteer from 'puppeteer';
 
 /**
@@ -45,7 +45,7 @@ export async function GET(
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename=INV-${invoiceId.slice(-6)}.pdf`,
+        'Content-Disposition': `attachment; filename=Invoice-${invoiceId.toUpperCase().slice(-8)}.pdf`,
       },
     });
   } catch (error: any) {
