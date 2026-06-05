@@ -23,6 +23,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { CommunicationForm } from '@/components/communications/communication-form';
 import { createCommunicationLog } from '@/services/communications-service';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context';
 import { 
     User, 
     Car, 
@@ -56,6 +57,7 @@ interface BookingDetailsProps {
 export function BookingDetails({ booking, onClose, onStatusChange, onConvertToJobCard, onEdit }: BookingDetailsProps) {
     const db = useFirestore();
     const { toast } = useToast();
+    const { user: currentUser } = useAuth();
     
     // Stabilized document references with explicit guards to prevent runtime crashes
     const custRef = useMemoFirebase(() => {
@@ -84,15 +86,15 @@ export function BookingDetails({ booking, onClose, onStatusChange, onConvertToJo
     const { data: mechanic } = useDoc<StaffMember>(mechRef as any);
     
     const [isFormOpen, setIsFormOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [isCommSubmitting, setIsCommSubmitting] = useState(false);
 
     const handleAction = (status: Booking['status']) => {
         onStatusChange(booking.bookingId, status);
     };
 
     const handleLogInteraction = async (data: any) => {
-        if (!customer) return;
-        setIsSubmitting(true);
+        if (!customer || !currentUser) return;
+        setIsCommSubmitting(true);
         try {
             await createCommunicationLog({
                 ...data,
@@ -101,13 +103,13 @@ export function BookingDetails({ booking, onClose, onStatusChange, onConvertToJo
                 vehicleId: booking.vehicleId,
                 toName: customer.fullName,
                 toRole: 'Customer'
-            }, booking.bookingId); // Logic captures current user correctly in service
+            }, currentUser.userId);
             setIsFormOpen(false);
             toast({ title: "Interaction Logged", description: "Technical trace registered for this intake." });
         } catch (error: any) {
             toast({ variant: "destructive", title: "Operation Failed", description: error.message });
         } finally {
-            setIsSubmitting(false);
+            setIsCommSubmitting(false);
         }
     };
 
@@ -327,7 +329,7 @@ export function BookingDetails({ booking, onClose, onStatusChange, onConvertToJo
                     </DialogHeader>
                     <CommunicationForm 
                         onSubmit={handleLogInteraction} 
-                        isSubmitting={isSubmitting} 
+                        isSubmitting={isCommSubmitting} 
                         initialData={{
                             bookingId: booking.bookingId,
                             customerId: booking.customerId,
