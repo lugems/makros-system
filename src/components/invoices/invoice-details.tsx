@@ -200,24 +200,24 @@ export function InvoiceDetails({
                                 <div className="space-y-5">
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
-                                            <User className="h-4 w-4" />
+                                            <User className="h-4 w-4 text-primary" />
                                         </div>
                                         <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Fiscal Recipient</h3>
                                     </div>
                                     <div className="pl-9 space-y-1.5">
                                         <p className="font-black text-xl leading-none uppercase tracking-tight">{customer?.fullName || 'Registry Void'}</p>
                                         <p className="text-sm font-bold text-muted-foreground pt-1 flex items-center gap-2">
-                                            <Phone className="h-3 w-3 text-primary/50" /> {customer?.phone}
+                                            <Phone className="h-3 w-3 text-primary/60" /> {customer?.phone}
                                         </p>
                                         <p className="text-[11px] font-medium text-muted-foreground/60 italic flex items-center gap-2 truncate">
-                                            <Mail className="h-3 w-3 text-primary/30" /> {customer?.email}
+                                            <Mail className="h-3 w-3 text-primary/40" /> {customer?.email}
                                         </p>
                                     </div>
                                 </div>
                                 <div className="space-y-5">
                                     <div className="flex items-center gap-2 text-muted-foreground md:justify-end">
                                         <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
-                                            <Building2 className="h-4 w-4" />
+                                            <Building2 className="h-4 w-4 text-primary" />
                                         </div>
                                         <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Certified Issuer</h3>
                                     </div>
@@ -245,17 +245,17 @@ export function InvoiceDetails({
                                         )}
                                         <div className="space-y-1 pt-2">
                                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center md:justify-end gap-2">
-                                                <MapPin className="h-3 w-3 opacity-40" /> {settings?.address || 'KAMPALA, UGANDA'}
+                                                <MapPin className="h-3 w-3 text-primary/40" /> {settings?.address || 'KAMPALA, UGANDA'}
                                             </p>
                                             <div className="flex flex-wrap items-center md:justify-end gap-2 text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">
-                                                <Phone className="h-3 w-3 opacity-30" /> 
+                                                <Phone className="h-3 w-3 text-primary/30" /> 
                                                 <span>{settings?.phone}</span>
                                                 {settings?.additionalPhones?.map((p, i) => (
                                                     <span key={i}>| {p}</span>
                                                 ))}
                                             </div>
                                             <div className="flex flex-wrap items-center md:justify-end gap-2 text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em]">
-                                                <Mail className="h-3 w-3 opacity-30" /> 
+                                                <Mail className="h-3 w-3 text-primary/30" /> 
                                                 <span>{settings?.email}</span>
                                                 {settings?.additionalEmails?.map((e, i) => (
                                                     <span key={i}>| {e}</span>
@@ -263,7 +263,7 @@ export function InvoiceDetails({
                                             </div>
                                             {settings?.website && (
                                                 <p className="text-[9px] font-bold text-primary/40 uppercase tracking-[0.2em] flex items-center md:justify-end gap-2">
-                                                    <Globe className="h-3 w-3 opacity-30" /> {settings.website}
+                                                    <Globe className="h-3 w-3 text-primary/20" /> {settings.website}
                                                 </p>
                                             )}
                                         </div>
@@ -276,7 +276,7 @@ export function InvoiceDetails({
                             <div className="space-y-6">
                                 <div className="flex items-center gap-2 text-muted-foreground">
                                     <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
-                                        <Receipt className="h-4 w-4" />
+                                        <Receipt className="h-4 w-4 text-primary" />
                                     </div>
                                     <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Line Item Ledger</h3>
                                 </div>
@@ -371,7 +371,7 @@ export function InvoiceDetails({
                                 <div className="space-y-6 pt-6">
                                     <div className="flex items-center gap-2 text-muted-foreground">
                                         <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
-                                            <History className="h-4 w-4" />
+                                            <History className="h-4 w-4 text-primary" />
                                         </div>
                                         <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Transaction Trace</h3>
                                     </div>
@@ -381,8 +381,8 @@ export function InvoiceDetails({
                                                 <div className="space-y-1 relative z-10">
                                                     <p className="font-black text-xs uppercase tracking-tight group-hover:text-primary transition-colors">{payment.method} Settlement</p>
                                                     <div className="flex items-center gap-2">
-                                                        <Fingerprint className="h-3 w-3 text-muted-foreground/40" />
-                                                        <p className="text-[9px] text-muted-foreground font-mono font-bold uppercase tracking-tighter">REF: {payment.transactionRef || 'NO_AUTH_ID'}</p>
+                                                        <Fingerprint className="h-3 w-3 text-primary opacity-40" />
+                                                        <p className="text-[9px] text-muted-foreground font-mono font-bold uppercase tracking-tighter">REF: {payment.transactionRef || 'SYSTEM_VERIFIED'}</p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right relative z-10">
@@ -400,7 +400,7 @@ export function InvoiceDetails({
                         </CardContent>
                     </TabsContent>
 
-                    <TabsContent value="communication" className="m-0 focus-visible:outline-none animate-in fade-in duration-500">
+                    <TabsContent value="communication" className="m-0 focus-visible:outline-none animate-in fade-in duration-500 w-full max-w-full min-w-0 overflow-hidden">
                         <div className="p-4 sm:p-8">
                             <RelatedCommunications 
                                 invoiceId={invoice.invoiceId} 

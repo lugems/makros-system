@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -57,7 +56,7 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, selectedInvo
                         <div className="flex justify-between items-start mb-4">
                             <div className="space-y-1">
                                 <div className="flex items-center gap-2">
-                                    <Fingerprint className="h-3 w-3 text-primary/50" />
+                                    <Fingerprint className="h-3 w-3 text-primary" />
                                     <span className="text-[9px] font-mono font-black uppercase text-muted-foreground tracking-widest">
                                         {invoice.invoiceNumber || invoice.invoiceId.slice(-8).toUpperCase()}
                                     </span>
@@ -71,12 +70,12 @@ export const InvoiceList: React.FC<InvoiceListProps> = ({ invoices, selectedInvo
                         
                         <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-5">
                             <div className="flex items-center gap-1.5">
-                                <Car className="h-3 w-3 opacity-40" />
+                                <Car className="h-3 w-3 text-primary opacity-60" />
                                 <span className="bg-muted/50 px-1.5 py-0.5 rounded text-[9px] font-mono">{vehicle?.numberPlate || 'UNIT_TBD'}</span>
                             </div>
                             <span className="opacity-30">•</span>
                             <div className="flex items-center gap-1.5">
-                                <Hash className="h-3 w-3 opacity-40" />
+                                <Hash className="h-3 w-3 text-primary opacity-60" />
                                 <FormattedDate date={invoice.issuedAt} formatString="dd MMM" />
                             </div>
                         </div>

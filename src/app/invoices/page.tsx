@@ -181,21 +181,21 @@ export default function InvoicesPage() {
                     <InvoiceSummaryCard 
                         title="Total Billed" 
                         value={<CurrencyFormat value={metrics.total} abbreviate />} 
-                        icon={<FileText className="h-4 w-4" />}
+                        icon={<FileText className="h-4 w-4 text-white" />}
                         trend="Gross Revenue"
                         gradient="blue"
                     />
                     <InvoiceSummaryCard 
                         title="Collections" 
                         value={<CurrencyFormat value={metrics.collected} abbreviate />} 
-                        icon={<Wallet className="h-4 w-4 text-green-500" />} 
+                        icon={<Wallet className="h-4 w-4 text-white" />} 
                         trend="Net Realized"
                         gradient="green"
                     />
                     <InvoiceSummaryCard 
                         title="Outstanding" 
                         value={<CurrencyFormat value={metrics.outstanding} abbreviate />} 
-                        icon={<AlertCircle className="h-4 w-4 text-destructive" />} 
+                        icon={<AlertCircle className="h-4 w-4 text-white" />} 
                         trend="Awaiting Payment"
                         gradient="orange"
                     />
@@ -217,7 +217,7 @@ export default function InvoicesPage() {
                     <div className="md:col-span-4 lg:col-span-3 space-y-4">
                         <div className="flex items-center justify-between px-2 mb-2">
                             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                <Receipt className="h-3.5 w-3.5" /> Ledger Registry
+                                <Receipt className="h-3.5 w-3.5 text-primary" /> Ledger Registry
                             </h3>
                             <span className="text-[10px] font-bold text-muted-foreground/60">{filteredInvoices.length} Records</span>
                         </div>
