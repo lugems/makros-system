@@ -7,6 +7,7 @@ export type PaymentMethod =
 
 export interface Payment {
   paymentId: string;
+  receiptNumber?: string;
   invoiceId: string;
   customerId: string;
   amount: number;

@@ -32,13 +32,13 @@ interface ReceiptPreviewProps {
 
 /**
  * @fileOverview High-fidelity Certified Payment Receipt Terminal.
- * Synchronized with Invoice module standards: Full Preview navigates, Print Layout pops out.
+ * Refined to support certified receipt numbers from the treasury registry.
  */
 export function ReceiptPreview({ payment, isStandalone = false, onPreview }: ReceiptPreviewProps) {
     const db = useFirestore();
     const { toast } = useToast();
 
-    // 1. Primary Record Resolution (Stabilized) - Hardened with explicit guards
+    // 1. Primary Record Resolution (Stabilized)
     const id = payment.paymentId || (payment as any).id;
     
     const custRef = useMemoFirebase(() => {
@@ -86,7 +86,7 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
             {/* ACTION BAR: Dashboard/Details Mode */}
             {!isStandalone && (
                 <div className="bg-muted/30 p-6 sm:p-8 border-b flex flex-col lg:flex-row items-center justify-between no-print shrink-0 gap-6">
-                    <div className="flex items-center gap-4 w-full lg:w-auto">
+                    <div className="flex items-center gap-4 w-full lg:auto">
                         <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
                             <FileCheck className="h-5 w-5 text-primary" />
                         </div>
@@ -223,7 +223,7 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
                                     <ShieldCheck className="h-20 w-20" />
                                 </div>
                                 <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40 mb-3 relative z-10 text-center">Certified Settlement</p>
-                                <p className="text-2xl font-black font-mono leading-none relative z-10 text-center text-primary uppercase">#{id.toUpperCase().slice(-12)}</p>
+                                <p className="text-2xl font-black font-mono leading-none relative z-10 text-center text-primary uppercase">#{payment.receiptNumber || id.toUpperCase().slice(-12)}</p>
                                 <div className="mt-4 flex justify-center relative z-10">
                                     <Badge className="bg-green-500/20 text-green-400 border-none px-4 py-1 text-[9px] font-black uppercase shadow-lg">Verified Cleared</Badge>
                                 </div>

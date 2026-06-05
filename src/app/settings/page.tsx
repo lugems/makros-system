@@ -60,6 +60,7 @@ const defaultSettings: Partial<WorkshopSettings> = {
   invoicePrefix: "INV",
   invoiceStartNumber: 1001,
   receiptPrefix: "REC",
+  receiptStartNumber: 1001,
   receiptFooterNote: "Thank you for trusting Makros System Workshop.",
   website: "",
   paymentMethods: {
@@ -93,7 +94,11 @@ export default function SettingsPage() {
   const db = useFirestore();
   
   // Real-time Settings Stream (Memoized)
-  const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'workshop') as DocumentReference<WorkshopSettings>, [db]);
+  const settingsRef = useMemoFirebase(() => {
+    if (!db) return null;
+    return doc(db, 'settings', 'workshop') as DocumentReference<WorkshopSettings>;
+  }, [db]);
+  
   const { data: remoteSettings, loading: settingsLoading } = useDoc<WorkshopSettings>(settingsRef);
 
   const [activeTab, setActiveTab] = useState('summary');
@@ -102,18 +107,16 @@ export default function SettingsPage() {
   const [hasInitialized, setHasInitialized] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Synchronize remote settings to local buffer for staged calibration
+  // Synchronize remote settings to local buffer
   useEffect(() => {
     if (settingsLoading) return;
 
-    // Correct hydration logic: Update form state only if not yet initialized or if the remote source has data
     const hydrated = remoteSettings 
       ? { ...defaultSettings, ...remoteSettings } 
       : defaultSettings;
     
     setBaseSettings(hydrated);
     
-    // Only auto-initialize currentSettings if the user hasn't started editing or it's the first data arrival
     if (!hasInitialized) {
       setCurrentSettings(hydrated);
       setHasInitialized(true);
@@ -138,26 +141,26 @@ export default function SettingsPage() {
     });
   };
 
-  const isOwner = currentUser?.role === 'Makros System Owner';
-  const canCommitChanges = useMemo(() => isOwner, [isOwner]);
+  const isOwnerOrManager = useMemo(() => 
+    currentUser && ['Makros System Owner', 'Workshop Manager'].includes(currentUser.role)
+  , [currentUser]);
 
   const handleSave = async () => {
     if (!currentUser || !currentSettings) return;
     
-    if (!canCommitChanges) {
+    if (!isOwnerOrManager) {
         toast({ 
             variant: "destructive", 
             title: "Access Denied", 
-            description: "You do not have the required clearance to modify the master registry." 
+            description: "Clearance insufficient to modify master registry." 
         });
         return;
     }
 
     setIsSaving(true);
     try {
-      // Mutations are non-blocking; UI reflects local state immediately
       await updateSettings(currentSettings, currentUser.userId);
-      toast({ title: "Configuration Applied", description: "Workshop parameters have been synchronized with the master registry." });
+      toast({ title: "Configuration Applied", description: "Workshop parameters synchronized." });
       setBaseSettings(currentSettings);
     } catch (error: any) {
       toast({ variant: "destructive", title: "Sync Failed", description: error.message });
@@ -168,12 +171,11 @@ export default function SettingsPage() {
 
   const handleReset = () => {
     setCurrentSettings(baseSettings || null);
-    toast({ title: "Buffer Cleared", description: "Unsaved calibration data has been reverted." });
+    toast({ title: "Buffer Cleared", description: "Reverted to last committed state." });
   };
   
   const hasUnsavedChanges = useMemo(() => {
     if (!baseSettings || !currentSettings) return false;
-    // Deep comparison of strings to detect property shifts
     return JSON.stringify(baseSettings) !== JSON.stringify(currentSettings);
   }, [baseSettings, currentSettings]);
 
@@ -182,7 +184,7 @@ export default function SettingsPage() {
   const settingsSections = [
     { id: 'profile', title: 'Workshop Profile', description: 'Legal identity, contact authority and localization.', status: 'Configured', icon: User },
     { id: 'hours', title: 'Operating Hours', description: 'Weekly technical availability and intake windows.', status: 'Configured', icon: Clock },
-    { id: 'invoicing', title: 'Fiscal & Tax', description: 'Invoice sequences, VAT rules, document footers and discounts.', status: 'Configured', icon: FileText },
+    { id: 'invoicing', title: 'Fiscal & Tax', description: 'Sequencing protocols, VAT rules, and document calibration.', status: 'Configured', icon: FileText },
     { id: 'workflow', title: 'Operational States', description: 'Dossier transitions and job card lifecycle logic.', status: 'Configured', icon: GitBranch },
     { id: 'notifications', title: 'Alert Pipeline', description: 'Multi-channel communication and trigger logic.', status: 'Configured', icon: Bell },
     { id: 'payments', title: 'Settlement Methods', description: 'Authorized treasury channels and digital gateways.', status: 'Configured', icon: CreditCard },
@@ -249,7 +251,7 @@ export default function SettingsPage() {
             </div>
             <div className="flex-1 text-center md:text-left relative z-10">
               <h4 className="font-black uppercase tracking-tight text-lg">Platform Recalibration Protocol</h4>
-              <p className="text-sm font-medium text-muted-foreground leading-relaxed mt-1">Changes made in this panel instantly propagate across all technician terminals, fiscal dossiers, and client outreach pipelines. Ensure all legal data matches your registration documents.</p>
+              <p className="text-sm font-medium text-muted-foreground leading-relaxed mt-1">Changes made in this panel instantly propagate across all technician terminals, fiscal dossiers, and client outreach pipelines.</p>
             </div>
             <Button variant="outline" className="font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl h-12 px-8 relative z-10" asChild>
               <a href="/audit-logs">Audit Log Registry <ArrowRight className="h-3.5 w-3.5" /></a>
@@ -309,7 +311,7 @@ export default function SettingsPage() {
         </div>
       </Tabs>
 
-      {/* Floating Action Bar for Unsaved Buffer */}
+      {/* Floating Action Bar */}
       {activeTab !== 'summary' && (
         <div className="fixed bottom-8 left-0 right-0 z-50 px-6 pointer-events-none lg:pl-72">
           <div className={cn(
@@ -317,7 +319,7 @@ export default function SettingsPage() {
             hasUnsavedChanges ? "translate-y-0 opacity-100 scale-100" : "translate-y-20 opacity-0 scale-95 pointer-events-none"
           )}>
             <div className="flex items-center gap-4">
-              <div className="h-3 w-3 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+              <div className="h-3 w-3 rounded-full bg-primary animate-pulse" />
               <div className="space-y-0.5">
                 <p className="text-xs font-black uppercase tracking-tight">Unsaved Calibration Buffer Active</p>
                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Pending Master Registry Synchronization</p>
@@ -333,7 +335,7 @@ export default function SettingsPage() {
               </Button>
               <Button 
                 onClick={handleSave} 
-                disabled={isSaving || !canCommitChanges}
+                disabled={isSaving || !isOwnerOrManager}
                 className="flex-1 sm:flex-none h-11 px-8 font-black uppercase tracking-widest text-[10px] gap-2 rounded-xl shadow-lg shadow-primary/20"
               >
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="h-4 w-4 mr-2" /> Commit to Registry</>}

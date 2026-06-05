@@ -26,6 +26,7 @@ export interface WorkshopSettings {
   invoicePrefix: string;
   invoiceStartNumber: number;
   receiptPrefix: string;
+  receiptStartNumber: number;
   receiptFooterNote: string;
 
   paymentMethods: {

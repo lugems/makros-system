@@ -10,8 +10,7 @@ import { WorkshopSettings } from '@/types/settings';
 
 /**
  * @fileOverview High-fidelity PDF Receipt Template.
- * Utilizes local font sources and a rigid grid system for forensic stability.
- * Hardened with footer buffers to prevent content overlap on multi-page receipts.
+ * Refined to display certified receipt numbers.
  */
 
 // 1. Register high-density local fonts
@@ -56,7 +55,7 @@ const formatPdfDate = (date: any) => {
 const styles = StyleSheet.create({
   page: {
     padding: 40,
-    paddingBottom: 100, // TECHNICAL FIX: Reserve space for the absolute positioned fixed footer
+    paddingBottom: 100, 
     backgroundColor: '#FFFFFF',
     fontFamily: 'Inter',
     color: '#0F172A',
@@ -272,7 +271,7 @@ export function ReceiptPDFDocument({
           </View>
           <View style={styles.receiptMeta}>
             <Text style={styles.receiptTitle}>Certified Receipt</Text>
-            <Text style={styles.receiptNumber}>#{id.toUpperCase().slice(-12)}</Text>
+            <Text style={styles.receiptNumber}>#{safeText(payment.receiptNumber || id.toUpperCase().slice(-12))}</Text>
             <Text style={styles.entityText}>Settlement Date: {formatPdfDate(payment.paidAt)}</Text>
           </View>
         </View>

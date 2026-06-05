@@ -24,33 +24,53 @@ export function InvoiceSettings({ data, onUpdate }: InvoiceSettingsProps) {
               <Hash className="h-4 w-4 text-primary" /> Sequencing Protocols
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-8 space-y-6">
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Invoice Prefix</Label>
-                <Input 
-                  value={data?.invoicePrefix || ''} 
-                  onChange={(e) => onUpdate('invoicePrefix', e.target.value)}
-                  className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold uppercase"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Starting Number</Label>
-                <Input 
-                  type="number"
-                  value={data?.invoiceStartNumber || ''} 
-                  onChange={(e) => onUpdate('invoiceStartNumber', parseInt(e.target.value))}
-                  className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold"
-                />
-              </div>
+          <CardContent className="p-8 space-y-8">
+            <div className="space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Invoice Sequence</p>
+                <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Prefix</Label>
+                        <Input 
+                        value={data?.invoicePrefix || ''} 
+                        onChange={(e) => onUpdate('invoicePrefix', e.target.value)}
+                        className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold uppercase"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Next Number</Label>
+                        <Input 
+                        type="number"
+                        value={data?.invoiceStartNumber || ''} 
+                        onChange={(e) => onUpdate('invoiceStartNumber', parseInt(e.target.value) || 0)}
+                        className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold"
+                        />
+                    </div>
+                </div>
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Receipt Prefix</Label>
-              <Input 
-                value={data?.receiptPrefix || ''} 
-                onChange={(e) => onUpdate('receiptPrefix', e.target.value)}
-                className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold uppercase"
-              />
+
+            <Separator className="opacity-50" />
+
+            <div className="space-y-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary ml-1">Receipt Sequence</p>
+                <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Prefix</Label>
+                        <Input 
+                        value={data?.receiptPrefix || ''} 
+                        onChange={(e) => onUpdate('receiptPrefix', e.target.value)}
+                        className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold uppercase"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Next Number</Label>
+                        <Input 
+                        type="number"
+                        value={data?.receiptStartNumber || ''} 
+                        onChange={(e) => onUpdate('receiptStartNumber', parseInt(e.target.value) || 0)}
+                        className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold"
+                        />
+                    </div>
+                </div>
             </div>
           </CardContent>
         </Card>
@@ -88,7 +108,7 @@ export function InvoiceSettings({ data, onUpdate }: InvoiceSettingsProps) {
                   <Input 
                     type="number"
                     value={data?.taxRate || ''} 
-                    onChange={(e) => onUpdate('taxRate', parseFloat(e.target.value))}
+                    onChange={(e) => onUpdate('taxRate', parseFloat(e.target.value) || 0)}
                     className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold"
                   />
                 </div>
@@ -107,7 +127,7 @@ export function InvoiceSettings({ data, onUpdate }: InvoiceSettingsProps) {
                 onChange={(e) => onUpdate('defaultDiscount', parseFloat(e.target.value) || 0)}
                 className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold"
               />
-              <p className="text-[9px] font-bold text-muted-foreground/60 uppercase ml-1">Proposed reduction (percentage) applied to new billing records.</p>
+              <p className="text-[9px] font-bold text-muted-foreground/60 uppercase ml-1">Proposed reduction applied to new billing records.</p>
             </div>
 
             <Separator className="opacity-50" />
@@ -119,7 +139,7 @@ export function InvoiceSettings({ data, onUpdate }: InvoiceSettingsProps) {
                 <textarea 
                   value={data?.receiptFooterNote || ''} 
                   onChange={(e) => onUpdate('receiptFooterNote', e.target.value)}
-                  className="w-full min-h-[100px] pl-11 pt-3 bg-muted/20 border border-border/50 rounded-xl font-medium focus-visible:ring-primary/20 outline-none text-sm"
+                  className="w-full min-h-[100px] pl-11 pt-3 bg-muted/20 border border-border/50 rounded-xl font-medium focus-visible:ring-primary/20 outline-none text-sm resize-none"
                   placeholder="Thank you for trusting Makros System..."
                 />
               </div>

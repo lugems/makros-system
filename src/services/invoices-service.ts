@@ -10,6 +10,7 @@ import {
 import { db } from '@/lib/firebase';
 import { Invoice } from '@/types/invoice';
 import { JobCardStatus } from '@/types/job-card';
+import { WorkshopSettings } from '@/types/settings';
 import { logAudit } from '@/lib/audit-logger';
 
 const COLLECTION_NAME = 'invoices';
@@ -17,7 +18,7 @@ const COLLECTION_NAME = 'invoices';
 /**
  * ATOMIC TRANSACTION: Generate Invoice from Job Card
  * Aggregates repair data, calculates precise labor and materials, and transitions workflow.
- * Accepts overrides for tax and discount application based on the intake session choice.
+ * Implements atomic sequencing for invoice numbers.
  */
 export const generateInvoiceTransaction = async (
   jobCardId: string, 
@@ -36,33 +37,36 @@ export const generateInvoiceTransaction = async (
     
     const jobData = jobCardSnap.data();
 
-    // Pull workshop parameters from master settings
+    // 1. Pull workshop parameters and handle sequencing
     const settingsRef = doc(db, 'settings', 'workshop');
     const settingsSnap = await transaction.get(settingsRef);
-    const settingsData = settingsSnap.exists() ? settingsSnap.data() : { 
+    const settingsData = settingsSnap.exists() ? settingsSnap.data() as WorkshopSettings : { 
       taxRate: 0, 
       defaultDiscount: 0, 
-      invoicePrefix: 'INV' 
-    };
+      invoicePrefix: 'INV',
+      invoiceStartNumber: 1001 
+    } as WorkshopSettings;
     
-    // Calibrate rates based on session overrides provided from the UI
+    // Calibrate rates based on session overrides
     const taxRate = options.applyTax ? (settingsData.taxRate || 0) / 100 : 0;
     const discountRate = options.applyDiscount ? (settingsData.defaultDiscount || 0) / 100 : 0;
 
     const laborTotal = jobData.laborCost || 0;
     const subtotal = laborTotal + partsTotal;
     
-    // Calculate Discount Amount (Applied to Subtotal)
+    // Calculations
     const discountAmount = subtotal * discountRate;
     const discountedSubtotal = subtotal - discountAmount;
-    
-    // Calculate Tax Amount (Applied to Discounted Subtotal)
     const taxAmount = discountedSubtotal * taxRate;
     const grandTotal = discountedSubtotal + taxAmount;
 
+    // 2. Generate Serial Number
+    const nextInvoiceId = settingsData.invoiceStartNumber || 1001;
+    const invoicePrefix = settingsData.invoicePrefix || 'INV';
+    const invoiceNumber = `${invoicePrefix}-${nextInvoiceId}`;
+
     const invoiceRef = doc(collection(db, COLLECTION_NAME));
     const invoiceId = invoiceRef.id;
-    const invoiceNumber = `${settingsData.invoicePrefix || 'INV'}-${Date.now().toString().slice(-4)}`;
 
     const invoicePayload: Invoice = {
       invoiceId,
@@ -82,16 +86,20 @@ export const generateInvoiceTransaction = async (
       updatedAt: new Date().toISOString()
     };
 
-    // 1. Commit Certified Invoice Record
+    // 3. Commit Records and Increment Sequence
     transaction.set(invoiceRef, invoicePayload);
 
-    // 2. Transition Job Card Workflow State
+    transaction.update(settingsRef, {
+      invoiceStartNumber: nextInvoiceId + 1,
+      updatedAt: serverTimestamp()
+    });
+
     transaction.update(jobCardRef, { 
       status: JobCardStatus.Invoiced, 
       updatedAt: serverTimestamp() 
     });
 
-    // 3. Log Immutable Audit Trace
+    // 4. Log Audit Trace
     const auditRef = doc(collection(db, 'auditLogs'));
     transaction.set(auditRef, {
       userId,
