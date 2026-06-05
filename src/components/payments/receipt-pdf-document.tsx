@@ -11,6 +11,7 @@ import { WorkshopSettings } from '@/types/settings';
 /**
  * @fileOverview High-fidelity PDF Receipt Template.
  * Utilizes local font sources and a rigid grid system for forensic stability.
+ * Hardened with footer buffers to prevent content overlap on multi-page receipts.
  */
 
 // 1. Register high-density local fonts
@@ -55,6 +56,7 @@ const formatPdfDate = (date: any) => {
 const styles = StyleSheet.create({
   page: {
     padding: 40,
+    paddingBottom: 100, // TECHNICAL FIX: Reserve space for the absolute positioned fixed footer
     backgroundColor: '#FFFFFF',
     fontFamily: 'Inter',
     color: '#0F172A',
@@ -296,7 +298,7 @@ export function ReceiptPDFDocument({
             <Text style={[styles.labelText, styles.colMain]}>Description</Text>
             <Text style={[styles.labelText, styles.colVal]}>Amount ({currency})</Text>
           </View>
-          <View style={styles.ledgerRow}>
+          <View style={styles.ledgerRow} wrap={false}>
             <View style={styles.colMain}>
               <Text style={styles.entityName}>Workshop Service Settlement</Text>
               <Text style={styles.entityText}>Authorization Reference: {safeText(payment.transactionRef || 'SYSTEM_VERIFIED')}</Text>
@@ -307,7 +309,7 @@ export function ReceiptPDFDocument({
           </View>
         </View>
 
-        <View style={styles.summaryBox}>
+        <View style={styles.summaryBox} wrap={false}>
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Total Disbursed</Text>
             <Text style={styles.totalAmount}>{currency} {payment.amount.toLocaleString()}</Text>

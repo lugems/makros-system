@@ -11,6 +11,7 @@ import { WorkshopSettings } from '@/types/settings';
 /**
  * @fileOverview High-fidelity PDF Document Template for Makros System.
  * Utilizes local font sources and a rigid grid system to ensure forensic stability.
+ * Hardened with footer buffers to prevent content overlap on multi-page dossiers.
  */
 
 // 1. Register high-density local fonts
@@ -56,6 +57,7 @@ const formatPdfDate = (date: any) => {
 const styles = StyleSheet.create({
   page: {
     padding: 40,
+    paddingBottom: 100, // TECHNICAL FIX: Reserve space for the absolute positioned fixed footer
     backgroundColor: '#FFFFFF',
     fontFamily: 'Inter',
     color: '#0F172A',
@@ -389,7 +391,7 @@ export function InvoicePDFDocument({
             <Text style={[styles.headerText, styles.colTotal]}>Total</Text>
           </View>
 
-          <View style={styles.tableRow}>
+          <View style={styles.tableRow} wrap={false}>
             <View style={styles.colDesc}>
               <Text style={styles.rowText}>Labor & Diagnostic Procedures</Text>
               <Text style={styles.rowSubText}>Service fees for repair and maintenance cycles.</Text>
@@ -413,7 +415,7 @@ export function InvoicePDFDocument({
         </View>
 
         {/* 4. Totals Block */}
-        <View style={styles.totalsContainer}>
+        <View style={styles.totalsContainer} wrap={false}>
           <View style={styles.totalsBox}>
             <View style={styles.totalRow}>
               <Text style={styles.totalLabel}>Subtotal</Text>
