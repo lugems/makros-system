@@ -1,17 +1,29 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
 import { doc, DocumentReference } from 'firebase/firestore';
 import { Booking, BookingStatus } from '@/types/booking';
 import { LoadingState } from '@/components/shared/loading-state';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { ArrowLeft, Calendar, Fingerprint, ShieldCheck } from 'lucide-react';
+import { FormattedDate } from '@/components/shared/formatted-date';
 import { BookingDetails } from './booking-details';
 import { useToast } from '@/hooks/use-toast';
-import { updateBookingStatus } from '@/services/bookings-service';
+import { updateBookingStatus, updateBooking } from '@/services/bookings-service';
 import { useAuth } from '@/contexts/auth-context';
+import BookingFormDialog from './booking-form-dialog';
 
 interface BookingDetailsPageProps {
   params: { bookingId: string };
@@ -28,6 +40,9 @@ const BookingDetailsPage = ({ params }: BookingDetailsPageProps) => {
   const { user: currentUser } = useAuth();
   const { bookingId } = params;
 
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+
   // Real-time Technical Stream (Stabilized)
   const bookingRef = useMemoFirebase(() => {
     if (!db || !bookingId) return null;
@@ -43,6 +58,20 @@ const BookingDetailsPage = ({ params }: BookingDetailsPageProps) => {
       toast({ title: "Status Synchronized", description: `Appointment marked as ${status} in master registry.` });
     } catch (error) {
       toast({ variant: "destructive", title: "Update Failed", description: "Technical error during state transition." });
+    }
+  };
+
+  const handleUpdateBooking = async (data: any) => {
+    if (!currentUser || !booking) return;
+    setIsActionLoading(true);
+    try {
+      updateBooking(booking.bookingId, data, currentUser.userId);
+      setIsEditOpen(false);
+      toast({ title: "Record Synchronized", description: "Appointment parameters updated successfully." });
+    } catch (err) {
+      toast({ variant: "destructive", title: "Sync Failed", description: "Technical error during write protocol." });
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -108,7 +137,7 @@ const BookingDetailsPage = ({ params }: BookingDetailsPageProps) => {
                 onClose={() => router.push('/bookings')}
                 onStatusChange={handleStatusChange}
                 onConvertToJobCard={handleConvertToJobCard}
-                onEdit={() => {}} // Logic handled within specialized component tabs/dialogs if needed
+                onEdit={() => setIsEditOpen(true)}
             />
           </div>
           
@@ -145,6 +174,14 @@ const BookingDetailsPage = ({ params }: BookingDetailsPageProps) => {
               </Card>
           </div>
       </div>
+
+      <BookingFormDialog 
+        isOpen={isEditOpen} 
+        onClose={() => setIsEditOpen(false)} 
+        onSave={handleUpdateBooking} 
+        isSubmitting={isActionLoading}
+        booking={booking}
+      />
 
       <footer className="bg-muted/30 px-8 py-6 border-t flex items-center justify-center rounded-[2.5rem]">
           <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.6em] text-center">Makros System Technical Intake • Internal Reference Classified</p>
