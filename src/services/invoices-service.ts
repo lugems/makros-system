@@ -4,14 +4,17 @@ import {
   collection, 
   doc, 
   getDocs, 
+  updateDoc,
   serverTimestamp,
   runTransaction
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Invoice } from '@/types/invoice';
+import { Invoice, PaymentStatus } from '@/types/invoice';
 import { JobCardStatus } from '@/types/job-card';
 import { WorkshopSettings } from '@/types/settings';
 import { logAudit } from '@/lib/audit-logger';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 const COLLECTION_NAME = 'invoices';
 
@@ -112,4 +115,41 @@ export const generateInvoiceTransaction = async (
     
     return invoiceId;
   });
+};
+
+/**
+ * Technical Decommissioning Protocol: Cancel Invoice
+ * Updates the fiscal state to Cancelled and logs the event.
+ */
+export const cancelInvoice = (invoiceId: string, userId: string) => {
+  const docRef = doc(db, COLLECTION_NAME, invoiceId);
+  const payload = { paymentStatus: 'Cancelled' as PaymentStatus, updatedAt: serverTimestamp() };
+  
+  updateDoc(docRef, payload).catch(async (err) => {
+    errorEmitter.emit('permission-error', new FirestorePermissionError({
+      path: docRef.path,
+      operation: 'update',
+      requestResourceData: payload,
+    } satisfies SecurityRuleContext));
+  });
+
+  logAudit(userId, 'CANCEL_INVOICE', 'Invoices', invoiceId, `Cancelled billing record in master ledger.`);
+};
+
+/**
+ * Synchronizes technical metadata for a billing record.
+ */
+export const updateInvoiceMetadata = (invoiceId: string, data: Partial<Invoice>, userId: string) => {
+    const docRef = doc(db, COLLECTION_NAME, invoiceId);
+    const payload = { ...data, updatedAt: serverTimestamp() };
+    
+    updateDoc(docRef, payload).catch(async (err) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: docRef.path,
+        operation: 'update',
+        requestResourceData: payload,
+      } satisfies SecurityRuleContext));
+    });
+  
+    logAudit(userId, 'UPDATE_INVOICE', 'Invoices', invoiceId, `Synchronized fiscal metadata for record.`);
 };

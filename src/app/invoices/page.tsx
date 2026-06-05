@@ -23,9 +23,13 @@ import { CurrencyFormat } from '@/components/shared/currency-format';
 import { LoadingState } from '@/components/shared/loading-state';
 import { useAuth } from '@/contexts/auth-context';
 import { useRouter } from 'next/navigation';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import InvoicePreview from '@/components/invoices/invoice-preview';
 import { DataTablePagination } from '@/components/shared/data-table-pagination';
+import { cancelInvoice, updateInvoiceMetadata } from '@/services/invoices-service';
 
 export default function InvoicesPage() {
     const isMobile = useMediaQuery("(max-width: 768px)");
@@ -54,6 +58,7 @@ export default function InvoicesPage() {
 
     const [isGenerateOpen, setIsGenerateOpen] = useState(false);
     const [isPaymentOpen, setIsRecordPaymentOpen] = useState(false);
+    const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
     const [previewingInvoice, setPreviewingInvoice] = useState<Invoice | null>(null);
 
     // Pagination State
@@ -122,6 +127,25 @@ export default function InvoicesPage() {
             setSelectedInvoiceId(filteredInvoices[0].invoiceId);
         }
     }, [filteredInvoices, selectedInvoiceId, isMobile]);
+
+    const handleCancelInvoice = (invoiceToCancel: Invoice) => {
+        if (!currentUser) return;
+        cancelInvoice(invoiceToCancel.invoiceId, currentUser.userId);
+        toast({ title: "Invoice Cancelled", description: "The billing record has been marked as Cancelled in the ledger." });
+    };
+
+    const handleUpdateInvoiceMetadata = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (editingInvoice && currentUser) {
+            updateInvoiceMetadata(editingInvoice.invoiceId, {
+                issuedAt: editingInvoice.issuedAt,
+                dueDate: editingInvoice.dueDate,
+                notes: editingInvoice.notes
+            }, currentUser.userId);
+            setEditingInvoice(null);
+            toast({ title: "Record Synchronized", description: "Financial record metadata updated successfully." });
+        }
+    };
 
     if (authLoading || (isAuthorized && invLoading)) return <LoadingState />;
 
@@ -218,8 +242,8 @@ export default function InvoicesPage() {
                             <InvoiceDetails 
                                 invoice={selectedInvoice} 
                                 onRecordPayment={() => setIsRecordPaymentOpen(true)}
-                                onCancel={() => {}}
-                                onEdit={() => {}}
+                                onCancel={() => handleCancelInvoice(selectedInvoice)}
+                                onEdit={(inv) => setEditingInvoice(inv)}
                                 onPreview={setPreviewingInvoice}
                             />
                         ) : (
@@ -253,10 +277,55 @@ export default function InvoicesPage() {
                 />
             )}
 
+            {/* Edit Metadata Dialog */}
+            <Dialog open={!!editingInvoice} onOpenChange={(o) => !o && setEditingInvoice(null)}>
+                <DialogContent className="sm:max-w-[480px] rounded-[2rem] bg-background text-foreground border-border/50">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-black uppercase tracking-tight">Financial Record Sync</DialogTitle>
+                        <DialogDescription className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Modify metadata for Record #{editingInvoice?.invoiceId.slice(-6).toUpperCase()}</DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleUpdateInvoiceMetadata} className="space-y-6 py-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Issued Date</Label>
+                                <Input 
+                                    type="date" 
+                                    value={editingInvoice?.issuedAt?.split('T')[0] || ''} 
+                                    onChange={(e) => setEditingInvoice(inv => inv ? { ...inv, issuedAt: e.target.value } : null)}
+                                    className="rounded-xl h-11 bg-muted/50 border-none font-bold"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Due Date</Label>
+                                <Input 
+                                    type="date" 
+                                    value={editingInvoice?.dueDate?.split('T')[0] || ''} 
+                                    onChange={(e) => setEditingInvoice(inv => inv ? { ...inv, dueDate: e.target.value } : null)}
+                                    className="rounded-xl h-11 bg-muted/50 border-none font-bold"
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fiscal Notes</Label>
+                            <Textarea 
+                                value={editingInvoice?.notes || ''} 
+                                onChange={(e) => setEditingInvoice(inv => inv ? { ...inv, notes: e.target.value } : null)}
+                                className="rounded-xl min-h-[100px] bg-muted/50 border-none resize-none font-medium text-sm"
+                                placeholder="Add payment terms or technical notes..."
+                            />
+                        </div>
+                        <Button type="submit" className="w-full h-12 font-black uppercase tracking-[0.2em] rounded-xl shadow-lg shadow-primary/20">
+                            Commit Changes
+                        </Button>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
             {previewingInvoice && (
                 <Dialog open={!!previewingInvoice} onOpenChange={(o) => !o && setPreviewingInvoice(null)}>
                     <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent shadow-none">
                         <DialogTitle className="sr-only">Invoice Preview</DialogTitle>
+                        <DialogDescription className="sr-only">Forensic print preview for the selected billing record.</DialogDescription>
                         <div className="relative">
                             <Button 
                                 variant="ghost" 
@@ -282,8 +351,8 @@ export default function InvoicesPage() {
                         <InvoiceDetails 
                             invoice={selectedInvoice}
                             onRecordPayment={() => setIsRecordPaymentOpen(true)}
-                            onCancel={() => {}}
-                            onEdit={() => {}}
+                            onCancel={() => handleCancelInvoice(selectedInvoice)}
+                            onEdit={(inv) => setEditingInvoice(inv)}
                             onPreview={setPreviewingInvoice}
                         />
                     )}
