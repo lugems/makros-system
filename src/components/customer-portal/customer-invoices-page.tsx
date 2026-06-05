@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
@@ -162,14 +161,19 @@ export default function CustomerInvoicesPage() {
                                 Makros System accepts certified settlements via Cash, Mobile Money, and authorized Bank Transfers.
                             </p>
                             <Separator className="bg-white/10" />
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/40">
-                                    <span>Mobile Money:</span>
-                                    <span className="text-white">+256 772 345 111</span>
+                            <div className="space-y-4">
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Bank Authority</p>
+                                    <p className="text-[11px] font-black uppercase text-white tracking-tight">STANBIC BANK: 9030017839968</p>
+                                    <p className="text-[9px] font-bold text-white/60 uppercase">Garden City Branch</p>
                                 </div>
-                                <div className="flex items-center justify-between text-[10px] font-bold uppercase tracking-widest text-white/40">
-                                    <span>Registered Name:</span>
-                                    <span className="text-white">MAKROS SYSTEM</span>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Account Name</p>
+                                    <p className="text-[11px] font-black uppercase text-white tracking-tight">MAKROS HOLDINGS UGANDA LIMITED</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">SWIFT / BIC</p>
+                                    <p className="text-[11px] font-mono font-black text-primary uppercase">SBICUGKX</p>
                                 </div>
                             </div>
                         </div>
