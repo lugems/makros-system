@@ -12,7 +12,7 @@ import { doc, collection, query, orderBy, DocumentReference } from 'firebase/fir
 import { CurrencyFormat } from '@/components/shared/currency-format';
 import { FormattedDate } from '@/components/shared/formatted-date';
 import { Button } from '@/components/ui/button';
-import { Printer, Download, FileText, MapPin, Phone, Mail, ShieldCheck, Fingerprint, Receipt, User, Car, Globe, Loader2 } from 'lucide-react';
+import { Printer, Download, FileText, MapPin, Phone, Mail, ShieldCheck, Fingerprint, Receipt, User, Car, Globe, Loader2, TrendingUp } from 'lucide-react';
 import PaymentStatusBadge from './payment-status-badge';
 import { Separator } from '@/components/ui/separator';
 import { PDFDownloadLink } from '@react-pdf/renderer';
