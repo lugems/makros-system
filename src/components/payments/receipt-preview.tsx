@@ -33,6 +33,7 @@ interface ReceiptPreviewProps {
 /**
  * @fileOverview High-fidelity Certified Payment Receipt Terminal.
  * Refined to support certified receipt numbers from the treasury registry.
+ * Synchronized with the Midnight Slate theme.
  */
 export function ReceiptPreview({ payment, isStandalone = false, onPreview }: ReceiptPreviewProps) {
     const db = useFirestore();
@@ -77,6 +78,10 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
         currency: "UGX",
         receiptFooterNote: "Thank you for trusting Makros System Workshop."
     };
+
+    const fileName = payment.receiptNumber 
+        ? `${payment.receiptNumber}.pdf` 
+        : `Receipt-${id.toUpperCase().slice(-8)}.pdf`;
 
     return (
         <Card className={cn(
@@ -124,7 +129,7 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
                         <Button asChild className="h-10 px-6 rounded-xl font-black uppercase tracking-widest text-[9px] shadow-xl shadow-primary/20 cursor-pointer">
                             <PDFDownloadLink 
                                 document={<ReceiptPDFDocument payment={payment} customer={customer} invoice={invoice} recorder={recorder} settings={settings} />} 
-                                fileName={`${payment.receiptNumber || `REC-${id.toUpperCase().slice(-8)}`}.pdf`}
+                                fileName={fileName}
                             >
                                 {({ loading }) => (
                                     <>
@@ -155,7 +160,7 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
                                 <Button asChild className="h-10 px-6 rounded-xl font-black uppercase text-[10px] tracking-widest gap-2 shadow-xl shadow-primary/20 cursor-pointer text-white">
                                     <PDFDownloadLink 
                                         document={<ReceiptPDFDocument payment={payment} customer={customer} invoice={invoice} recorder={recorder} settings={settings} />} 
-                                        fileName={`${payment.receiptNumber || `REC-${id.toUpperCase().slice(-8)}`}.pdf`}
+                                        fileName={fileName}
                                     >
                                         {({ loading }) => (
                                             <>

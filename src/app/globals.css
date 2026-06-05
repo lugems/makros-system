@@ -22,7 +22,7 @@
     --muted: 210 40% 94%;
     --muted-foreground: 215.4 16.3% 46.9%;
     
-    /* Accent: #fcb209 */
+    /* Accent: #fcb209 (Used for highlights) */
     --accent: 42 97% 51%;
     --accent-foreground: 222 47% 11%;
     
@@ -47,13 +47,13 @@
   .dark {
     --background: 222 47% 4%;
     --foreground: 213 31% 91%;
-    --card: 222 47% 7%;
+    --card: 222 47% 6%;
     --card-foreground: 213 31% 91%;
-    --popover: 222 47% 7%;
+    --popover: 222 47% 6%;
     --popover-foreground: 213 31% 91%;
     
-    /* Adjusted Primary for Dark Mode Contrast */
-    --primary: 217 91% 55%;
+    /* Adjusted Primary for Dark Mode Contrast: #3b82f6 equivalent */
+    --primary: 217 91% 60%;
     --primary-foreground: 210 40% 98%;
     
     --secondary: 217 32% 12%;
@@ -62,24 +62,25 @@
     --muted: 217 32% 12%;
     --muted-foreground: 215 20.2% 65.1%;
     
-    --accent: 42 97% 51%;
-    --accent-foreground: 222 47% 4%;
+    /* Consistent Accent for Dark Mode Hovers: Subtle blue-grey tint */
+    --accent: 217 32% 15%;
+    --accent-foreground: 213 31% 91%;
     
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
     
     --border: 217 32% 16%;
     --input: 217 32% 18%;
-    --ring: 217 91% 55%;
+    --ring: 217 91% 60%;
 
     --sidebar-background: 222 47% 4%;
     --sidebar-foreground: 213 31% 91%;
-    --sidebar-primary: 217 91% 55%;
+    --sidebar-primary: 217 91% 60%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 217 32% 12%;
     --sidebar-accent-foreground: 213 31% 91%;
     --sidebar-border: 217 32% 17%;
-    --sidebar-ring: 217 91% 55%;
+    --sidebar-ring: 217 91% 60%;
   }
 }
 
