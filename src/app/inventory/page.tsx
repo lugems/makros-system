@@ -204,7 +204,7 @@ export default function InventoryPage() {
                         className="pl-10 bg-background h-11 rounded-xl focus-visible:ring-1 focus-visible:ring-primary/20 shadow-sm" 
                     />
                 </div>
-                <div class='flex flex-wrap items-center gap-3 w-full lg:w-auto'>
+                <div className='flex flex-wrap items-center gap-3 w-full lg:w-auto'>
                     <div className="flex items-center gap-2">
                         <Tag className="h-4 w-4 text-muted-foreground hidden sm:block" />
                         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
