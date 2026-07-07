@@ -26,7 +26,7 @@ interface InvoiceActionsProps {
 
 /**
  * @fileOverview Technical Action Terminal for fiscal records.
- * Enhanced with @react-pdf client-side construction.
+ * Enhanced with @react-pdf client-side construction for Proforma, Tax, and standard Invoices.
  */
 export const InvoiceActions: React.FC<InvoiceActionsProps> = ({ 
     invoice, 
@@ -88,6 +88,8 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
         });
     };
 
+    const fileName = invoice.invoiceNumber || `INV-${invoice.invoiceId.toUpperCase().slice(-8)}`;
+
     return (
         <div className="flex w-full max-w-full flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-3 no-print overflow-hidden">
             {hasPermission(['Makros System Owner', 'Accountant', 'Workshop Manager']) && (
@@ -112,7 +114,7 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
                         <MoreHorizontal className="ml-1 h-3.5 w-3.5 opacity-50 flex-shrink-0" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="rounded-xl p-2 w-64 shadow-2xl border-border/50">
+                <DropdownMenuContent align="end" className="rounded-xl p-2 w-72 shadow-2xl border-border/50">
                     <DropdownMenuItem onClick={() => onPreview(invoice)} className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest">
                         <Eye className="h-4 w-4 text-primary" /> Inspect Dossier
                     </DropdownMenuItem>
@@ -121,27 +123,57 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
                         <Printer className="h-4 w-4 text-primary" /> Print Layout
                     </DropdownMenuItem>
 
+                    <DropdownMenuSeparator className="my-2" />
+                    
                     <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
                         <PDFDownloadLink 
-                            document={<InvoicePDFDocument invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
-                            fileName={`${invoice.invoiceNumber || `INV-${invoice.invoiceId.toUpperCase().slice(-8)}`}.pdf`}
+                            document={<InvoicePDFDocument title="PROFORMA INVOICE" invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
+                            fileName={`Proforma-${fileName}.pdf`}
                         >
                             {({ loading }) => (
                                 <div className="flex items-center gap-3">
                                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-primary" />}
-                                    <span>Export Pure PDF</span>
+                                    <span>Export Proforma Invoice</span>
                                 </div>
                             )}
                         </PDFDownloadLink>
                     </DropdownMenuItem>
                     
+                    <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
+                        <PDFDownloadLink 
+                            document={<InvoicePDFDocument title="TAX INVOICE" invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
+                            fileName={`Tax-Invoice-${fileName}.pdf`}
+                        >
+                            {({ loading }) => (
+                                <div className="flex items-center gap-3">
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-primary" />}
+                                    <span>Export Tax Invoice</span>
+                                </div>
+                            )}
+                        </PDFDownloadLink>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
+                        <PDFDownloadLink 
+                            document={<InvoicePDFDocument title="INVOICE" invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
+                            fileName={`Invoice-${fileName}.pdf`}
+                        >
+                            {({ loading }) => (
+                                <div className="flex items-center gap-3">
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-primary" />}
+                                    <span>Export Invoice</span>
+                                </div>
+                            )}
+                        </PDFDownloadLink>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuSeparator className="my-2" />
+
                     {hasPermission(['Makros System Owner', 'Accountant', 'Workshop Manager']) && (
                         <DropdownMenuItem onClick={() => onEdit(invoice)} className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest">
                             <Pencil className="h-4 w-4 text-primary" /> Synchronize Record
                         </DropdownMenuItem>
                     )}
-                    
-                    <DropdownMenuSeparator className="my-2" />
                     
                     <DropdownMenuItem onClick={handleSendEmail} className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest">
                         <Send className="h-4 w-4 text-primary" /> Send via Email

@@ -108,14 +108,14 @@ const styles = StyleSheet.create({
   },
   invoiceMeta: {
     textAlign: 'right',
-    width: 180,
+    width: 220,
   },
   invoiceTitle: {
     fontSize: 9,
     fontWeight: 900,
     textTransform: 'uppercase',
     color: '#3B82F6',
-    letterSpacing: 1.5,
+    letterSpacing: 1,
     marginBottom: 4,
   },
   invoiceNumber: {
@@ -322,6 +322,7 @@ interface InvoicePDFDocumentProps {
   vehicle: Vehicle | null;
   parts: JobPart[] | null;
   settings: WorkshopSettings | null;
+  title?: string;
 }
 
 export function InvoicePDFDocument({ 
@@ -329,7 +330,8 @@ export function InvoicePDFDocument({
     customer, 
     vehicle, 
     parts, 
-    settings 
+    settings,
+    title
 }: InvoicePDFDocumentProps) {
   const currency = settings?.currency || 'Ush';
   
@@ -354,7 +356,7 @@ export function InvoicePDFDocument({
             </View>
           </View>
           <View style={styles.invoiceMeta}>
-            <Text style={styles.invoiceTitle}>Certified Document</Text>
+            <Text style={styles.invoiceTitle}>Certified Document {title ? `• ${title}` : ''}</Text>
             <Text style={styles.invoiceNumber}>#{safeText(invoice.invoiceNumber || invoice.invoiceId.slice(-8).toUpperCase())}</Text>
             <Text style={styles.metaLabelValue}>Issue Date: {formatPdfDate(invoice.issuedAt)}</Text>
             {invoice.dueDate && (
