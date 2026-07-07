@@ -26,7 +26,9 @@ import {
     MoreHorizontal,
     Play,
     Check,
-    MessageSquare
+    MessageSquare,
+    Download,
+    FileText
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +64,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RelatedCommunications } from '@/components/communications/related-communications';
 import { CommunicationForm } from '@/components/communications/communication-form';
 import { createCommunicationLog } from '@/services/communications-service';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { JobCardPDFDocument } from './job-card-pdf-document';
 
 /**
  * @fileOverview Technical Repair Dossier.
@@ -265,6 +269,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
     if (!jobCard) return null;
 
     const canInvoice = [JobCardStatus.Completed, JobCardStatus.QualityCheck].includes(jobCard.status as any) && (isManager || isOwner || isReceptionist);
+    const pdfFileName = `JobCard-${jobCardId.toUpperCase().slice(-8)}.pdf`;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500 pb-32">
@@ -309,6 +314,20 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                     </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                    <Button asChild variant="outline" className="flex-1 sm:flex-none h-12 px-8 font-black uppercase tracking-widest text-[10px] rounded-xl bg-background border-border/50 hover:bg-muted transition-all">
+                        <PDFDownloadLink 
+                            document={<JobCardPDFDocument jobCard={jobCard} customer={customer} vehicle={vehicle} tasks={tasks} parts={parts} mechanic={mechanic} settings={settings} />} 
+                            fileName={pdfFileName}
+                        >
+                            {({ loading }) => (
+                                <div className="flex items-center gap-2">
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+                                    <span>Export Roadmap</span>
+                                </div>
+                            )}
+                        </PDFDownloadLink>
+                    </Button>
+
                     {(isManager || isOwner || isReceptionist) && (
                         <Button 
                             onClick={handleGenerateInvoice} 

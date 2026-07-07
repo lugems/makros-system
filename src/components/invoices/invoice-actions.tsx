@@ -4,7 +4,7 @@ import React from 'react';
 import { Invoice } from '@/types/invoice';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Plus, Pencil, Trash2, Eye, Download, Send, Printer, FileText, Loader2 } from 'lucide-react';
+import { MoreHorizontal, Plus, Pencil, Trash2, Eye, Download, Send, Printer, FileText, Loader2, FileCheck, FileDigit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { InvoicePDFDocument } from './invoice-pdf-document';
@@ -26,7 +26,7 @@ interface InvoiceActionsProps {
 
 /**
  * @fileOverview Technical Action Terminal for fiscal records.
- * Enhanced with @react-pdf client-side construction for Proforma, Tax, and standard Invoices.
+ * Enhanced with @react-pdf client-side construction and professional naming protocols.
  */
 export const InvoiceActions: React.FC<InvoiceActionsProps> = ({ 
     invoice, 
@@ -57,12 +57,12 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
     
     const { data: customer } = useDoc<Customer>(custRef as any);
     const { data: jobCard } = useDoc<any>(jobRef as any);
-    const { data: settings } = useDoc<WorkshopSettings>(settingsRef);
+    const { data: settings } = useDoc<WorkshopSettings>(settingsRef as any);
 
     const vehRef = useMemoFirebase(() => {
         if (!db || !jobCard?.vehicleId) return null;
         return doc(db, 'vehicles', jobCard.vehicleId);
-    }, [db, jobCard]);
+    }, [db, jobCard?.vehicleId]);
     const { data: vehicle } = useDoc<Vehicle>(vehRef as any);
 
     const partsQuery = useMemoFirebase(() => {
@@ -88,7 +88,8 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
         });
     };
 
-    const fileName = invoice.invoiceNumber || `INV-${invoice.invoiceId.toUpperCase().slice(-8)}`;
+    // Sequential File Naming Protocol
+    const baseFileName = (invoice.invoiceNumber || `INV-${invoice.invoiceId.slice(-8)}`).toUpperCase();
 
     return (
         <div className="flex w-full max-w-full flex-col sm:flex-row items-stretch sm:items-center sm:justify-end gap-3 no-print overflow-hidden">
@@ -124,29 +125,28 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator className="my-2" />
-                    
                     <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
                         <PDFDownloadLink 
-                            document={<InvoicePDFDocument title="PROFORMA INVOICE" invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
-                            fileName={`Proforma-${fileName}.pdf`}
+                            document={<InvoicePDFDocument invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} documentTitle="PROFORMA INVOICE" />} 
+                            fileName={`PROFORMA_${baseFileName}.pdf`}
                         >
                             {({ loading }) => (
                                 <div className="flex items-center gap-3">
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-primary" />}
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-amber-500" />}
                                     <span>Export Proforma Invoice</span>
                                 </div>
                             )}
                         </PDFDownloadLink>
                     </DropdownMenuItem>
-                    
+
                     <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
                         <PDFDownloadLink 
-                            document={<InvoicePDFDocument title="TAX INVOICE" invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
-                            fileName={`Tax-Invoice-${fileName}.pdf`}
+                            document={<InvoicePDFDocument invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} documentTitle="TAX INVOICE" />} 
+                            fileName={`TAX_${baseFileName}.pdf`}
                         >
                             {({ loading }) => (
                                 <div className="flex items-center gap-3">
-                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-primary" />}
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDigit className="h-4 w-4 text-indigo-500" />}
                                     <span>Export Tax Invoice</span>
                                 </div>
                             )}
@@ -155,13 +155,27 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
 
                     <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
                         <PDFDownloadLink 
-                            document={<InvoicePDFDocument title="INVOICE" invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
-                            fileName={`Invoice-${fileName}.pdf`}
+                            document={<InvoicePDFDocument invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} documentTitle="INVOICE" />} 
+                            fileName={`${baseFileName}.pdf`}
+                        >
+                            {({ loading }) => (
+                                <div className="flex items-center gap-3">
+                                    {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileCheck className="h-4 w-4 text-green-500" />}
+                                    <span>Export Invoice</span>
+                                </div>
+                            )}
+                        </PDFDownloadLink>
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
+                        <PDFDownloadLink 
+                            document={<InvoicePDFDocument invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} />} 
+                            fileName={`PURE_${baseFileName}.pdf`}
                         >
                             {({ loading }) => (
                                 <div className="flex items-center gap-3">
                                     {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4 text-primary" />}
-                                    <span>Export Invoice</span>
+                                    <span>Export Pure PDF</span>
                                 </div>
                             )}
                         </PDFDownloadLink>
@@ -169,7 +183,7 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
                     
                     <DropdownMenuSeparator className="my-2" />
 
-                    {hasPermission(['Makros System Owner', 'Accountant', 'Workshop Manager']) && (
+                    {hasPermission(['Ssejp System Owner', 'Accountant', 'Workshop Manager']) && (
                         <DropdownMenuItem onClick={() => onEdit(invoice)} className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest">
                             <Pencil className="h-4 w-4 text-primary" /> Synchronize Record
                         </DropdownMenuItem>

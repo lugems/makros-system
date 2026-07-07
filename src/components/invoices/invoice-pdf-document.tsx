@@ -11,7 +11,7 @@ import { WorkshopSettings } from '@/types/settings';
 /**
  * @fileOverview High-fidelity PDF Document Template for Makros System.
  * Utilizes local font sources and a rigid grid system to ensure forensic stability.
- * Hardened with footer buffers to prevent content overlap on multi-page dossiers.
+ * Optimized for multi-page overflow handling without footer collision.
  */
 
 // 1. Register high-density local fonts
@@ -56,8 +56,10 @@ const formatPdfDate = (date: any) => {
 // 3. Technical Styles (React-PDF Compatible)
 const styles = StyleSheet.create({
   page: {
-    padding: 40,
-    paddingBottom: 100, // TECHNICAL FIX: Reserve space for the absolute positioned fixed footer
+    paddingTop: 40,
+    paddingRight: 40,
+    paddingBottom: 90, // Increased to ensure content breaks before the fixed footer
+    paddingLeft: 40,
     backgroundColor: '#FFFFFF',
     fontFamily: 'Inter',
     color: '#0F172A',
@@ -108,14 +110,21 @@ const styles = StyleSheet.create({
   },
   invoiceMeta: {
     textAlign: 'right',
-    width: 220,
+    width: 180,
   },
   invoiceTitle: {
     fontSize: 9,
     fontWeight: 900,
     textTransform: 'uppercase',
     color: '#3B82F6',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    marginBottom: 4,
+  },
+  documentType: {
+    fontSize: 10,
+    fontWeight: 900,
+    textTransform: 'uppercase',
+    color: '#0F172A',
     marginBottom: 4,
   },
   invoiceNumber: {
@@ -322,7 +331,7 @@ interface InvoicePDFDocumentProps {
   vehicle: Vehicle | null;
   parts: JobPart[] | null;
   settings: WorkshopSettings | null;
-  title?: string;
+  documentTitle?: string;
 }
 
 export function InvoicePDFDocument({ 
@@ -331,7 +340,7 @@ export function InvoicePDFDocument({
     vehicle, 
     parts, 
     settings,
-    title
+    documentTitle = 'INVOICE'
 }: InvoicePDFDocumentProps) {
   const currency = settings?.currency || 'Ush';
   
@@ -356,7 +365,8 @@ export function InvoicePDFDocument({
             </View>
           </View>
           <View style={styles.invoiceMeta}>
-            <Text style={styles.invoiceTitle}>Certified Document {title ? `• ${title}` : ''}</Text>
+            <Text style={styles.invoiceTitle}>Certified Document</Text>
+            <Text style={styles.documentType}>{documentTitle}</Text>
             <Text style={styles.invoiceNumber}>#{safeText(invoice.invoiceNumber || invoice.invoiceId.slice(-8).toUpperCase())}</Text>
             <Text style={styles.metaLabelValue}>Issue Date: {formatPdfDate(invoice.issuedAt)}</Text>
             {invoice.dueDate && (
@@ -393,6 +403,7 @@ export function InvoicePDFDocument({
             <Text style={[styles.headerText, styles.colTotal]}>Total</Text>
           </View>
 
+          {/* Labor Row: wrap=false to prevent split across pages */}
           <View style={styles.tableRow} wrap={false}>
             <View style={styles.colDesc}>
               <Text style={styles.rowText}>Labor & Diagnostic Procedures</Text>
@@ -416,7 +427,7 @@ export function InvoicePDFDocument({
           ))}
         </View>
 
-        {/* 4. Totals Block */}
+        {/* 4. Totals Block: wrap=false to ensure all totals stay together on one page */}
         <View style={styles.totalsContainer} wrap={false}>
           <View style={styles.totalsBox}>
             <View style={styles.totalRow}>
@@ -453,7 +464,7 @@ export function InvoicePDFDocument({
 
         {/* 6. Footer */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerNote}>{safeText(settings?.receiptFooterNote || 'Thank you for choosing Makros System. Professional warranty coverage applies to all labor.', 300)}</Text>
+          <Text style={styles.footerNote}>{safeText(settings?.receiptFooterNote || 'Thank you for trusting MAKROS HOLDINGS UGANDA LIMITED.', 300)}</Text>
           <Text style={styles.certification}>MAKROS SYSTEM FINANCIAL ANALYSIS OS • CERTIFIED DIGITAL RECORD</Text>
         </View>
       </Page>
