@@ -10,7 +10,7 @@ import { WorkshopSettings } from '@/types/settings';
 
 /**
  * @fileOverview High-fidelity PDF Receipt Template.
- * Refined to display certified receipt numbers.
+ * Refined to display certified receipt numbers and comprehensive bank authority details.
  */
 
 // 1. Register high-density local fonts
@@ -95,6 +95,12 @@ const styles = StyleSheet.create({
     color: '#64748B',
     textTransform: 'uppercase',
     fontWeight: 700,
+    flexWrap: 'wrap',
+  },
+  contactText: {
+    fontSize: 7,
+    color: '#94A3B8',
+    fontWeight: 400,
     flexWrap: 'wrap',
   },
   receiptMeta: {
@@ -210,6 +216,36 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
 
+  instructionSection: {
+    marginTop: 30,
+    flexDirection: 'row',
+    gap: 20,
+  },
+  bankSection: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  bankRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  bankLabel: {
+    fontSize: 6,
+    fontWeight: 900,
+    textTransform: 'uppercase',
+    color: '#94A3B8',
+    width: 70,
+  },
+  bankValue: {
+    fontSize: 7,
+    fontWeight: 700,
+    color: '#0F172A',
+  },
+
   footer: {
     position: 'absolute',
     bottom: 40,
@@ -266,7 +302,14 @@ export function ReceiptPDFDocument({
             <View style={styles.workshopInfo}>
               <Text style={styles.workshopName}>{safeText(settings?.workshopName || 'MAKROS SYSTEM')}</Text>
               <Text style={styles.workshopLegal}>{safeText(settings?.businessRegistrationName)}</Text>
-              {settings?.tin && <Text style={styles.entityText}>TIN: {safeText(settings.tin)}</Text>}
+              {settings?.tin && <Text style={styles.contactText}>TIN: {safeText(settings.tin)}</Text>}
+              <Text style={styles.contactText}>{safeText(settings?.address, 150)}</Text>
+              
+              <View style={{ marginTop: 4 }}>
+                  <Text style={styles.contactText}>Phone: {safeText(settings?.phone)} {settings?.additionalPhones?.join(' | ')}</Text>
+                  <Text style={styles.contactText}>Email: {safeText(settings?.email)}</Text>
+                  {settings?.website && <Text style={styles.contactText}>Web: {safeText(settings.website)}</Text>}
+              </View>
             </View>
           </View>
           <View style={styles.receiptMeta}>
@@ -314,6 +357,35 @@ export function ReceiptPDFDocument({
             <Text style={styles.totalAmount}>{currency} {payment.amount.toLocaleString()}</Text>
           </View>
         </View>
+
+        {/* Bank Instructions Section */}
+        {settings?.bankName && (
+            <View style={styles.instructionSection} wrap={false}>
+                <View style={styles.bankSection}>
+                    <Text style={styles.sectionTitle}>Technical Instructions</Text>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>Bank Name:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankName)}</Text>
+                    </View>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>Branch:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankBranch)}</Text>
+                    </View>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>Account Title:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankAccountName)}</Text>
+                    </View>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>Account No:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankAccountNumber)}</Text>
+                    </View>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>SWIFT Code:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankSwiftCode)}</Text>
+                    </View>
+                </View>
+            </View>
+        )}
 
         <View style={styles.footer} fixed>
           <Text style={styles.footerNote}>{safeText(settings?.receiptFooterNote || 'Thank you for choosing Makros System.', 300)}</Text>

@@ -15,7 +15,7 @@ import { FormattedDate } from '@/components/shared/formatted-date';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Printer, Download, FileCheck, ShieldCheck, Mail, Phone, MapPin, Fingerprint, Receipt, User, History, ExternalLink, Globe, Loader2, FileText } from 'lucide-react';
+import { Printer, Download, FileCheck, ShieldCheck, Mail, Phone, MapPin, Fingerprint, Receipt, User, History, ExternalLink, Globe, Loader2, FileText, Landmark, CreditCard, Binary } from 'lucide-react';
 import PaymentStatusBadge from '@/components/invoices/payment-status-badge';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -219,6 +219,12 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
                                         <span key={i} className="before:content-['|'] before:mr-2 before:opacity-30">{e}</span>
                                     ))}
                                 </div>
+                                {workshop.website && (
+                                    <div className="flex items-center gap-3">
+                                        <Globe className="h-4 w-4 text-primary/60" />
+                                        <span>{workshop.website}</span>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -302,19 +308,52 @@ export function ReceiptPreview({ payment, isStandalone = false, onPreview }: Rec
                         </table>
                     </div>
 
-                    <div className="flex justify-end mb-24">
-                        <div className="w-full max-w-sm bg-slate-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group border-none">
-                            <div className="absolute -right-6 -bottom-6 h-40 w-40 bg-white/5 rounded-full blur-3xl group-hover:scale-150 transition-all duration-700" />
-                            <div className="relative z-10 space-y-6">
-                                <div className="flex justify-between items-center border-b border-white/10 pb-6">
-                                    <span className="text-[11px] font-black uppercase tracking-[0.4em] text-white/40">Total Disbursed</span>
-                                    <span className="text-3xl font-black text-white tabular-nums"><CurrencyFormat value={payment.amount} /></span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-10 mb-16">
+                        <div>
+                            {workshop.bankName && (
+                                <div className="p-8 rounded-[2rem] bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 space-y-6">
+                                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2">
+                                        <Landmark className="h-4 w-4 text-primary" /> Payment Instructions
+                                    </h3>
+                                    <div className="space-y-4">
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Bank Institution</p>
+                                            <p className="text-sm font-black uppercase">{workshop.bankName}</p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase opacity-60">{workshop.bankBranch}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Account Title</p>
+                                            <p className="text-sm font-black uppercase">{workshop.bankAccountName}</p>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Account No</p>
+                                                <p className="text-sm font-mono font-black">{workshop.bankAccountNumber}</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">SWIFT / BIC</p>
+                                                <p className="text-sm font-mono font-black text-primary">{workshop.bankSwiftCode}</p>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-[11px] font-black uppercase tracking-[0.4em] text-primary">Registry state</span>
-                                    <div className="flex items-center gap-3 text-green-400">
-                                        <ShieldCheck className="h-5 w-5" />
-                                        <span className="text-sm font-black uppercase tracking-[0.2em]">CLEARED</span>
+                            )}
+                        </div>
+
+                        <div className="flex flex-col items-end space-y-6">
+                            <div className="w-full md:w-80 bg-slate-900 text-white p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group/total border-none">
+                                <div className="absolute -right-6 -bottom-6 h-40 w-40 bg-white/5 rounded-full blur-3xl group-hover/total:scale-150 transition-all duration-700" />
+                                <div className="relative z-10 space-y-6">
+                                    <div className="flex justify-between items-center border-b border-white/10 pb-6">
+                                        <span className="text-[11px] font-black uppercase tracking-[0.4em] text-white/40">Settled Balance</span>
+                                        <span className="text-3xl font-black text-white tabular-nums"><CurrencyFormat value={payment.amount} /></span>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-[11px] font-black uppercase tracking-[0.4em] text-primary">Registry state</span>
+                                        <div className="flex items-center gap-3 text-green-400">
+                                            <ShieldCheck className="h-5 w-5" />
+                                            <span className="text-sm font-black uppercase tracking-[0.2em]">CLEARED</span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
