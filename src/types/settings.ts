@@ -13,6 +13,13 @@ export interface WorkshopSettings {
   address: string;
   logoUrl?: string;
 
+  // Bank Authority Parameters
+  bankName?: string;
+  bankBranch?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
+  bankSwiftCode?: string;
+
   currency: "UGX" | "USD" | "KES" | "TZS";
   timezone: string;
   language: "English" | "Swahili" | "Luganda";

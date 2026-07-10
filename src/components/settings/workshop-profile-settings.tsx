@@ -6,7 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { WorkshopSettings } from '@/types/settings';
-import { User, Phone, Mail, MapPin, Building2, Camera, Trash2, Loader2, Image as ImageIcon, Plus, X, Globe, FileText } from 'lucide-react';
+import { 
+  User, 
+  Phone, 
+  Mail, 
+  MapPin, 
+  Building2, 
+  Camera, 
+  Trash2, 
+  Loader2, 
+  Image as ImageIcon, 
+  Plus, 
+  X, 
+  Globe, 
+  FileText,
+  Landmark,
+  CreditCard,
+  Binary
+} from 'lucide-react';
 import { uploadWorkshopLogo } from '@/lib/storage-service';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -21,6 +38,7 @@ interface WorkshopProfileSettingsProps {
 /**
  * @fileOverview Technical Calibration terminal for Workshop Corporate Identity.
  * Includes Branding (Logo), Legal registration, and multi-channel communication parameters.
+ * Enhanced with Bank Authority parameters for settlement instructions.
  */
 export function WorkshopProfileSettings({ data, onUpdate }: WorkshopProfileSettingsProps) {
   const { toast } = useToast();
@@ -286,7 +304,6 @@ export function WorkshopProfileSettings({ data, onUpdate }: WorkshopProfileSetti
 
             <Separator className="opacity-50" />
 
-            {/* Website Section */}
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
                 <Globe className="h-3 w-3" /> Digital Headquarters (Website)
@@ -312,6 +329,83 @@ export function WorkshopProfileSettings({ data, onUpdate }: WorkshopProfileSetti
                   placeholder="Street Address, City, Country"
                 />
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Bank Authority Registry */}
+        <Card className="rounded-[2.5rem] border-border/50 bg-card shadow-sm overflow-hidden md:col-span-2 lg:col-span-1">
+          <CardHeader className="bg-muted/30 border-b p-8">
+            <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
+              <Landmark className="h-4 w-4 text-primary" /> Bank Authority & Settlements
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-8 space-y-6">
+            <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 mb-2">
+                <p className="text-[10px] font-medium text-muted-foreground leading-relaxed uppercase opacity-70">
+                    These credentials appear on certified invoices and receipts for electronic settlement instructions.
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Financial Institution (Bank Name)</Label>
+                    <div className="relative">
+                        <Landmark className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                            value={data?.bankName || ''} 
+                            onChange={(e) => onUpdate('bankName', e.target.value)}
+                            placeholder="e.g. Stanbic Bank"
+                            className="pl-11 h-12 bg-muted/20 border-border/50 rounded-xl font-bold"
+                        />
+                    </div>
+                </div>
+                <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Branch Identity</Label>
+                    <Input 
+                        value={data?.bankBranch || ''} 
+                        onChange={(e) => onUpdate('bankBranch', e.target.value)}
+                        placeholder="e.g. Garden City Branch"
+                        className="h-12 bg-muted/20 border-border/50 rounded-xl font-medium"
+                    />
+                </div>
+            </div>
+
+            <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                    <User className="h-3 w-3" /> Account Legal Title
+                </Label>
+                <Input 
+                    value={data?.bankAccountName || ''} 
+                    onChange={(e) => onUpdate('bankAccountName', e.target.value)}
+                    placeholder="e.g. MAKROS HOLDINGS UGANDA LIMITED"
+                    className="h-12 bg-muted/20 border-border/50 rounded-xl font-bold uppercase"
+                />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                        <CreditCard className="h-3 w-3" /> Account Number
+                    </Label>
+                    <Input 
+                        value={data?.bankAccountNumber || ''} 
+                        onChange={(e) => onUpdate('bankAccountNumber', e.target.value)}
+                        placeholder="000000000000"
+                        className="h-12 bg-muted/20 border-border/50 rounded-xl font-black font-mono tracking-wider"
+                    />
+                </div>
+                <div className="space-y-2">
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1 flex items-center gap-2">
+                        <Binary className="h-3 w-3" /> SWIFT / BIC Code
+                    </Label>
+                    <Input 
+                        value={data?.bankSwiftCode || ''} 
+                        onChange={(e) => onUpdate('bankSwiftCode', e.target.value)}
+                        placeholder="SBICUGKX"
+                        className="h-12 bg-muted/20 border-border/50 rounded-xl font-black font-mono uppercase tracking-widest text-primary"
+                    />
+                </div>
             </div>
           </CardContent>
         </Card>

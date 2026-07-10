@@ -63,6 +63,11 @@ const defaultSettings: Partial<WorkshopSettings> = {
   receiptStartNumber: 1001,
   receiptFooterNote: "Thank you for trusting Makros System Workshop.",
   website: "",
+  bankName: "",
+  bankBranch: "",
+  bankAccountName: "",
+  bankAccountNumber: "",
+  bankSwiftCode: "",
   paymentMethods: {
     cash: true, mobileMoney: true, bankTransfer: true, card: false, credit: false
   },
@@ -182,7 +187,7 @@ export default function SettingsPage() {
   if (authLoading || (settingsLoading && !hasInitialized)) return <LoadingState />;
 
   const settingsSections = [
-    { id: 'profile', title: 'Workshop Profile', description: 'Legal identity, contact authority and localization.', status: 'Configured', icon: User },
+    { id: 'profile', title: 'Workshop Profile', description: 'Legal identity, contact authority and bank details.', status: 'Configured', icon: User },
     { id: 'hours', title: 'Operating Hours', description: 'Weekly technical availability and intake windows.', status: 'Configured', icon: Clock },
     { id: 'invoicing', title: 'Fiscal & Tax', description: 'Sequencing protocols, VAT rules, and document calibration.', status: 'Configured', icon: FileText },
     { id: 'workflow', title: 'Operational States', description: 'Dossier transitions and job card lifecycle logic.', status: 'Configured', icon: GitBranch },
