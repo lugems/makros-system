@@ -275,6 +275,51 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  // Settlement Specifics
+  settlementSection: {
+    marginTop: 15,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopStyle: 'dashed',
+    borderTopColor: '#E2E8F0',
+    gap: 4,
+  },
+  settledLabel: {
+    fontSize: 8,
+    fontWeight: 700,
+    textTransform: 'uppercase',
+    color: '#64748B',
+    flexShrink: 0,
+  },
+  settledValue: {
+    fontSize: 9,
+    fontWeight: 900,
+    color: '#10B981',
+    textAlign: 'right',
+    flex: 1,
+  },
+  balanceBlock: {
+    marginTop: 10,
+    backgroundColor: '#0F172A',
+    padding: 10,
+    borderRadius: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  balanceLabel: {
+    fontSize: 8,
+    fontWeight: 900,
+    textTransform: 'uppercase',
+    color: '#FFFFFF',
+    opacity: 0.5,
+  },
+  balanceValue: {
+    fontSize: 12,
+    fontWeight: 900,
+    color: '#3B82F6',
+  },
+
   // Notes
   notesSection: {
     marginTop: 20,
@@ -403,7 +448,7 @@ export function InvoicePDFDocument({
             <Text style={[styles.headerText, styles.colTotal]}>Total</Text>
           </View>
 
-          {/* Labor Row: wrap=false to prevent split across pages */}
+          {/* Labor Row */}
           <View style={styles.tableRow} wrap={false}>
             <View style={styles.colDesc}>
               <Text style={styles.rowText}>Labor & Diagnostic Procedures</Text>
@@ -427,7 +472,7 @@ export function InvoicePDFDocument({
           ))}
         </View>
 
-        {/* 4. Totals Block: wrap=false to ensure all totals stay together on one page */}
+        {/* 4. Totals Block */}
         <View style={styles.totalsContainer} wrap={false}>
           <View style={styles.totalsBox}>
             <View style={styles.totalRow}>
@@ -450,6 +495,19 @@ export function InvoicePDFDocument({
             <View style={styles.grandTotalRow}>
               <Text style={styles.grandTotalLabel}>Grand Total</Text>
               <Text style={styles.grandTotalValue}>{formatValue(invoice.grandTotal)}</Text>
+            </View>
+
+            {/* Payment Settlement Breakdown */}
+            <View style={styles.settlementSection}>
+              <View style={styles.totalRow}>
+                <Text style={styles.settledLabel}>Net Settled</Text>
+                <Text style={styles.settledValue}>{formatValue(invoice.amountPaid)}</Text>
+              </View>
+              
+              <View style={styles.balanceBlock}>
+                <Text style={styles.balanceLabel}>Balance Due</Text>
+                <Text style={styles.balanceValue}>{formatValue(invoice.balance)}</Text>
+              </View>
             </View>
           </View>
         </View>

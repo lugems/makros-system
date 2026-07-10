@@ -27,7 +27,8 @@ import {
     ChevronRight,
     Camera,
     MessageSquare,
-    Plus
+    Plus,
+    Binary
 } from 'lucide-react';
 import { FormattedDate } from '@/components/shared/formatted-date';
 import { JobStatusBadge } from '@/components/job-cards/job-status-badge';
@@ -188,26 +189,26 @@ export function VehicleDetails({ vehicleId }: { vehicleId: string }) {
                                       </p>
                                   </div>
                                   <div className="space-y-1">
+                                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Engine Identification</label>
+                                      <p className="text-sm font-mono font-bold flex items-center gap-2 text-foreground/80">
+                                          <Binary className="h-4 w-4 text-primary" />
+                                          {vehicle.engineNumber?.toUpperCase() || 'NOT_CALIBRATED'}
+                                      </p>
+                                  </div>
+                              </div>
+                              <div className="space-y-6">
+                                  <div className="space-y-1">
                                       <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Odometer Telemetry</label>
                                       <p className="text-sm font-bold flex items-center gap-2">
                                           <Gauge className="h-4 w-4 text-primary" />
                                           {vehicle.mileage?.toLocaleString() || 0} KM
                                       </p>
                                   </div>
-                              </div>
-                              <div className="space-y-6">
                                   <div className="space-y-1">
                                       <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Fuel Configuration</label>
                                       <p className="text-sm font-bold flex items-center gap-2">
                                           <Fuel className="h-4 w-4 text-primary" />
                                           {vehicle.fuelLevel || 'Not Calibrated'}
-                                      </p>
-                                  </div>
-                                  <div className="space-y-1">
-                                      <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Manufacturing Cycle</label>
-                                      <p className="text-sm font-bold flex items-center gap-2">
-                                          <Calendar className="h-4 w-4 text-indigo-500" />
-                                          Year {vehicle.year || 'N/A'}
                                       </p>
                                   </div>
                               </div>
@@ -359,7 +360,7 @@ export function VehicleDetails({ vehicleId }: { vehicleId: string }) {
       </div>
       
       <div className="bg-muted/30 px-8 py-6 border-t flex items-center justify-center">
-          <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.5em] text-center">Makros System Technical Directory • Vehicle Reference Classified</p>
+          <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.5em] text-center">Ssejp System Technical Directory • Vehicle Reference Classified</p>
       </div>
 
       {/* Interaction Modal */}

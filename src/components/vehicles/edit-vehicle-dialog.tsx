@@ -35,7 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/auth-context';
 import { Vehicle } from '@/types/vehicle';
 import { Customer } from '@/types/customer';
-import { Car, User, Hash, Calendar as CalendarIcon, FileText, Loader2, Gauge, Fuel } from 'lucide-react';
+import { Car, User, Hash, Calendar as CalendarIcon, FileText, Loader2, Gauge, Fuel, Binary } from 'lucide-react';
 
 const vehicleFormSchema = z.object({
   make: z.string().min(1, "Make is required"),
@@ -43,6 +43,7 @@ const vehicleFormSchema = z.object({
   year: z.coerce.number().min(1900).max(new Date().getFullYear() + 1),
   numberPlate: z.string().min(1, "License plate is required"),
   vin: z.string().optional(),
+  engineNumber: z.string().optional(),
   mileage: z.coerce.number().min(0, "Mileage cannot be negative"),
   fuelLevel: z.string().min(1, "Fuel configuration required"),
   customerId: z.string().min(1, "Owner selection is required"),
@@ -79,6 +80,7 @@ export function EditVehicleDialog({ vehicle, customers, isOpen, onClose }: EditV
       year: vehicle.year ? Number(vehicle.year) : new Date().getFullYear(),
       numberPlate: vehicle.numberPlate,
       vin: vehicle.vin || '',
+      engineNumber: vehicle.engineNumber || '',
       mileage: vehicle.mileage || 0,
       fuelLevel: vehicle.fuelLevel || 'Half Tank',
       customerId: vehicle.customerId,
@@ -94,6 +96,7 @@ export function EditVehicleDialog({ vehicle, customers, isOpen, onClose }: EditV
         year: vehicle.year ? Number(vehicle.year) : new Date().getFullYear(),
         numberPlate: vehicle.numberPlate,
         vin: vehicle.vin || '',
+        engineNumber: vehicle.engineNumber || '',
         mileage: vehicle.mileage || 0,
         fuelLevel: vehicle.fuelLevel || 'Half Tank',
         customerId: vehicle.customerId,
@@ -105,10 +108,10 @@ export function EditVehicleDialog({ vehicle, customers, isOpen, onClose }: EditV
   async function onSubmit(data: VehicleFormValues) {
     try {
       await updateVehicle(vehicle.vehicleId, { ...data, year: String(data.year) }, user?.userId || '');
-      toast({ title: "Success", description: "Vehicle updated successfully" });
+      toast({ title: "Record Synchronized", description: "Vehicle data updated successfully." });
       onClose();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to update vehicle", variant: "destructive" });
+      toast({ title: "Error", description: "Failed to update technical record.", variant: "destructive" });
     }
   }
 
@@ -116,8 +119,8 @@ export function EditVehicleDialog({ vehicle, customers, isOpen, onClose }: EditV
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden p-0 sm:max-w-[500px] border-border/50">
         <DialogHeader className="px-6 pt-6 pb-2 text-left">
-          <DialogTitle className="text-xl font-black uppercase tracking-tight">Technical Data Update</DialogTitle>
-          <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Synchronize registry record for Asset #{vehicle.vehicleId.slice(-6).toUpperCase()}</DialogDescription>
+          <DialogTitle className="text-xl font-black uppercase tracking-tight">Record Synchronization</DialogTitle>
+          <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Modify technical data for Asset #{vehicle.vehicleId.slice(-6).toUpperCase()}</DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
@@ -141,7 +144,7 @@ export function EditVehicleDialog({ vehicle, customers, isOpen, onClose }: EditV
                         </FormControl>
                         <SelectContent className="rounded-xl border-border/50">
                           {customers.map((customer) => (
-                            <SelectItem key={customer.customerId || (customer as any).id} value={customer.customerId || (customer as any).id} className="font-bold text-xs uppercase">
+                            <SelectItem key={customer.customerId} value={customer.customerId} className="font-bold text-xs uppercase">
                               {customer.fullName}
                             </SelectItem>
                           ))}
@@ -272,7 +275,7 @@ export function EditVehicleDialog({ vehicle, customers, isOpen, onClose }: EditV
                     render={({ field }) => (
                         <FormItem className="space-y-2">
                         <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
-                            <FileText className="h-3 w-3" /> VIN
+                            <FileText className="h-3 w-3 text-primary" /> VIN / Chassis
                         </FormLabel>
                         <FormControl>
                             <Input {...field} className="h-11 bg-muted/50 border-none rounded-xl font-mono text-[10px] uppercase" />
@@ -283,26 +286,42 @@ export function EditVehicleDialog({ vehicle, customers, isOpen, onClose }: EditV
                     />
                     <FormField
                     control={form.control}
-                    name="status"
+                    name="engineNumber"
                     render={({ field }) => (
                         <FormItem className="space-y-2">
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Registry Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger className="h-11 bg-muted/50 border-none rounded-xl font-black text-primary">
-                                <SelectValue />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                            <SelectItem value="Active" className="font-bold text-xs uppercase">Active Duty</SelectItem>
-                            <SelectItem value="Inactive" className="font-bold text-xs uppercase">Decommissioned</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
+                            <Binary className="h-3 w-3 text-primary" /> Engine Number
+                        </FormLabel>
+                        <FormControl>
+                            <Input {...field} className="h-11 bg-muted/50 border-none rounded-xl font-mono text-[10px] uppercase" />
+                        </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
                     />
                 </div>
+
+                <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                    <FormItem className="space-y-2">
+                    <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Registry Status</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                        <SelectTrigger className="h-11 bg-muted/50 border-none rounded-xl font-black text-primary">
+                            <SelectValue />
+                        </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                        <SelectItem value="Active" className="font-bold text-xs uppercase">Active Duty</SelectItem>
+                        <SelectItem value="Inactive" className="font-bold text-xs uppercase">Decommissioned</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                    </FormItem>
+                )}
+                />
               </div>
             </DialogBody>
 

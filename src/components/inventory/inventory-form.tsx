@@ -40,7 +40,19 @@ const CATEGORIES = [
     "Filters",
     "Tyres & Wheels",
     "Battery & Power",
-    "General Hardware"
+    "General Hardware",
+    "AC system",
+    "Electrical and Wiring services",
+    "Service",
+    "Clutch system",
+    "Exhaust system",
+    "Accessories",
+    "Welding and metal works",
+    "Ambulance conversion/retrofitting",
+    "Truck conversions",
+    "Mobile lab conversions",
+    "Mobile clinic conversion",
+    "Funeral Van conversion"
 ];
 
 export function InventoryForm({ onSubmit, item }: InventoryFormProps) {

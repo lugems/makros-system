@@ -15,6 +15,7 @@ import {
   DialogBody,
   DialogFooter,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useFirestore, useCollection } from '@/firebase';
@@ -22,7 +23,7 @@ import { collection, query, orderBy } from 'firebase/firestore';
 import { registerVehicle } from '@/services/vehicles-service';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { Car, User, Hash, Calendar as CalendarIcon, FileText, Loader2, Gauge, Fuel } from 'lucide-react';
+import { Car, User, Hash, Calendar as CalendarIcon, FileText, Loader2, Gauge, Fuel, Binary } from 'lucide-react';
 import { Customer } from '@/types/customer';
 
 const vehicleFormSchema = z.object({
@@ -31,6 +32,7 @@ const vehicleFormSchema = z.object({
   year: z.coerce.number().min(1900).max(new Date().getFullYear() + 1),
   numberPlate: z.string().min(1, "License plate is required"),
   vin: z.string().optional(),
+  engineNumber: z.string().optional(),
   mileage: z.coerce.number().min(0, "Mileage cannot be negative"),
   fuelLevel: z.string().min(1, "Fuel configuration required"),
   customerId: z.string().min(1, "Owner selection is required"),
@@ -69,6 +71,7 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
       year: new Date().getFullYear(),
       numberPlate: '',
       vin: '',
+      engineNumber: '',
       mileage: 0,
       fuelLevel: 'Half Tank',
       customerId: '',
@@ -81,7 +84,7 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
     
     try {
         await registerVehicle({ ...data, year: String(data.year) }, user.userId);
-        toast({ title: "Asset Registered", description: `${data.make} ${data.model} added to fleet.` });
+        toast({ title: "Asset Registered", description: `${data.make} ${data.model} added to fleet registry.` });
         onClose();
         form.reset();
     } catch (error: any) {
@@ -93,7 +96,8 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
     <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
       <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden p-0 sm:max-w-[500px] border-border/50">
         <DialogHeader className="px-6 pt-6 pb-2 text-left">
-          <DialogTitle className="text-xl font-black uppercase tracking-tight">New Vehicle Enrollment</DialogTitle>
+          <DialogTitle className="text-xl font-black uppercase tracking-tight">Asset Enrollment</DialogTitle>
+          <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Initialize a new technical vehicle dossier.</DialogDescription>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
@@ -115,7 +119,7 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                         </FormControl>
                         <SelectContent className="rounded-xl">
                           {customers?.map((c) => (
-                            <SelectItem key={c.customerId || (c as any).id} value={c.customerId || (c as any).id} className="font-bold uppercase text-xs">
+                            <SelectItem key={c.customerId} value={c.customerId} className="font-bold uppercase text-xs">
                               {c.fullName}
                             </SelectItem>
                           ))}
@@ -132,7 +136,7 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                     name="make"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest">Brand / Make</FormLabel>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Brand / Make</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g. Toyota" {...field} className="bg-muted/50 border-none rounded-xl h-11 font-bold" />
                         </FormControl>
@@ -145,7 +149,7 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                     name="model"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest">Model</FormLabel>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Model</FormLabel>
                         <FormControl>
                           <Input placeholder="e.g. Camry" {...field} className="bg-muted/50 border-none rounded-xl h-11 font-bold" />
                         </FormControl>
@@ -161,8 +165,8 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                     name="numberPlate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                          <Hash className="h-3 w-3" /> License Plate
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
+                          <Hash className="h-3 w-3 text-primary" /> License Plate
                         </FormLabel>
                         <FormControl>
                           <Input placeholder="UAB 123X" {...field} className="bg-muted/50 border-none rounded-xl h-11 font-mono font-black uppercase" />
@@ -176,8 +180,8 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                     name="year"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                          <CalendarIcon className="h-3 w-3" /> Year
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
+                          <CalendarIcon className="h-3 w-3 text-primary" /> Year
                         </FormLabel>
                         <FormControl>
                           <Input type="number" {...field} className="bg-muted/50 border-none rounded-xl h-11 font-bold" />
@@ -188,14 +192,13 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                   />
                 </div>
 
-                {/* Telemetry Integration */}
                 <div className="grid grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="mileage"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
                           <Gauge className="h-3 w-3 text-primary" /> Odometer (KM)
                         </FormLabel>
                         <FormControl>
@@ -210,7 +213,7 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                     name="fuelLevel"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
                           <Fuel className="h-3 w-3 text-primary" /> Fuel Config
                         </FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
@@ -231,21 +234,38 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="vin"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
-                        <FileText className="h-3 w-3" /> VIN / Chassis Number
-                      </FormLabel>
-                      <FormControl>
-                        <Input placeholder="17-digit identification code" {...field} className="bg-muted/50 border-none rounded-xl h-11 font-mono uppercase text-xs" />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="vin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
+                          <FileText className="h-3 w-3 text-primary" /> VIN / Chassis
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="17-digit code" {...field} className="bg-muted/50 border-none rounded-xl h-11 font-mono uppercase text-[10px]" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="engineNumber"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
+                          <Binary className="h-3 w-3 text-primary" /> Engine Number
+                        </FormLabel>
+                        <FormControl>
+                          <Input placeholder="Engine ID" {...field} className="bg-muted/50 border-none rounded-xl h-11 font-mono uppercase text-[10px]" />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
             </DialogBody>
 

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Invoice } from '@/types/invoice';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { MoreHorizontal, Plus, Pencil, Trash2, Eye, Download, Send, Printer, FileText, Loader2, FileCheck, FileDigit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -26,7 +26,7 @@ interface InvoiceActionsProps {
 
 /**
  * @fileOverview Technical Action Terminal for fiscal records.
- * Enhanced with @react-pdf client-side construction and professional naming protocols.
+ * Enhanced with specialized multi-title export commands and settlement indicators.
  */
 export const InvoiceActions: React.FC<InvoiceActionsProps> = ({ 
     invoice, 
@@ -116,15 +116,20 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="rounded-xl p-2 w-72 shadow-2xl border-border/50">
+                    <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Dossier Command</DropdownMenuLabel>
+                    
                     <DropdownMenuItem onClick={() => onPreview(invoice)} className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest">
                         <Eye className="h-4 w-4 text-primary" /> Inspect Dossier
                     </DropdownMenuItem>
                     
-                    <DropdownMenuItem onClick={() => onPreview(invoice)} className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest">
+                    <DropdownMenuItem onClick={() => window.print()} className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest">
                         <Printer className="h-4 w-4 text-primary" /> Print Layout
                     </DropdownMenuItem>
 
                     <DropdownMenuSeparator className="my-2" />
+                    
+                    <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Export Registry</DropdownMenuLabel>
+
                     <DropdownMenuItem asChild className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest cursor-pointer">
                         <PDFDownloadLink 
                             document={<InvoicePDFDocument invoice={invoice} customer={customer} vehicle={vehicle} parts={parts} settings={settings} documentTitle="PROFORMA INVOICE" />} 
@@ -183,7 +188,9 @@ export const InvoiceActions: React.FC<InvoiceActionsProps> = ({
                     
                     <DropdownMenuSeparator className="my-2" />
 
-                    {hasPermission(['Ssejp System Owner', 'Accountant', 'Workshop Manager']) && (
+                    <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground px-3 py-2">Workflow & Sync</DropdownMenuLabel>
+
+                    {hasPermission(['Makros System Owner', 'Accountant', 'Workshop Manager']) && (
                         <DropdownMenuItem onClick={() => onEdit(invoice)} className="rounded-lg gap-3 py-3 text-[10px] font-black uppercase tracking-widest">
                             <Pencil className="h-4 w-4 text-primary" /> Synchronize Record
                         </DropdownMenuItem>
