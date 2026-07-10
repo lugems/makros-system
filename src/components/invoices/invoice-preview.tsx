@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React from 'react';
 import Image from 'next/image';
 import { Invoice } from '@/types/invoice';
 import { Customer } from '@/types/customer';
@@ -12,7 +12,7 @@ import { doc, collection, query, orderBy, DocumentReference } from 'firebase/fir
 import { CurrencyFormat } from '@/components/shared/currency-format';
 import { FormattedDate } from '@/components/shared/formatted-date';
 import { Button } from '@/components/ui/button';
-import { Printer, Download, FileText, MapPin, Phone, Mail, ShieldCheck, Fingerprint, Receipt, User, Car, Globe, Loader2, TrendingUp } from 'lucide-react';
+import { Printer, Download, FileText, MapPin, Phone, Mail, ShieldCheck, Fingerprint, Receipt, User, Car, Globe, Loader2, TrendingUp, Landmark, CreditCard, Binary } from 'lucide-react';
 import PaymentStatusBadge from './payment-status-badge';
 import { Separator } from '@/components/ui/separator';
 import { PDFDownloadLink } from '@react-pdf/renderer';
@@ -25,7 +25,7 @@ interface InvoicePreviewProps {
 /**
  * @fileOverview High-fidelity Certified Fiscal Document.
  * Enhanced with @react-pdf client-side construction and print-safe styling.
- * Synchronized with the Midnight Slate theme.
+ * Synchronized with the Midnight Slate theme and Workshop Bank Authority.
  */
 const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
   const db = useFirestore();
@@ -162,6 +162,12 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
                             <span key={i} className="before:content-['|'] before:mr-2 before:opacity-30">{e}</span>
                         ))}
                     </div>
+                    {workshop.website && (
+                        <div className="flex items-center gap-3">
+                            <Globe className="h-4 w-4 text-primary/60" />
+                            <span>{workshop.website}</span>
+                        </div>
+                    )}
                 </div>
             </div>
             <div className="text-right space-y-6 w-full md:w-auto">
@@ -276,40 +282,73 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
             </table>
         </section>
 
-        <section className="flex flex-col items-end mt-12 space-y-6">
-            <div className="w-full md:w-80 space-y-4 bg-muted/20 p-8 rounded-[2rem] border border-border/50 relative overflow-hidden group">
-                <div className="absolute top-0 right-0 p-4 opacity-[0.03] rotate-12 transition-transform group-hover:rotate-45">
-                    <TrendingUp className="h-32 w-32" />
-                </div>
-                
-                <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
-                    <span>Subtotal</span>
-                    <span className="font-black text-foreground"><CurrencyFormat value={invoice.laborTotal + invoice.partsTotal} /></span>
-                </div>
-                {invoice.discount > 0 && (
-                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-green-600">
-                        <span>Certified Discount</span>
-                        <span className="font-black">-<CurrencyFormat value={invoice.discount} /></span>
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-10 mt-12">
+            <div>
+                {workshop.bankName && (
+                    <div className="p-8 rounded-[2rem] bg-muted/20 border border-border/50 space-y-6">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-2">
+                            <Landmark className="h-4 w-4 text-primary" /> Payment Instructions
+                        </h3>
+                        <div className="space-y-4">
+                            <div className="space-y-1">
+                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Bank Institution</p>
+                                <p className="text-sm font-black uppercase">{workshop.bankName}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">{workshop.bankBranch}</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Account Title</p>
+                                <p className="text-sm font-black uppercase">{workshop.bankAccountName}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Account No</p>
+                                    <p className="text-sm font-mono font-black">{workshop.bankAccountNumber}</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">SWIFT / BIC</p>
+                                    <p className="text-sm font-mono font-black text-primary">{workshop.bankSwiftCode}</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 )}
-                <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/40 pb-4">
-                    <span>Tax Provision</span>
-                    <span className="font-black text-foreground"><CurrencyFormat value={invoice.tax} /></span>
-                </div>
-                
-                <div className="flex justify-between items-end pt-2">
-                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Grand Total</span>
-                    <span className="text-4xl font-black text-primary tracking-tighter leading-none"><CurrencyFormat value={invoice.grandTotal} /></span>
-                </div>
+            </div>
 
-                <div className="pt-6 space-y-3">
-                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
-                        <span>Net Settled</span>
-                        <span className="text-green-600 font-black"><CurrencyFormat value={invoice.amountPaid} /></span>
+            <div className="flex flex-col items-end space-y-6">
+                <div className="w-full md:w-80 space-y-4 bg-muted/20 p-8 rounded-[2rem] border border-border/50 relative overflow-hidden group">
+                    <div className="absolute top-0 right-0 p-4 opacity-[0.03] rotate-12 transition-transform group-hover:rotate-45">
+                        <TrendingUp className="h-32 w-32" />
                     </div>
-                    <div className="flex justify-between py-4 px-5 bg-slate-900 rounded-2xl text-white shadow-xl">
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Balance Due</span>
-                        <span className="text-xl font-black text-primary tracking-tight leading-none"><CurrencyFormat value={invoice.balance} /></span>
+                    
+                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-muted-foreground relative z-10">
+                        <span>Subtotal</span>
+                        <span className="font-black text-foreground"><CurrencyFormat value={invoice.laborTotal + invoice.partsTotal} /></span>
+                    </div>
+                    {invoice.discount > 0 && (
+                        <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-green-600 relative z-10">
+                            <span>Certified Discount</span>
+                            <span className="font-black">-<CurrencyFormat value={invoice.discount} /></span>
+                        </div>
+                    )}
+                    <div className="flex justify-between text-[11px] font-bold uppercase tracking-widest text-muted-foreground border-b border-border/40 pb-4 relative z-10">
+                        <span>Tax Provision</span>
+                        <span className="font-black text-foreground"><CurrencyFormat value={invoice.tax} /></span>
+                    </div>
+                    
+                    <div className="flex justify-between items-end pt-2 relative z-10">
+                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Grand Total</span>
+                        <span className="text-4xl font-black text-primary tracking-tighter leading-none"><CurrencyFormat value={invoice.grandTotal} /></span>
+                    </div>
+
+                    <div className="pt-6 space-y-3 relative z-10">
+                        <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                            <span>Net Settled</span>
+                            <span className="text-green-600 font-black"><CurrencyFormat value={invoice.amountPaid} /></span>
+                        </div>
+                        <div className="flex justify-between py-4 px-5 bg-slate-900 rounded-2xl text-white shadow-xl">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/40">Balance Due</span>
+                            <span className="text-xl font-black text-primary tracking-tight leading-none"><CurrencyFormat value={invoice.balance} /></span>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -20,7 +20,7 @@ import { CurrencyFormat } from '@/components/shared/currency-format';
 import PaymentStatusBadge from './payment-status-badge';
 import { InvoiceActions } from './invoice-actions';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ArrowLeft, Car, User, Clock, FileText, History, Fingerprint, Receipt, ShieldCheck, TrendingUp, Phone, CheckCircle2, ExternalLink, Package, Building2, MapPin, Mail, MessageSquare, Globe } from 'lucide-react';
+import { ArrowLeft, Car, User, Clock, FileText, History, Fingerprint, Receipt, ShieldCheck, TrendingUp, Phone, CheckCircle2, ExternalLink, Package, Building2, MapPin, Mail, MessageSquare, Globe, Landmark, Binary, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/auth-context';
 import Link from 'next/link';
@@ -241,7 +241,7 @@ export function InvoiceDetails({
                                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mt-1">{settings.businessRegistrationName}</p>
                                         )}
                                         {settings?.tin && (
-                                            <p className="text-[9px] font-mono font-bold text-primary/60 uppercase tracking-widest mt-1">TIN: {settings.tin}</p>
+                                            <p className="text-[9px] font-mono font-black text-primary/60 uppercase tracking-widest mt-1">TIN: {settings.tin}</p>
                                         )}
                                         <div className="space-y-1 pt-2">
                                             <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center md:justify-end gap-2">
@@ -270,6 +270,42 @@ export function InvoiceDetails({
                                     </div>
                                 </div>
                             </div>
+
+                            <Separator className="opacity-50" />
+
+                            {/* Payment Instructions Section */}
+                            {settings?.bankName && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center gap-2 text-muted-foreground">
+                                        <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
+                                            <Landmark className="h-4 w-4 text-primary" />
+                                        </div>
+                                        <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Settlement Authority</h3>
+                                    </div>
+                                    <div className="pl-9 grid md:grid-cols-3 gap-6">
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Bank Institution</p>
+                                            <p className="text-sm font-black uppercase text-foreground">{settings.bankName}</p>
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase opacity-60">{settings.bankBranch}</p>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Account Details</p>
+                                            <p className="text-sm font-black uppercase text-foreground">{settings.bankAccountName}</p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <CreditCard className="h-3 w-3 text-primary/40" />
+                                                <p className="text-xs font-mono font-black tracking-widest">{settings.bankAccountNumber}</p>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">SWIFT / BIC</p>
+                                            <div className="flex items-center gap-2">
+                                                <Binary className="h-3 w-3 text-primary/40" />
+                                                <p className="text-sm font-mono font-black text-primary uppercase tracking-tighter">{settings.bankSwiftCode}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             <Separator className="opacity-50" />
 

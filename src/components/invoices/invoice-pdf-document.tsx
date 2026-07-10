@@ -58,7 +58,7 @@ const styles = StyleSheet.create({
   page: {
     paddingTop: 40,
     paddingRight: 40,
-    paddingBottom: 90, // Increased to ensure content breaks before the fixed footer
+    paddingBottom: 90, 
     paddingLeft: 40,
     backgroundColor: '#FFFFFF',
     fontFamily: 'Inter',
@@ -320,12 +320,41 @@ const styles = StyleSheet.create({
     color: '#3B82F6',
   },
 
-  // Notes
+  // Bank & Notes
+  instructionSection: {
+    marginTop: 30,
+    flexDirection: 'row',
+    gap: 20,
+  },
+  bankSection: {
+    flex: 1,
+    padding: 12,
+    backgroundColor: '#F8FAFC',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#F1F5F9',
+  },
+  bankRow: {
+    flexDirection: 'row',
+    marginBottom: 2,
+  },
+  bankLabel: {
+    fontSize: 6,
+    fontWeight: 900,
+    textTransform: 'uppercase',
+    color: '#94A3B8',
+    width: 70,
+  },
+  bankValue: {
+    fontSize: 7,
+    fontWeight: 700,
+    color: '#0F172A',
+  },
   notesSection: {
-    marginTop: 20,
-    padding: 10,
+    flex: 1,
+    padding: 12,
     backgroundColor: '#F1F5F9',
-    borderRadius: 8,
+    borderRadius: 12,
   },
   notesTitle: {
     fontSize: 7,
@@ -335,7 +364,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   notesContent: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#475569',
     fontStyle: 'italic',
     lineHeight: 1.4,
@@ -407,6 +436,12 @@ export function InvoicePDFDocument({
               <Text style={styles.workshopLegal}>{safeText(settings?.businessRegistrationName)}</Text>
               {settings?.tin && <Text style={styles.contactText}>TIN: {safeText(settings.tin)}</Text>}
               <Text style={styles.contactText}>{safeText(settings?.address, 150)}</Text>
+              
+              <View style={{ marginTop: 4 }}>
+                  <Text style={styles.contactText}>Phone: {safeText(settings?.phone)} {settings?.additionalPhones?.join(' | ')}</Text>
+                  <Text style={styles.contactText}>Email: {safeText(settings?.email)}</Text>
+                  {settings?.website && <Text style={styles.contactText}>Web: {safeText(settings.website)}</Text>}
+              </View>
             </View>
           </View>
           <View style={styles.invoiceMeta}>
@@ -512,13 +547,41 @@ export function InvoicePDFDocument({
           </View>
         </View>
 
-        {/* 5. Remarks */}
-        {invoice.notes && (
-            <View style={styles.notesSection} wrap={false}>
-                <Text style={styles.notesTitle}>Fiscal Remarks & Terms</Text>
-                <Text style={styles.notesContent}>{safeText(invoice.notes, 1000)}</Text>
-            </View>
-        )}
+        {/* 5. Instructions & Remarks */}
+        <View style={styles.instructionSection}>
+            {settings?.bankName && (
+                <View style={styles.bankSection} wrap={false}>
+                    <Text style={styles.sectionTitle}>Payment Instructions</Text>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>Bank Name:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankName)}</Text>
+                    </View>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>Branch:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankBranch)}</Text>
+                    </View>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>Account Title:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankAccountName)}</Text>
+                    </View>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>Account No:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankAccountNumber)}</Text>
+                    </View>
+                    <View style={styles.bankRow}>
+                        <Text style={styles.bankLabel}>SWIFT Code:</Text>
+                        <Text style={styles.bankValue}>{safeText(settings.bankSwiftCode)}</Text>
+                    </View>
+                </View>
+            )}
+
+            {invoice.notes && (
+                <View style={styles.notesSection} wrap={false}>
+                    <Text style={styles.notesTitle}>Fiscal Remarks & Terms</Text>
+                    <Text style={styles.notesContent}>{safeText(invoice.notes, 1000)}</Text>
+                </View>
+            )}
+        </View>
 
         {/* 6. Footer */}
         <View style={styles.footer} fixed>
