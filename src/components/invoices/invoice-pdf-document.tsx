@@ -384,10 +384,10 @@ const styles = StyleSheet.create({
     borderTopColor: '#E2E8F0',
   },
   footerNote: {
-    fontSize: 7,
+    fontSize: 8,
     color: '#94A3B8',
-    marginBottom: 8,
     fontStyle: 'italic',
+    marginBottom: 8,
     flexWrap: 'wrap',
   },
   certification: {
@@ -483,17 +483,7 @@ export function InvoicePDFDocument({
             <Text style={[styles.headerText, styles.colTotal]}>Total</Text>
           </View>
 
-          {/* Labor Row */}
-          <View style={styles.tableRow} wrap={false}>
-            <View style={styles.colDesc}>
-              <Text style={styles.rowText}>Labor & Diagnostic Procedures</Text>
-              <Text style={styles.rowSubText}>Service fees for repair and maintenance cycles.</Text>
-            </View>
-            <View style={styles.colQty}><Text style={styles.rowText}>1</Text></View>
-            <View style={styles.colPrice}><Text style={styles.rowText}>{formatValue(invoice.laborTotal)}</Text></View>
-            <View style={styles.colTotal}><Text style={styles.rowText}>{formatValue(invoice.laborTotal)}</Text></View>
-          </View>
-
+          {/* Parts Rows First */}
           {parts?.map((part, i) => (
             <View key={i} style={styles.tableRow} wrap={false}>
               <View style={styles.colDesc}>
@@ -505,6 +495,19 @@ export function InvoicePDFDocument({
               <View style={styles.colTotal}><Text style={styles.rowText}>{formatValue(part.unitPrice * part.quantityUsed)}</Text></View>
             </View>
           ))}
+
+          {/* Labor Row at the Bottom, conditionally rendered */}
+          {invoice.laborTotal > 0 && (
+            <View style={styles.tableRow} wrap={false}>
+              <View style={styles.colDesc}>
+                <Text style={styles.rowText}>Labor & Diagnostic Charges</Text>
+                <Text style={styles.rowSubText}>Service fees for repair and maintenance cycles.</Text>
+              </View>
+              <View style={styles.colQty}><Text style={styles.rowText}>1</Text></View>
+              <View style={styles.colPrice}><Text style={styles.rowText}>{formatValue(invoice.laborTotal)}</Text></View>
+              <View style={styles.colTotal}><Text style={styles.rowText}>{formatValue(invoice.laborTotal)}</Text></View>
+            </View>
+          )}
         </View>
 
         {/* 4. Totals Block */}

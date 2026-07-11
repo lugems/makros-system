@@ -70,14 +70,62 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
     window.print();
   };
 
-  const workshop = settings || {
+  const workshop: WorkshopSettings = settings || {
     workshopName: "MAKROS SYSTEM WORKSHOP",
     address: "KAMPALA, UGANDA",
     phone: "+256 000 000 000",
     email: "registry@makrossystem.com",
     taxRate: 18,
     currency: "UGX",
-    receiptFooterNote: "Thank you for trusting Makros System Workshop."
+    receiptFooterNote: "Thank you for trusting Makros System Workshop.",
+    logoUrl: '',
+    businessRegistrationName: '',
+    tin: '',
+    additionalPhones: [],
+    additionalEmails: [],
+    website: '',
+    bankName: '',
+    bankBranch: '',
+    bankAccountName: '',
+    bankAccountNumber: '',
+    bankSwiftCode: '',
+    settingsId: '',
+    secondaryPhone: '',
+    timezone: '',
+    language: 'English',
+    taxEnabled: false,
+    taxName: '',
+    defaultDiscount: 0,
+    invoicePrefix: '',
+    invoiceStartNumber: 0,
+    receiptPrefix: '',
+    receiptStartNumber: 0,
+    paymentMethods: {
+        cash: false,
+        mobileMoney: false,
+        bankTransfer: false,
+        card: false,
+        credit: false
+    },
+    notifications: {
+        sms: false,
+        email: false,
+        whatsapp: false,
+        inApp: false,
+        bookingReminders: false,
+        jobStatusUpdates: false,
+        paymentReminders: false,
+        serviceReminders: false,
+        lowStockAlerts: false
+    },
+    operatingHours: [],
+    inventoryAlerts: {
+        lowStockEnabled: false,
+        notifyInventoryOfficer: false,
+        notifyWorkshopManager: false
+    },
+    createdAt: '',
+    updatedAt: ''
   };
 
   const fileName = invoice.invoiceNumber 
@@ -151,14 +199,14 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
                     <div className="flex flex-wrap items-center gap-3">
                         <Phone className="h-4 w-4 text-primary/60" /> 
                         <span>{workshop.phone}</span>
-                        {workshop.additionalPhones?.map((p, i) => (
+                        {workshop.additionalPhones?.map((p: string, i: number) => (
                             <span key={i} className="before:content-['|'] before:mr-2 before:opacity-30">{p}</span>
                         ))}
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <Mail className="h-4 w-4 text-primary/60" /> 
                         <span>{workshop.email}</span>
-                        {workshop.additionalEmails?.map((e, i) => (
+                        {workshop.additionalEmails?.map((e: string, i: number) => (
                             <span key={i} className="before:content-['|'] before:mr-2 before:opacity-30">{e}</span>
                         ))}
                     </div>
@@ -388,7 +436,7 @@ const InvoicePreview: React.FC<InvoicePreviewProps> = ({ invoice }) => {
                 .bg-card {
                   box-shadow: none !important;
                   border: none !important;
-                  background: white !important;
+                  background: white !import; 
                 }
                 * { 
                   color: #0f172a !important; 
