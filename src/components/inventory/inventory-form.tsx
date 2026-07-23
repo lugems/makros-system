@@ -84,11 +84,11 @@ export function InventoryForm({ onSubmit, item }: InventoryFormProps) {
           name="itemName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
+              <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-muted-foreground">
                 <Package className="h-3 w-3 text-primary" /> SKU Description
               </FormLabel>
               <FormControl>
-                <Input placeholder="e.g. Full Synthetic Oil 5W-30" {...field} className="rounded-xl h-11 bg-muted/50 dark:bg-muted/10 border-none font-bold" />
+                <Input placeholder="e.g. Full Synthetic Oil 5W-30" {...field} className="rounded-xl h-11 bg-muted/50 dark:bg-muted/10 border-none font-bold text-sm" />
               </FormControl>
               <FormMessage className="text-[10px] font-bold uppercase" />
             </FormItem>
@@ -101,7 +101,7 @@ export function InventoryForm({ onSubmit, item }: InventoryFormProps) {
             name="category"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
+                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-muted-foreground">
                   <Tag className="h-3 w-3 text-primary" /> Technical Category
                 </FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
@@ -125,12 +125,12 @@ export function InventoryForm({ onSubmit, item }: InventoryFormProps) {
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
+                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-muted-foreground">
                   <Activity className="h-3 w-3 text-primary" /> Registry Status
                 </FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-none font-black text-primary">
+                    <SelectTrigger className="h-12 rounded-xl bg-muted/50 dark:bg-muted/10 border-none font-black text-primary uppercase text-xs tracking-widest">
                       <SelectValue />
                     </SelectTrigger>
                   </FormControl>
@@ -155,7 +155,7 @@ export function InventoryForm({ onSubmit, item }: InventoryFormProps) {
                     <Layers className="h-3 w-3 text-primary" /> In-Stock Units
                 </FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} className="h-11 rounded-xl bg-muted/50 border-none font-black text-primary" />
+                  <Input type="number" step="any" {...field} className="h-11 rounded-xl bg-muted/50 border-none font-black text-primary" />
                 </FormControl>
                 <FormMessage className="text-[10px] font-bold uppercase" />
               </FormItem>
@@ -170,7 +170,7 @@ export function InventoryForm({ onSubmit, item }: InventoryFormProps) {
                     <AlertTriangle className="h-3 w-3 text-orange-500" /> Alert Threshold
                 </FormLabel>
                 <FormControl>
-                  <Input type="number" {...field} className="h-11 rounded-xl bg-muted/50 border-none font-black text-orange-600" />
+                  <Input type="number" step="any" {...field} className="h-11 rounded-xl bg-muted/50 border-none font-black text-orange-600" />
                 </FormControl>
                 <FormMessage className="text-[10px] font-bold uppercase" />
               </FormItem>

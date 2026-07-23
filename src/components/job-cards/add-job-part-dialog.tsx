@@ -47,7 +47,8 @@ export function AddJobPartDialog({ jobCardId }: { jobCardId: string }) {
     if (!user || !itemId) return;
 
     try {
-        await addPartToJobCardTransaction(jobCardId, itemId, parseInt(quantity, 10), user.userId);
+        // Support decimal points for items like oil (e.g. 4.5L)
+        await addPartToJobCardTransaction(jobCardId, itemId, parseFloat(quantity), user.userId);
         setOpen(false);
         setItemId('');
         setQuantity('1');
@@ -98,9 +99,10 @@ export function AddJobPartDialog({ jobCardId }: { jobCardId: string }) {
               </Label>
               <Input 
                 type="number" 
+                step="any"
                 value={quantity} 
                 onChange={e => setQuantity(e.target.value)} 
-                min="1"
+                min="0.01"
                 className="rounded-xl h-11 bg-muted/50 border-none font-black text-primary"
               />
             </div>
