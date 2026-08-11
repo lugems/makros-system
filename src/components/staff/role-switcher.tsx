@@ -17,7 +17,17 @@ const ROLES: UserRole[] = [
   "Makros System Owner",
   "Workshop Manager",
   "Receptionist",
+  "Senior Mechanic / Lead Mechanic",
   "Mechanic",
+  "Diagnostic Technician",
+  "Auto-Wiring Technician",
+  "Welding Lead Technician",
+  "Welding Technician",
+  "Auto Body / Panel Beater",
+  "Painter",
+  "Tyre & Wheel Technician",
+  "Car Wash / Detailing Technician",
+  "Quality Control Officer",
   "Inventory Officer",
   "Accountant",
   "Customer",
@@ -48,7 +58,6 @@ export function RoleSwitcher() {
         });
     } catch (error: any) {
         console.error("Failed to sync role to registry:", error);
-        // Fallback for context-only change if DB update is restricted
         toast({
             variant: "destructive",
             title: "Registry Sync Failed",

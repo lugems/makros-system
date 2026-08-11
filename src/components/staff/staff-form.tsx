@@ -23,7 +23,17 @@ const ROLES: UserRole[] = [
   "Makros System Owner",
   "Workshop Manager",
   "Receptionist",
+  "Senior Mechanic / Lead Mechanic",
   "Mechanic",
+  "Diagnostic Technician",
+  "Auto-Wiring Technician",
+  "Welding Lead Technician",
+  "Welding Technician",
+  "Auto Body / Panel Beater",
+  "Painter",
+  "Tyre & Wheel Technician",
+  "Car Wash / Detailing Technician",
+  "Quality Control Officer",
   "Inventory Officer",
   "Accountant",
 ];
@@ -36,7 +46,12 @@ const SPECIALIZATIONS = [
     "Body Works",
     "General Mechanic",
     "Wheel Alignment",
-    "Diagnostics"
+    "Diagnostics",
+    "ECU Scanning",
+    "Auto-Wiring",
+    "Welding & Fabrication",
+    "Panel Beating",
+    "Detailing & Washing"
   ];
 
 export function StaffForm({ staff, onChange }: StaffFormProps) {
@@ -61,6 +76,19 @@ export function StaffForm({ staff, onChange }: StaffFormProps) {
   const handleSelectChange = (name: string, value: any) => {
     setFormData({ ...formData, [name]: value });
   };
+
+  const isTechnician = [
+    "Senior Mechanic / Lead Mechanic",
+    "Mechanic",
+    "Diagnostic Technician",
+    "Auto-Wiring Technician",
+    "Welding Lead Technician",
+    "Welding Technician",
+    "Auto Body / Panel Beater",
+    "Painter",
+    "Tyre & Wheel Technician",
+    "Car Wash / Detailing Technician"
+  ].includes(formData.role || '');
 
   return (
     <div className="space-y-6">
@@ -140,7 +168,7 @@ export function StaffForm({ staff, onChange }: StaffFormProps) {
           </div>
       </div>
 
-      {formData.role === 'Mechanic' && (
+      {isTechnician && (
         <div className="space-y-2">
             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                 <Zap className="h-3 w-3" /> Technical Specialization

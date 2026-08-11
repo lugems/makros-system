@@ -21,11 +21,13 @@ service cloud.firestore {
     }
 
     function isStaff() {
-      return isAuthenticated() && getUserData().get('role', '') in ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Mechanic', 'Inventory Officer', 'Accountant'];
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && role != '' && role != 'Customer';
     }
 
     function isInventoryManager() {
-      return isAuthenticated() && getUserData().get('role', '') in ['Makros System Owner', 'Workshop Manager', 'Inventory Officer', 'Accountant'];
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && role in ['Makros System Owner', 'Workshop Manager', 'Inventory Officer', 'Accountant'];
     }
 
     function isReceptionist() {
@@ -40,8 +42,24 @@ service cloud.firestore {
       return isAuthenticated() && getUserData().get('role', '') == 'Inventory Officer';
     }
 
-    function isMechanic() {
-      return isAuthenticated() && getUserData().get('role', '') == 'Mechanic';
+    function isQualityControl() {
+        return isAuthenticated() && getUserData().get('role', '') == 'Quality Control Officer';
+    }
+
+    function isTechnician() {
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && role in [
+        'Senior Mechanic / Lead Mechanic', 
+        'Mechanic', 
+        'Diagnostic Technician', 
+        'Auto-Wiring Technician', 
+        'Welding Lead Technician', 
+        'Welding Technician', 
+        'Auto Body / Panel Beater', 
+        'Painter', 
+        'Tyre & Wheel Technician', 
+        'Car Wash / Detailing Technician'
+      ];
     }
 
     function isCustomer() {
@@ -145,7 +163,7 @@ service cloud.firestore {
         || isAccountant()
         || isInventoryOfficer()
         || (
-          isMechanic() &&
+          isTechnician() &&
           resource.data.jobCardId != null &&
           get(/databases/$(database)/documents/jobCards/$(resource.data.jobCardId)).data.assignedMechanicId == request.auth.uid
         );

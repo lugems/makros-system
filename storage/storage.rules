@@ -13,7 +13,7 @@ service firebase.storage {
 
     function isStaff() {
       let role = getUserData().get('role', '');
-      return isAuthenticated() && role in ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Mechanic', 'Inventory Officer', 'Accountant'];
+      return isAuthenticated() && role != '' && role != 'Customer';
     }
 
     function isManager() {
@@ -61,7 +61,7 @@ service firebase.storage {
     match /job-card-photos/{jobCardId}/{allPaths=**} {
       allow read: if isStaff() || (isCustomer() && firestore.get(/databases/(default)/documents/jobCards/$(jobCardId)).data.customerId == request.auth.uid);
       allow create: if isStaff() && isValidSize() && isImage() && 
-                    (getUserData().role != 'Mechanic' || firestore.get(/databases/(default)/documents/jobCards/$(jobCardId)).data.assignedMechanicId == request.auth.uid);
+                    (getUserData().role == 'Makros System Owner' || getUserData().role == 'Workshop Manager' || firestore.get(/databases/(default)/documents/jobCards/$(jobCardId)).data.assignedMechanicId == request.auth.uid);
       allow update, delete: if isManager();
     }
 

@@ -32,9 +32,32 @@ const ROLES: UserRole[] = [
   "Makros System Owner",
   "Workshop Manager",
   "Receptionist",
+  "Senior Mechanic / Lead Mechanic",
   "Mechanic",
+  "Diagnostic Technician",
+  "Auto-Wiring Technician",
+  "Welding Lead Technician",
+  "Welding Technician",
+  "Auto Body / Panel Beater",
+  "Painter",
+  "Tyre & Wheel Technician",
+  "Car Wash / Detailing Technician",
+  "Quality Control Officer",
   "Inventory Officer",
   "Accountant",
+];
+
+const TECHNICIAN_ROLES = [
+  "Senior Mechanic / Lead Mechanic",
+  "Mechanic",
+  "Diagnostic Technician",
+  "Auto-Wiring Technician",
+  "Welding Lead Technician",
+  "Welding Technician",
+  "Auto Body / Panel Beater",
+  "Painter",
+  "Tyre & Wheel Technician",
+  "Car Wash / Detailing Technician",
 ];
 
 export default function StaffPage() {
@@ -58,14 +81,14 @@ export default function StaffPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Authorization check
+  // Authorization check - Expanded for new roles
   const canManageRegistry = useMemo(() => 
     !!currentRole && ['Makros System Owner', 'Workshop Manager'].includes(currentRole), 
     [currentRole]
   );
 
   const canViewAllStaff = useMemo(() => 
-    !!currentRole && ['Makros System Owner', 'Workshop Manager', 'Accountant', 'Receptionist'].includes(currentRole),
+    !!currentRole && ['Makros System Owner', 'Workshop Manager', 'Accountant', 'Receptionist', 'Quality Control Officer', 'Inventory Officer', 'Senior Mechanic / Lead Mechanic'].includes(currentRole),
     [currentRole]
   );
 
@@ -73,7 +96,7 @@ export default function StaffPage() {
   const staffWithWorkload = useMemo(() => {
     if (!users) return [];
     return users.map((s) => {
-      if (s.role === 'Mechanic') {
+      if (TECHNICIAN_ROLES.includes(s.role)) {
         const activeJobs = (jobCards || []).filter(j => j.assignedMechanicId === s.userId && ['In Progress', 'Diagnosing', 'Waiting for Parts'].includes(j.status)).length;
         const completedJobs = (jobCards || []).filter(j => j.assignedMechanicId === s.userId && j.status === 'Completed').length;
         return { ...s, assignedJobs: activeJobs, completedJobs, currentWorkload: activeJobs };
@@ -82,13 +105,13 @@ export default function StaffPage() {
     });
   }, [users, jobCards]);
 
-  const mechanics = useMemo(() => staffWithWorkload.filter(s => s.role === 'Mechanic'), [staffWithWorkload]);
+  const mechanics = useMemo(() => staffWithWorkload.filter(s => TECHNICIAN_ROLES.includes(s.role)), [staffWithWorkload]);
 
   const filteredStaff = useMemo(() => {
     return staffWithWorkload
       .filter((s) => {
-          // Mechanics can only see themselves and other mechanics for coordination
-          if (currentRole === 'Mechanic') return s.userId === currentUser?.userId || s.role === 'Mechanic';
+          // Technicians can only see themselves and other technicians for coordination
+          if (TECHNICIAN_ROLES.includes(currentRole || '')) return s.userId === currentUser?.userId || TECHNICIAN_ROLES.includes(s.role);
           return true;
       })
       .filter((s) => {
@@ -119,12 +142,11 @@ export default function StaffPage() {
   // 3. Operational Actions
   const onAddStaff = useCallback(async (newStaff: Partial<StaffMember>) => {
     if (!currentUser) return;
-
     try {
       await enrollStaff(newStaff, currentUser.userId);
     } catch (error) {
       console.error("Staff enrollment error details:", error);
-      throw error; // Let modal handle specific error messaging
+      throw error;
     }
   }, [currentUser]);
 
@@ -136,7 +158,7 @@ export default function StaffPage() {
 
   if (authLoading || usersLoading || jobsLoading) return <LoadingState />;
 
-  if (!canViewAllStaff && currentRole !== 'Mechanic') {
+  if (!canViewAllStaff && !TECHNICIAN_ROLES.includes(currentRole || '')) {
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 animate-in fade-in duration-500">
             <div className="h-20 w-20 rounded-[2.5rem] bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-lg shadow-destructive/10">

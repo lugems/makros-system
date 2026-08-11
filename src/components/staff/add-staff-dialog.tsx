@@ -23,7 +23,17 @@ const ROLES: UserRole[] = [
   "Makros System Owner",
   "Workshop Manager",
   "Receptionist",
+  "Senior Mechanic / Lead Mechanic",
   "Mechanic",
+  "Diagnostic Technician",
+  "Auto-Wiring Technician",
+  "Welding Lead Technician",
+  "Welding Technician",
+  "Auto Body / Panel Beater",
+  "Painter",
+  "Tyre & Wheel Technician",
+  "Car Wash / Detailing Technician",
+  "Quality Control Officer",
   "Inventory Officer",
   "Accountant",
   "Customer",
@@ -51,6 +61,19 @@ export function AddStaffDialog({ onAdd }: AddStaffDialogProps) {
       specialization,
     });
   };
+
+  const isTechnician = [
+    "Senior Mechanic / Lead Mechanic",
+    "Mechanic",
+    "Diagnostic Technician",
+    "Auto-Wiring Technician",
+    "Welding Lead Technician",
+    "Welding Technician",
+    "Auto Body / Panel Beater",
+    "Painter",
+    "Tyre & Wheel Technician",
+    "Car Wash / Detailing Technician"
+  ].includes(role);
 
   return (
     <Dialog>
@@ -82,7 +105,7 @@ export function AddStaffDialog({ onAdd }: AddStaffDialogProps) {
               <SelectItem value="Inactive">Inactive</SelectItem>
             </SelectContent>
           </Select>
-          {role === 'Mechanic' && <Input placeholder="Specialization" value={specialization} onChange={e => setSpecialization(e.target.value)} />}
+          {isTechnician && <Input placeholder="Specialization" value={specialization} onChange={e => setSpecialization(e.target.value)} />}
           <Button onClick={handleSubmit}>Add Staff</Button>
         </div>
       </DialogContent>
