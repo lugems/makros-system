@@ -67,9 +67,23 @@ import { createCommunicationLog } from '@/services/communications-service';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { JobCardPDFDocument } from './job-card-pdf-document';
 
+const TECHNICIAN_ROLES = [
+  "Senior Mechanic / Lead Mechanic",
+  "Mechanic",
+  "Diagnostic Technician",
+  "Auto-Wiring Technician",
+  "Welding Lead Technician",
+  "Welding Technician",
+  "Auto Body / Panel Beater",
+  "Painter",
+  "Tyre & Wheel Technician",
+  "Car Wash / Detailing Technician",
+];
+
 /**
  * @fileOverview Technical Repair Dossier.
  * Stabilized with useMemoFirebase for multi-registry real-time synchronization.
+ * Synchronized with the expanded 16-role matrix.
  */
 export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
     const { user: currentUser, role: currentRole } = useAuth();
@@ -146,11 +160,13 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
     const isOwner = currentRole === 'Makros System Owner';
     const isManager = currentRole === 'Workshop Manager';
     const isReceptionist = currentRole === 'Receptionist';
-    const isMechanic = currentRole === 'Mechanic';
-    const isAssignedMechanic = currentUser?.userId === jobCard?.assignedMechanicId;
+    // Recognized if role is in the technical collection
+    const isTechnician = TECHNICIAN_ROLES.includes(currentRole || '');
+    const isAssignedTech = currentUser?.userId === jobCard?.assignedMechanicId;
 
     const canManageStructure = isOwner || isManager || isReceptionist;
-    const canUpdate = canManageStructure || (isMechanic && isAssignedMechanic);
+    // Technicians can update dossiers assigned directly to them
+    const canUpdate = canManageStructure || (isTechnician && isAssignedTech);
 
     const isLoading = jobLoading || tasksLoading || partsLoading;
 
@@ -574,7 +590,9 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                                 </div>
                                 <div className="space-y-0.5">
                                     <p className="text-sm font-black uppercase tracking-tight">{mechanic?.fullName || 'Personnel Unassigned'}</p>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground leading-none">Authorization Sync active</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground leading-none">
+                                        {mechanic?.role || 'Technical sync pending'}
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>

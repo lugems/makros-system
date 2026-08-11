@@ -26,7 +26,8 @@ import {
     List,
     ShieldCheck,
     ShieldAlert,
-    Sparkles
+    Sparkles,
+    UserCheck
 } from 'lucide-react';
 import PageHeader from '@/components/layout/page-header';
 import { JobCardsTable } from '@/components/job-cards/job-cards-table';
@@ -43,9 +44,23 @@ import { useToast } from '@/hooks/use-toast';
 import { CurrencyFormat } from '@/components/shared/currency-format';
 import { DataTablePagination } from '@/components/shared/data-table-pagination';
 
+const TECHNICIAN_ROLES = [
+  "Senior Mechanic / Lead Mechanic",
+  "Mechanic",
+  "Diagnostic Technician",
+  "Auto-Wiring Technician",
+  "Welding Lead Technician",
+  "Welding Technician",
+  "Auto Body / Panel Beater",
+  "Painter",
+  "Tyre & Wheel Technician",
+  "Car Wash / Detailing Technician",
+];
+
 /**
  * @fileOverview Technical Operation Command Center.
  * Stabilized with useMemoFirebase to manage real-time dossier joins without render loops.
+ * Synchronized with the expanded 16-role personnel matrix.
  */
 export default function JobCardsPage() {
   const { user: currentUser, role: currentRole, isLoading: authLoading } = useAuth();
@@ -55,7 +70,7 @@ export default function JobCardsPage() {
   const isMobile = useMediaQuery("(max-width: 768px)");
   
   // Rule Check: Staff can read (security rules handle customer filter, but we gate the page)
-  const isStaff = ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Mechanic', 'Inventory Officer', 'Accountant'].includes(currentRole || '');
+  const isStaff = ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Mechanic', 'Senior Mechanic / Lead Mechanic', 'Inventory Officer', 'Accountant', 'Quality Control Officer'].includes(currentRole || '');
 
   // Real-time Operational Traces (Stabilized Queries)
   const jobsQuery = useMemoFirebase(() => {
@@ -99,7 +114,10 @@ export default function JobCardsPage() {
   const isOwner = currentRole === 'Makros System Owner';
   const isManager = currentRole === 'Workshop Manager';
   const isReceptionist = currentRole === 'Receptionist';
-  const canCreateDelete = isOwner || isManager || isReceptionist;
+  const isSeniorMechanic = currentRole === 'Senior Mechanic / Lead Mechanic';
+  
+  // Senior Mechanics are granted initialization authority for delegation
+  const canCreateDelete = isOwner || isManager || isReceptionist || isSeniorMechanic;
 
   const isLoading = jobLoading || authLoading;
 
@@ -160,7 +178,8 @@ export default function JobCardsPage() {
     }
   };
 
-  const activeMechanics = useMemo(() => users?.filter(u => u.role === 'Mechanic') || [], [users]);
+  // Expanded technician list for assignment filtering
+  const technicians = useMemo(() => users?.filter(u => TECHNICIAN_ROLES.includes(u.role)) || [], [users]);
 
   if (isLoading) return <LoadingState />;
 
@@ -288,17 +307,22 @@ export default function JobCardsPage() {
               </SelectContent>
             </Select>
           </div>
-          <Select value={mechanicFilter} onValueChange={setMechanicFilter}>
-            <SelectTrigger className="bg-background h-11 rounded-xl shadow-sm min-w-[180px]">
-              <SelectValue placeholder="Mechanic" />
-            </SelectTrigger>
-            <SelectContent>
-                <SelectItem value="All">All Technicians</SelectItem>
-                {activeMechanics.map(m => (
-                    <SelectItem key={m.userId} value={m.userId}>{m.fullName}</SelectItem>
-                ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2 flex-1 md:flex-none">
+            <UserCheck className="h-4 w-4 text-muted-foreground hidden sm:block" />
+            <Select value={mechanicFilter} onValueChange={setMechanicFilter}>
+                <SelectTrigger className="bg-background h-11 rounded-xl shadow-sm min-w-[200px]">
+                <SelectValue placeholder="Lead Technician" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="All">All Technical Personnel</SelectItem>
+                    {technicians.map(m => (
+                        <SelectItem key={m.userId} value={m.userId} className="font-bold text-xs uppercase">
+                            {m.fullName} ({m.role.split(' ')[0]})
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -308,7 +332,7 @@ export default function JobCardsPage() {
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                 <Activity className="h-3.5 w-3.5" /> Operations Registry
             </h3>
-            <span className="text-[10px] font-bold text-muted-foreground/60">{filteredJobCards.length} Trace Records</span>
+            <span className="text-[10px] font-bold text-muted-foreground/60">{filteredJobCards.length} Trace Records Found</span>
         </div>
 
         {viewMode === 'table' && !isMobile ? (

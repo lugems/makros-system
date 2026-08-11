@@ -45,9 +45,23 @@ import { FormattedDate } from '@/components/shared/formatted-date';
 import { JobStatusBadge } from './job-status-badge';
 import { LoadingState } from '@/components/shared/loading-state';
 
+const TECHNICIAN_ROLES = [
+  "Senior Mechanic / Lead Mechanic",
+  "Mechanic",
+  "Diagnostic Technician",
+  "Auto-Wiring Technician",
+  "Welding Lead Technician",
+  "Welding Technician",
+  "Auto Body / Panel Beater",
+  "Painter",
+  "Tyre & Wheel Technician",
+  "Car Wash / Detailing Technician",
+];
+
 /**
  * @fileOverview Technical Intake & AI Roadmap Terminal.
  * Stabilized with useMemoFirebase to manage cross-registry dependencies.
+ * Calibrated for the expanded 16-role personnel matrix.
  */
 export function NewJobCardPage() {
     const router = useRouter();
@@ -59,9 +73,9 @@ export function NewJobCardPage() {
     const { user: currentUser, isLoading: authLoading } = useAuth();
     const db = useFirestore();
 
-    // Authority Logic
+    // Authority Logic: Expanded to include Senior/Lead Mechanics
     const isAuthorized = useMemo(() => {
-        const allowedRoles = ['Makros System Owner', 'Workshop Manager', 'Receptionist'];
+        const allowedRoles = ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Senior Mechanic / Lead Mechanic'];
         return currentUser && allowedRoles.includes(currentUser.role);
     }, [currentUser]);
 
@@ -96,9 +110,10 @@ export function NewJobCardPage() {
         return query(collection(db, 'customers'), orderBy('fullName', 'asc')) as Query<Customer>;
     }, [db, isAuthorized]);
 
+    // Recalibrated to fetch all technicians in the expanded role matrix
     const usersQuery = useMemoFirebase(() => {
         if (!db || !isAuthorized) return null;
-        return query(collection(db, 'users'), where('role', '==', 'Mechanic'), where('status', '==', 'Active')) as Query<StaffMember>;
+        return query(collection(db, 'users'), where('status', '==', 'Active')) as Query<StaffMember>;
     }, [db, isAuthorized]);
 
     const servicesQuery = useMemoFirebase(() => {
@@ -109,7 +124,12 @@ export function NewJobCardPage() {
     const { data: bookings } = useCollection<Booking>(bookingsQuery);
     const { data: customers } = useCollection<Customer>(customersQuery);
     const { data: services } = useCollection<any>(servicesQuery as any);
-    const { data: staff } = useCollection<StaffMember>(usersQuery);
+    const { data: allStaff } = useCollection<StaffMember>(usersQuery);
+
+    // Filter staff client-side to only technical roles for assignment
+    const technicians = useMemo(() => {
+        return allStaff?.filter(s => TECHNICIAN_ROLES.includes(s.role)) || [];
+    }, [allStaff]);
 
     // 2. Dynamic Asset Stream (Filtered by Customer)
     const vehiclesQuery = useMemoFirebase(() => {
@@ -324,11 +344,14 @@ export function NewJobCardPage() {
                                         <SelectValue placeholder="Assign lead technician..." />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl border-border/50">
-                                        {staff?.map(m => (
-                                            <SelectItem key={m.userId || (m as any).id} value={m.userId || (m as any).id} className="font-bold text-xs uppercase py-3">{m.fullName}</SelectItem>
+                                        {technicians.map(m => (
+                                            <SelectItem key={m.userId || (m as any).id} value={m.userId || (m as any).id} className="font-bold text-xs uppercase py-3">
+                                                {m.fullName} ({m.role.split(' ')[0]})
+                                            </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1 ml-1 italic">Assigning from expanded technical force strength.</p>
                             </div>
                         </CardContent>
                     </Card>
