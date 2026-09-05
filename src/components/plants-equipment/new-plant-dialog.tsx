@@ -58,6 +58,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [enrollmentResult, setEnrollmentResult] = useState<any>(null);
 
   const form = useForm<PlantFormData>({
     resolver: zodResolver(plantSchema),
@@ -240,7 +241,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                         name="meterType"
                         render={({ field }) => (
                             <FormItem className="space-y-2">
-                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Telemetry Protocol</Label>
+                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Telemetry Protocol</FormLabel>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl><SelectTrigger className="h-11 bg-muted/20 border-none rounded-xl font-bold"><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
