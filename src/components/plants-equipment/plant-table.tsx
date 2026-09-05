@@ -19,9 +19,7 @@ import {
     Edit, 
     Trash2, 
     Activity,
-    ShieldAlert,
-    PowerOff,
-    CheckCircle2
+    PowerOff
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
@@ -30,22 +28,19 @@ import { updatePlantStatus, decommissionPlant } from '@/services/plants-service'
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { UpdateMeterDialog } from './update-meter-dialog';
-import { EditPlantDialog } from './edit-plant-dialog';
 
 interface PlantTableProps {
   plants: PlantEquipment[];
   customers: Customer[];
+  onUpdateMeter: (plant: PlantEquipment) => void;
+  onEdit: (plant: PlantEquipment) => void;
 }
 
-export function PlantTable({ plants, customers }: PlantTableProps) {
+export function PlantTable({ plants, customers, onUpdateMeter, onEdit }: PlantTableProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [selectedPlant, setSelectedPlant] = useState<PlantEquipment | null>(null);
-  const [isUpdateMeterOpen, setIsUpdateMeterOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [plantToDecommission, setPlantToDecommission] = useState<PlantEquipment | null>(null);
 
   const handleStatusShift = async (id: string, status: PlantStatus) => {
@@ -156,7 +151,7 @@ export function PlantTable({ plants, customers }: PlantTableProps) {
                             <DropdownMenuItem onClick={() => router.push(`/job-cards/new?assetId=${plant.id}&assetType=Plant`)} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
                                 <Plus className="h-4 w-4 text-primary" /> Create Work Order
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setSelectedPlant(plant); setIsUpdateMeterOpen(true); }} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
+                            <DropdownMenuItem onClick={() => onUpdateMeter(plant)} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
                                 <Gauge className="h-4 w-4 text-indigo-500" /> Update Telemetry
                             </DropdownMenuItem>
                             
@@ -165,7 +160,7 @@ export function PlantTable({ plants, customers }: PlantTableProps) {
                             <DropdownMenuItem onClick={() => router.push(`/plants-equipment/${plant.id}`)} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
                                 <Eye className="h-4 w-4 text-primary" /> Technical Dossier
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => { setSelectedPlant(plant); setIsEditOpen(true); }} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
+                            <DropdownMenuItem onClick={() => onEdit(plant)} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
                                 <Edit className="h-4 w-4 text-primary" /> Edit Record
                             </DropdownMenuItem>
                             
@@ -190,21 +185,6 @@ export function PlantTable({ plants, customers }: PlantTableProps) {
           })}
         </TableBody>
       </Table>
-
-      {selectedPlant && (
-          <>
-            <UpdateMeterDialog 
-                plant={selectedPlant} 
-                isOpen={isUpdateMeterOpen} 
-                onClose={() => setIsUpdateMeterOpen(false)} 
-            />
-            <EditPlantDialog 
-                plant={selectedPlant} 
-                isOpen={isEditOpen} 
-                onClose={() => setIsEditOpen(false)} 
-            />
-          </>
-      )}
 
       <AlertDialog open={!!plantToDecommission} onOpenChange={(o) => !o && setPlantToDecommission(null)}>
           <AlertDialogContent className="rounded-3xl border-border/50">

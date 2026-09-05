@@ -13,16 +13,12 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
     Plus, 
-    Settings, 
     ShieldCheck, 
     Activity, 
     Search, 
     Filter, 
-    Fingerprint, 
-    AlertCircle, 
     Wrench,
     Clock,
-    ClipboardList,
     LayoutGrid,
     List,
     Hammer,
@@ -36,28 +32,35 @@ import { NewPlantDialog } from '@/components/plants-equipment/new-plant-dialog';
 import { PlantTable } from '@/components/plants-equipment/plant-table';
 import { PlantCard } from '@/components/plants-equipment/plant-card';
 import { DataTablePagination } from '@/components/shared/data-table-pagination';
+import { UpdateMeterDialog } from '@/components/plants-equipment/update-meter-dialog';
+import { EditPlantDialog } from '@/components/plants-equipment/edit-plant-dialog';
 
 /**
- * @fileOverview Industrial Plant & Equipment Registry.
- * Polymorphic companion to the Vehicle Registry.
- * Hardened redirection protocol to avoid "update while rendering" errors.
+ * @fileOverview Industrial Plant & Equipment Registry Dashboard.
+ * Orchestrates technical machinery management with full lifecycle command support.
+ * Synchronized with the Polymorphic Workshop core.
  */
 export default function PlantsPage() {
     const isMobile = useMediaQuery("(max-width: 768px)");
     const router = useRouter();
-    const { user: currentUser, role, isLoading: authLoading } = useAuth();
+    const { role, isLoading: authLoading } = useAuth();
     const db = useFirestore();
 
     const isAuthorized = useMemo(() => 
         ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Senior Mechanic / Lead Mechanic', 'Inventory Officer'].includes(role || '')
     , [role]);
 
-    // Redirection Protocol: Moved to useEffect to comply with React rendering lifecycle
+    // Redirection Protocol
     useEffect(() => {
         if (!authLoading && !isAuthorized) {
             router.push('/dashboard');
         }
     }, [authLoading, isAuthorized, router]);
+
+    // UI States for Lifecycle Actions
+    const [selectedPlantForAction, setSelectedPlantForAction] = useState<PlantEquipment | null>(null);
+    const [isUpdateMeterOpen, setIsUpdateMeterOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
 
     // Real-time Technical Streams
     const plantsQuery = useMemoFirebase(() => {
@@ -66,11 +69,9 @@ export default function PlantsPage() {
     }, [db, isAuthorized]);
     
     const customersQuery = useMemoFirebase(() => query(collection(db, 'customers')), [db]);
-    const jobsQuery = useMemoFirebase(() => query(collection(db, 'jobCards')), [db]);
 
     const { data: plants, loading: pLoading } = useCollection<PlantEquipment>(plantsQuery as any);
     const { data: customers, loading: cLoading } = useCollection<Customer>(customersQuery as any);
-    const { data: jobCards, loading: jLoading } = useCollection<JobCard>(jobsQuery as any);
 
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('All');
@@ -81,7 +82,7 @@ export default function PlantsPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(10);
 
-    const isLoading = pLoading || cLoading || jLoading;
+    const isLoading = pLoading || cLoading;
 
     const stats = useMemo(() => {
         if (!plants) return { total: 0, active: 0, underRepair: 0, maintenanceDue: 0 };
@@ -114,28 +115,26 @@ export default function PlantsPage() {
         return filteredPlants.slice(start, start + pageSize);
     }, [filteredPlants, currentPage, pageSize]);
 
-    // Handle early returns for authentication and loading states
+    // Handle Page Resets
+    useEffect(() => {
+        setCurrentPage(1);
+    }, [searchTerm, statusFilter]);
+
+    // Action Dispatchers
+    const handleOpenUpdateMeter = (plant: PlantEquipment) => {
+        setSelectedPlantForAction(plant);
+        setIsUpdateMeterOpen(true);
+    };
+
+    const handleOpenEdit = (plant: PlantEquipment) => {
+        setSelectedPlantForAction(plant);
+        setIsEditOpen(true);
+    };
+
     if (authLoading || (!isAuthorized && !authLoading)) return <LoadingState />;
     if (isLoading) return <LoadingState />;
 
-    if (!isAuthorized) {
-        return (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 animate-in fade-in duration-500">
-                <div className="h-20 w-20 rounded-[2.5rem] bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-lg shadow-destructive/10">
-                    <ShieldAlert className="h-10 w-10 text-destructive" />
-                </div>
-                <div className="text-center space-y-2">
-                    <h3 className="text-2xl font-black uppercase tracking-tight">Access Restricted</h3>
-                    <p className="text-muted-foreground text-sm max-w-sm mx-auto font-medium leading-relaxed italic">
-                        Plant & Equipment registry access is limited to authorized personnel.
-                    </p>
-                </div>
-                <Button variant="outline" onClick={() => router.push('/dashboard')} className="rounded-xl font-black uppercase tracking-widest text-[10px] h-11 px-8">
-                    Return to Command
-                </Button>
-            </div>
-        );
-    }
+    if (!isAuthorized) return null;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
@@ -234,7 +233,8 @@ export default function PlantsPage() {
                             <SelectItem value="All">Global Fleet</SelectItem>
                             <SelectItem value="Active">Active Duty</SelectItem>
                             <SelectItem value="Under Repair">In Bay</SelectItem>
-                            <SelectItem value="Out of Service">Decommissioned</SelectItem>
+                            <SelectItem value="Under Maintenance">Maintenance</SelectItem>
+                            <SelectItem value="Out of Service">Out of Service</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -249,7 +249,12 @@ export default function PlantsPage() {
                 </div>
 
                 {viewMode === 'table' ? (
-                    <PlantTable plants={paginatedPlants} customers={customers || []} />
+                    <PlantTable 
+                        plants={paginatedPlants} 
+                        customers={customers || []} 
+                        onUpdateMeter={handleOpenUpdateMeter}
+                        onEdit={handleOpenEdit}
+                    />
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {paginatedPlants.map(p => (
@@ -257,6 +262,8 @@ export default function PlantsPage() {
                                 key={p.id} 
                                 plant={p} 
                                 ownerName={customers?.find(c => c.customerId === p.ownerId)?.fullName || 'Registry Void'} 
+                                onUpdateMeter={handleOpenUpdateMeter}
+                                onEdit={handleOpenEdit}
                             />
                         ))}
                     </div>
@@ -276,6 +283,21 @@ export default function PlantsPage() {
                 onClose={() => setIsCreateOpen(false)} 
                 customers={customers || []}
             />
+
+            {selectedPlantForAction && (
+                <>
+                    <UpdateMeterDialog 
+                        plant={selectedPlantForAction} 
+                        isOpen={isUpdateMeterOpen} 
+                        onClose={() => { setIsUpdateMeterOpen(false); setSelectedPlantForAction(null); }} 
+                    />
+                    <EditPlantDialog 
+                        plant={selectedPlantForAction} 
+                        isOpen={isEditOpen} 
+                        onClose={() => { setIsEditOpen(false); setSelectedPlantForAction(null); }} 
+                    />
+                </>
+            )}
         </div>
     );
 }

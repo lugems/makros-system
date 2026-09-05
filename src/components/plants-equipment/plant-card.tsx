@@ -26,22 +26,20 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { updatePlantStatus, decommissionPlant } from '@/services/plants-service';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
-import { UpdateMeterDialog } from './update-meter-dialog';
-import { EditPlantDialog } from './edit-plant-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 interface PlantCardProps {
   plant: PlantEquipment;
   ownerName: string;
+  onUpdateMeter: (plant: PlantEquipment) => void;
+  onEdit: (plant: PlantEquipment) => void;
 }
 
-export function PlantCard({ plant, ownerName }: PlantCardProps) {
+export function PlantCard({ plant, ownerName, onUpdateMeter, onEdit }: PlantCardProps) {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
   
-  const [isUpdateMeterOpen, setIsUpdateMeterOpen] = useState(false);
-  const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDecommissionAlertOpen, setIsDecommissionAlertOpen] = useState(false);
 
   const unit = getMeterUnit(plant.meterType);
@@ -94,11 +92,11 @@ export function PlantCard({ plant, ownerName }: PlantCardProps) {
                         <DropdownMenuItem onClick={() => router.push(`/job-cards/new?assetId=${plant.id}&assetType=Plant`)} className="rounded-lg gap-2 text-[10px] font-black uppercase">
                             <Plus className="h-3.5 w-3.5 text-primary" /> Create Work Order
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => setIsUpdateMeterOpen(true)} className="rounded-lg gap-2 text-[10px] font-black uppercase">
+                        <DropdownMenuItem onClick={() => onUpdateMeter(plant)} className="rounded-lg gap-2 text-[10px] font-black uppercase">
                             <Gauge className="h-3.5 w-3.5 text-indigo-500" /> Update Meter
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => setIsEditOpen(true)} className="rounded-lg gap-2 text-[10px] font-black uppercase">
+                        <DropdownMenuItem onClick={() => onEdit(plant)} className="rounded-lg gap-2 text-[10px] font-black uppercase">
                             <Edit className="h-3.5 w-3.5 text-primary" /> Edit Record
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleStatusShift(plant.id, 'Under Repair')} className="rounded-lg gap-2 text-[10px] font-black uppercase">
@@ -156,10 +154,6 @@ export function PlantCard({ plant, ownerName }: PlantCardProps) {
             <ArrowRight className="h-3 w-3" />
         </Button>
       </CardFooter>
-      
-      {/* Dialogs */}
-      <UpdateMeterDialog plant={plant} isOpen={isUpdateMeterOpen} onClose={() => setIsUpdateMeterOpen(false)} />
-      <EditPlantDialog plant={plant} isOpen={isEditOpen} onClose={() => setIsEditOpen(false)} />
       
       <AlertDialog open={isDecommissionAlertOpen} onOpenChange={setIsDecommissionAlertOpen}>
           <AlertDialogContent className="rounded-[2rem] border-border/50">
