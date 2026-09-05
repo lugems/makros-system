@@ -217,6 +217,7 @@ interface JobCardPDFDocumentProps {
   parts: JobPart[] | null;
   mechanic: StaffMember | null;
   settings: WorkshopSettings | null;
+  invoiceNumber?: string;
 }
 
 export function JobCardPDFDocument({ 
@@ -226,7 +227,8 @@ export function JobCardPDFDocument({
   tasks, 
   parts, 
   mechanic, 
-  settings 
+  settings,
+  invoiceNumber
 }: JobCardPDFDocumentProps) {
   return (
     <Document>
@@ -243,6 +245,9 @@ export function JobCardPDFDocument({
           <View style={styles.dossierMeta}>
             <Text style={styles.dossierTitle}>Certified Repair Dossier</Text>
             <Text style={styles.dossierID}>#{safeText(jobCard.jobCardId.toUpperCase().slice(-8))}</Text>
+            {invoiceNumber && (
+                <Text style={[styles.valSmall, { color: '#023891', fontWeight: 700 }]}>Invoice: #{safeText(invoiceNumber)}</Text>
+            )}
             <Text style={styles.valSmall}>Intake: {formatPdfDate(jobCard.createdAt)}</Text>
             <View style={styles.statusBadge}>
                 <Text>{safeText(jobCard.status)}</Text>

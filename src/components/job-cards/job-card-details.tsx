@@ -1,9 +1,8 @@
-
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { doc, collection, query, orderBy, serverTimestamp, where, limit } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { 
     Wrench, 
@@ -30,7 +29,8 @@ import {
     MessageSquare,
     Download,
     FileText,
-    Hammer
+    Hammer,
+    Receipt
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -52,6 +52,7 @@ import { Vehicle } from '@/types/vehicle';
 import { PlantEquipment } from '@/types/plant-equipment';
 import { StaffMember } from '@/types/staff';
 import { WorkshopSettings } from '@/types/settings';
+import { Invoice } from '@/types/invoice';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { updateJobStatus, removePartFromJobCardTransaction, updateJobCard, updateJobTaskStatus, deleteJobTask } from '@/services/job-cards-service';
@@ -111,9 +112,18 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
         if (!db) return null;
         return query(collection(db, 'jobCards', jobCardId, 'partsUsed'), orderBy('createdAt', 'asc'));
     }, [db, jobCardId]);
+
+    // Financial Registry Cross-Reference
+    const invoicesQuery = useMemoFirebase(() => {
+        if (!db || !jobCardId) return null;
+        return query(collection(db, 'invoices'), where('jobCardId', '==', jobCardId), limit(1));
+    }, [db, jobCardId]);
     
     const { data: tasks, loading: tasksLoading } = useCollection<JobTask>(tasksQuery as any);
     const { data: parts, loading: partsLoading } = useCollection<JobPart>(partsQuery as any);
+    const { data: linkedInvoices } = useCollection<Invoice>(invoicesQuery as any);
+
+    const linkedInvoice = linkedInvoices?.[0];
 
     const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'workshop'), [db]);
     const { data: settings } = useDoc<WorkshopSettings>(settingsRef as any);
@@ -125,8 +135,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
 
     const assetRef = useMemoFirebase(() => {
         if (!db || !jobCard) return null;
-        // POLYMORPHIC RESOLUTION: Priority based on stored assetType
-        const type = jobCard.assetType || 'Vehicle'; // Fallback for legacy
+        const type = jobCard.assetType || 'Vehicle';
         const id = jobCard.assetId || jobCard.vehicleId;
         if (!id) return null;
         const col = type === 'Vehicle' ? 'vehicles' : 'plantsAndEquipment';
@@ -321,6 +330,12 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                             </div>
                             <div className="flex items-center gap-3 mt-1 flex-wrap">
                                 <JobStatusBadge status={jobCard.status} className="h-6 text-[9px]" />
+                                {linkedInvoice && (
+                                    <Badge variant="outline" className="h-6 text-[9px] font-black uppercase border-primary/20 text-primary bg-primary/5 px-3">
+                                        <Receipt className="h-3 w-3 mr-1.5 opacity-60" />
+                                        #{linkedInvoice.invoiceNumber || linkedInvoice.invoiceId.slice(-6).toUpperCase()}
+                                    </Badge>
+                                )}
                                 <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
                                     <Clock className="h-3 w-3" /> Updated: <FormattedDate date={jobCard.updatedAt} />
                                 </span>
@@ -331,7 +346,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                 <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                     <Button asChild variant="outline" className="flex-1 sm:flex-none h-12 px-8 font-black uppercase tracking-widest text-[10px] rounded-xl bg-background border-border/50 hover:bg-muted">
                         <PDFDownloadLink 
-                            document={<JobCardPDFDocument jobCard={jobCard} customer={customer} vehicle={jobCard.assetType === 'Vehicle' ? asset : null} tasks={tasks} parts={parts} mechanic={mechanic} settings={settings} />} 
+                            document={<JobCardPDFDocument jobCard={jobCard} customer={customer} vehicle={jobCard.assetType === 'Vehicle' ? asset : null} tasks={tasks} parts={parts} mechanic={mechanic} settings={settings} invoiceNumber={linkedInvoice?.invoiceNumber} />} 
                             fileName={pdfFileName}
                         >
                             {({ loading }) => (
@@ -400,7 +415,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                                                 <p className="font-black text-sm uppercase tracking-tight truncate">
                                                     {jobCard.assetType === 'Plant' ? asset?.name : `${asset?.make} ${asset?.model}`}
                                                 </p>
-                                                <Badge variant="outline" className="text-[10px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase mt-1">
+                                                <Badge variant="outline" className="text-[9px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase mt-1">
                                                     {jobCard.assetType === 'Plant' ? asset?.assetId : asset?.numberPlate}
                                                 </Badge>
                                             </div>
