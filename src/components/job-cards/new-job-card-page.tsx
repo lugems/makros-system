@@ -43,7 +43,6 @@ import { mechanicAidJobCardCreation } from '@/ai/flows/mechanic-aid-job-card-cre
 import { CurrencyFormat } from '@/components/shared/currency-format';
 import { initializeJobCardWithAI } from '@/services/job-cards-service';
 import { updateBookingStatus } from '@/services/bookings-service';
-import { calculateJobCardTotals } from '@/lib/job-card-calculations';
 import { useAuth } from '@/contexts/auth-context';
 import { FormattedDate } from '@/components/shared/formatted-date';
 import { JobStatusBadge } from './job-status-badge';
@@ -60,6 +59,7 @@ export function NewJobCardPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const bookingIdFromUrl = searchParams.get('bookingId');
+    const assetIdFromUrl = searchParams.get('assetId');
     const assetTypeFromUrl = searchParams.get('assetType') as AssetType | null;
     
     const { toast } = useToast();
@@ -76,7 +76,7 @@ export function NewJobCardPage() {
     const [assetType, setAssetType] = useState<AssetType>(assetTypeFromUrl || 'Vehicle');
     const [selectedBookingId, setSelectedBookingId] = useState<string>(bookingIdFromUrl || '');
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-    const [selectedAssetId, setSelectedAssetId] = useState<string>('');
+    const [selectedAssetId, setSelectedAssetId] = useState<string>(assetIdFromUrl || '');
     const [assignedMechanicId, setAssignedMechanicId] = useState<string>('');
     const [reportedIssue, setReportedIssue] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,13 +87,12 @@ export function NewJobCardPage() {
     const bookingsQuery = useMemoFirebase(() => query(collection(db, 'bookings'), where('status', 'in', ['Confirmed', 'Pending', 'Checked In'])), [db]);
     const customersQuery = useMemoFirebase(() => query(collection(db, 'customers'), orderBy('fullName', 'asc')), [db]);
     const usersQuery = useMemoFirebase(() => query(collection(db, 'users'), where('status', '==', 'Active')), [db]);
-    const servicesQuery = useMemoFirebase(() => query(collection(db, 'services'), where('status', '==', 'Active')), [db]);
 
     const { data: bookings } = useCollection<Booking>(bookingsQuery as any);
     const { data: customers } = useCollection<Customer>(customersQuery as any);
-    const { data: services } = useCollection<any>(servicesQuery as any);
     const { data: allStaff } = useCollection<StaffMember>(usersQuery as any);
 
+    // Asset Queries - Filtered by Customer + AssetType
     const vehiclesQuery = useMemoFirebase(() => {
         if (!selectedCustomerId || assetType !== 'Vehicle') return null;
         return query(collection(db, 'vehicles'), where('customerId', '==', selectedCustomerId));
@@ -104,8 +103,8 @@ export function NewJobCardPage() {
         return query(collection(db, 'plantsAndEquipment'), where('ownerId', '==', selectedCustomerId));
     }, [db, selectedCustomerId, assetType]);
 
-    const { data: vehicles } = useCollection<Vehicle>(vehiclesQuery as any);
-    const { data: plants } = useCollection<PlantEquipment>(plantsQuery as any);
+    const { data: vehicles, loading: vLoading } = useCollection<Vehicle>(vehiclesQuery as any);
+    const { data: plants, loading: pLoading } = useCollection<PlantEquipment>(plantsQuery as any);
 
     const technicians = useMemo(() => allStaff?.filter(s => TECHNICIAN_ROLES.includes(s.role)) || [], [allStaff]);
 
@@ -115,6 +114,14 @@ export function NewJobCardPage() {
         setSelectedAssetId('');
         setAiSuggestions(null);
     };
+
+    // Effect: Handle customer changes (reset asset)
+    useEffect(() => {
+        if (intakeMode === 'walkin') {
+            setSelectedAssetId('');
+            setAiSuggestions(null);
+        }
+    }, [selectedCustomerId, intakeMode]);
 
     // Effect: Sync booking selection
     useEffect(() => {
@@ -257,6 +264,7 @@ export function NewJobCardPage() {
                                         onValueChange={setSelectedAssetId}
                                         disabled={!selectedCustomerId}
                                         placeholder="Identify unit..."
+                                        isLoading={vLoading || pLoading}
                                     />
                                 </div>
                             </div>

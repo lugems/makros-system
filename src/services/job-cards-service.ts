@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { JobCard, JobTask, JobPart, JobCardStatus } from '@/types/job-card';
+import { AssetType } from '@/types/asset';
 import { logAudit } from '@/lib/audit-logger';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -26,7 +27,8 @@ const COLLECTION_NAME = 'jobCards';
  */
 export const initializeJobCardWithAI = async (data: {
     customerId: string;
-    vehicleId: string;
+    assetId: string;
+    assetType: AssetType;
     bookingId?: string;
     assignedMechanicId?: string;
     reportedIssue: string;
@@ -45,7 +47,9 @@ export const initializeJobCardWithAI = async (data: {
         const jobPayload = {
             jobCardId,
             customerId: data.customerId,
-            vehicleId: data.vehicleId,
+            assetId: data.assetId,
+            assetType: data.assetType,
+            vehicleId: data.assetType === 'Vehicle' ? data.assetId : null, // Legacy support
             bookingId: data.bookingId || null,
             assignedMechanicId: data.assignedMechanicId || null,
             reportedIssue: data.reportedIssue,
@@ -93,7 +97,7 @@ export const initializeJobCardWithAI = async (data: {
             action: 'CREATE_JOB_CARD',
             module: 'Job Cards',
             recordId: jobCardId,
-            description: `Initialized forensic repair dossier for unit ${data.vehicleId} using AI roadmap.`,
+            description: `Initialized forensic repair dossier for ${data.assetType} unit ${data.assetId} using AI roadmap.`,
             createdAt: now
         });
 
@@ -262,7 +266,7 @@ export const removePartFromJobCardTransaction = async (
         // 4. Audit Trail
         const auditRef = doc(collection(db, 'auditLogs'));
         transaction.set(auditRef, {
-            userId,
+            userId: userId,
             action: 'REMOVE_PART',
             module: 'Job Cards',
             recordId: jobCardId,
