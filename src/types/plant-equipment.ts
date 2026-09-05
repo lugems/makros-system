@@ -26,6 +26,13 @@ export type PlantCategory =
   | 'Workshop Machine'
   | 'Other';
 
+export interface MaintenanceInterval {
+  intervalValue: number;
+  intervalUnit: 'Hours' | 'KM' | 'Miles' | 'Cycles' | 'Days' | 'Months';
+  lastReadingAtService: number;
+  lastDateAtService: string;
+}
+
 export interface PlantEquipment {
   id: string;
   ownerId: string;
@@ -47,6 +54,7 @@ export interface PlantEquipment {
   condition: PlantCondition;
   status: PlantStatus;
   notes?: string;
+  maintenance?: MaintenanceInterval;
   createdAt: any;
   updatedAt: any;
 }

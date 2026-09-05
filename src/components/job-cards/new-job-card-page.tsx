@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, Query } from 'firebase/firestore';
 import { JobCardStatus, JobCard } from '@/types/job-card';
+import { AssetType } from '@/types/asset';
 import { Booking } from '@/types/booking';
 import { Customer } from '@/types/customer';
 import { Vehicle } from '@/types/vehicle';
+import { PlantEquipment } from '@/types/plant-equipment';
 import { StaffMember } from '@/types/staff';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -33,7 +35,9 @@ import {
     Package,
     ShieldCheck,
     History,
-    UserCheck
+    UserCheck,
+    Hammer,
+    Fingerprint
 } from 'lucide-react';
 import { mechanicAidJobCardCreation } from '@/ai/flows/mechanic-aid-job-card-creation-flow';
 import { CurrencyFormat } from '@/components/shared/currency-format';
@@ -44,146 +48,108 @@ import { useAuth } from '@/contexts/auth-context';
 import { FormattedDate } from '@/components/shared/formatted-date';
 import { JobStatusBadge } from './job-status-badge';
 import { LoadingState } from '@/components/shared/loading-state';
+import { SearchableSelect } from '@/components/shared/searchable-select';
 
 const TECHNICIAN_ROLES = [
-  "Senior Mechanic / Lead Mechanic",
-  "Mechanic",
-  "Diagnostic Technician",
-  "Auto-Wiring Technician",
-  "Welding Lead Technician",
-  "Welding Technician",
-  "Auto Body / Panel Beater",
-  "Painter",
-  "Tyre & Wheel Technician",
-  "Car Wash / Detailing Technician",
+  "Senior Mechanic / Lead Mechanic", "Mechanic", "Diagnostic Technician",
+  "Auto-Wiring Technician", "Welding Lead Technician", "Welding Technician",
+  "Auto Body / Panel Beater", "Painter", "Tyre & Wheel Technician", "Car Wash / Detailing Technician",
 ];
 
-/**
- * @fileOverview Technical Intake & AI Roadmap Terminal.
- * Stabilized with useMemoFirebase to manage cross-registry dependencies.
- * Calibrated for the expanded 16-role personnel matrix.
- */
 export function NewJobCardPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const bookingIdFromUrl = searchParams.get('bookingId');
-    const mechanicIdFromUrl = searchParams.get('mechanicId');
+    const assetTypeFromUrl = searchParams.get('assetType') as AssetType | null;
     
     const { toast } = useToast();
     const { user: currentUser, isLoading: authLoading } = useAuth();
     const db = useFirestore();
 
-    // Authority Logic: Expanded to include Senior/Lead Mechanics
     const isAuthorized = useMemo(() => {
         const allowedRoles = ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Senior Mechanic / Lead Mechanic'];
         return currentUser && allowedRoles.includes(currentUser.role);
     }, [currentUser]);
 
-    useEffect(() => {
-        if (currentUser && !isAuthorized) {
-            router.push('/dashboard');
-            toast({ title: "Authorization Required", description: "Insufficient clearance for technical intake.", variant: "destructive" });
-        }
-    }, [currentUser, isAuthorized, router, toast]);
-
-    // Form State
+    // State
     const [intakeMode, setIntakeMode] = useState<'booking' | 'walkin'>(bookingIdFromUrl ? 'booking' : 'walkin');
+    const [assetType, setAssetType] = useState<AssetType>(assetTypeFromUrl || 'Vehicle');
     const [selectedBookingId, setSelectedBookingId] = useState<string>(bookingIdFromUrl || '');
     const [selectedCustomerId, setSelectedCustomerId] = useState<string>('');
-    const [selectedVehicleId, setSelectedVehicleId] = useState<string>('');
-    const [assignedMechanicId, setAssignedMechanicId] = useState<string>(mechanicIdFromUrl || '');
+    const [selectedAssetId, setSelectedAssetId] = useState<string>('');
+    const [assignedMechanicId, setAssignedMechanicId] = useState<string>('');
     const [reportedIssue, setReportedIssue] = useState<string>('');
     const [isSubmitting, setIsSubmitting] = useState(false);
-    
-    // AI State
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [aiSuggestions, setAiSuggestions] = useState<any>(null);
 
-    // 1. Technical Context Streams (Stabilized)
-    const bookingsQuery = useMemoFirebase(() => {
-        if (!db || !isAuthorized) return null;
-        return query(collection(db, 'bookings'), where('status', 'in', ['Confirmed', 'Pending', 'Checked In'])) as Query<Booking>;
-    }, [db, isAuthorized]);
+    // Queries
+    const bookingsQuery = useMemoFirebase(() => query(collection(db, 'bookings'), where('status', 'in', ['Confirmed', 'Pending', 'Checked In'])), [db]);
+    const customersQuery = useMemoFirebase(() => query(collection(db, 'customers'), orderBy('fullName', 'asc')), [db]);
+    const usersQuery = useMemoFirebase(() => query(collection(db, 'users'), where('status', '==', 'Active')), [db]);
+    const servicesQuery = useMemoFirebase(() => query(collection(db, 'services'), where('status', '==', 'Active')), [db]);
 
-    const customersQuery = useMemoFirebase(() => {
-        if (!db || !isAuthorized) return null;
-        return query(collection(db, 'customers'), orderBy('fullName', 'asc')) as Query<Customer>;
-    }, [db, isAuthorized]);
-
-    // Recalibrated to fetch all technicians in the expanded role matrix
-    const usersQuery = useMemoFirebase(() => {
-        if (!db || !isAuthorized) return null;
-        return query(collection(db, 'users'), where('status', '==', 'Active')) as Query<StaffMember>;
-    }, [db, isAuthorized]);
-
-    const servicesQuery = useMemoFirebase(() => {
-        if (!db || !isAuthorized) return null;
-        return query(collection(db, 'services'), where('status', '==', 'Active'));
-    }, [db, isAuthorized]);
-
-    const { data: bookings } = useCollection<Booking>(bookingsQuery);
-    const { data: customers } = useCollection<Customer>(customersQuery);
+    const { data: bookings } = useCollection<Booking>(bookingsQuery as any);
+    const { data: customers } = useCollection<Customer>(customersQuery as any);
     const { data: services } = useCollection<any>(servicesQuery as any);
-    const { data: allStaff } = useCollection<StaffMember>(usersQuery);
+    const { data: allStaff } = useCollection<StaffMember>(usersQuery as any);
 
-    // Filter staff client-side to only technical roles for assignment
-    const technicians = useMemo(() => {
-        return allStaff?.filter(s => TECHNICIAN_ROLES.includes(s.role)) || [];
-    }, [allStaff]);
-
-    // 2. Dynamic Asset Stream (Filtered by Customer)
     const vehiclesQuery = useMemoFirebase(() => {
-        if (!db || !selectedCustomerId) return null;
-        return query(collection(db, 'vehicles'), where('customerId', '==', selectedCustomerId)) as Query<Vehicle>;
-    }, [db, selectedCustomerId]);
-    const { data: vehicles, loading: vLoading } = useCollection<Vehicle>(vehiclesQuery);
+        if (!selectedCustomerId || assetType !== 'Vehicle') return null;
+        return query(collection(db, 'vehicles'), where('customerId', '==', selectedCustomerId));
+    }, [db, selectedCustomerId, assetType]);
 
-    // 3. Vehicle History Stream
-    const historyQuery = useMemoFirebase(() => {
-        if (!db || !selectedVehicleId) return null;
-        return query(collection(db, 'jobCards'), where('vehicleId', '==', selectedVehicleId), orderBy('createdAt', 'desc')) as Query<JobCard>;
-    }, [db, selectedVehicleId]);
-    const { data: jobHistory } = useCollection<JobCard>(historyQuery);
+    const plantsQuery = useMemoFirebase(() => {
+        if (!selectedCustomerId || assetType !== 'Plant') return null;
+        return query(collection(db, 'plantsAndEquipment'), where('ownerId', '==', selectedCustomerId));
+    }, [db, selectedCustomerId, assetType]);
 
-    // Synchronize form when a booking is selected
+    const { data: vehicles } = useCollection<Vehicle>(vehiclesQuery as any);
+    const { data: plants } = useCollection<PlantEquipment>(plantsQuery as any);
+
+    const technicians = useMemo(() => allStaff?.filter(s => TECHNICIAN_ROLES.includes(s.role)) || [], [allStaff]);
+
+    // Effect: Handle asset classification changes
+    const handleAssetTypeChange = (type: AssetType) => {
+        setAssetType(type);
+        setSelectedAssetId('');
+        setAiSuggestions(null);
+    };
+
+    // Effect: Sync booking selection
     useEffect(() => {
-        if (intakeMode === 'booking' && selectedBookingId && bookings?.length && services?.length) {
-            const dossier = bookings.find(b => b.bookingId === selectedBookingId || (b as any).id === selectedBookingId);
-            if (dossier) {
-                const srcSrv = services.find((s: any) => s.id === dossier.serviceId || s.serviceId === dossier.serviceId);
-                setSelectedCustomerId(dossier.customerId);
-                setSelectedVehicleId(dossier.vehicleId);
-                setReportedIssue(dossier.notes || srcSrv?.description || '');
-                if (!mechanicIdFromUrl) {
-                    setAssignedMechanicId(dossier.assignedMechanicId || '');
-                }
+        if (intakeMode === 'booking' && selectedBookingId && bookings) {
+            const b = bookings.find(b => b.bookingId === selectedBookingId || (b as any).id === selectedBookingId);
+            if (b) {
+                setSelectedCustomerId(b.customerId);
+                setAssetType(b.assetType || 'Vehicle');
+                setSelectedAssetId(b.assetId || b.vehicleId || '');
+                setReportedIssue(b.notes || '');
+                setAssignedMechanicId(b.assignedMechanicId || '');
             }
         }
-    }, [selectedBookingId, intakeMode, bookings, services, mechanicIdFromUrl]);
+    }, [selectedBookingId, intakeMode, bookings]);
 
     const handleAiAnalyze = async () => {
-        const vehicle = vehicles?.find(v => v.vehicleId === selectedVehicleId || (v as any).id === selectedVehicleId);
-        if (!reportedIssue || !vehicle) {
-            toast({ title: "Validation Error", description: "AI analysis requires symptoms and a vehicle reference.", variant: "destructive" });
+        let asset: any = assetType === 'Vehicle' 
+            ? vehicles?.find(v => v.vehicleId === selectedAssetId || (v as any).id === selectedAssetId)
+            : plants?.find(p => p.id === selectedAssetId);
+
+        if (!reportedIssue || !asset) {
+            toast({ title: "Validation Error", description: "Inquiry needs a technical asset and symptoms.", variant: "destructive" });
             return;
         }
 
         setIsAiLoading(true);
         try {
             const result = await mechanicAidJobCardCreation({
-                reportedIssue: reportedIssue,
-                vehicleMake: vehicle.make,
-                vehicleModel: vehicle.model,
-                vehicleYear: Number(vehicle.year || 2020),
+                reportedIssue,
+                vehicleMake: asset.make || asset.name,
+                vehicleModel: asset.model || asset.category,
+                vehicleYear: Number(asset.year || asset.yearOfManufacture || 2020),
             });
-            
-            const localizedResult = {
-                ...result,
-                estimatedLaborCost: Math.round(result.estimatedLaborCost * 3750 / 1000) * 1000
-            };
-            
-            setAiSuggestions(localizedResult);
-            toast({ title: "Analysis Complete", description: "AI Repair Intelligence roadmap generated." });
+            setAiSuggestions({ ...result, estimatedLaborCost: result.estimatedLaborCost * 3750 });
+            toast({ title: "Blueprint Generated", description: "AI Repair intelligence synthesized." });
         } catch (error) {
             toast({ title: "Analysis Failed", description: "Neural service unreachable.", variant: "destructive" });
         } finally {
@@ -192,40 +158,25 @@ export function NewJobCardPage() {
     };
 
     const handleCreate = async () => {
-        if (!selectedCustomerId || !selectedVehicleId || !currentUser) {
-            toast({ title: "Validation Error", description: "Registry references incomplete.", variant: "destructive" });
-            return;
-        }
-
+        if (!selectedCustomerId || !selectedAssetId || !currentUser) return;
         setIsSubmitting(true);
         try {
-            const bookingDossier = intakeMode === 'booking' ? bookings?.find(b => b.bookingId === selectedBookingId || (b as any).id === selectedBookingId) : null;
-            const serviceId = bookingDossier?.serviceId;
-            const selectedService = services?.find((s: any) => s.id === serviceId || s.serviceId === serviceId);
-
-            const serviceAmount = selectedService?.defaultLaborCost || 0;
-            const totals = calculateJobCardTotals({ serviceAmount, additionalLaborCost: 0, partsTotal: 0 });
-
             const jobCardId = await initializeJobCardWithAI({
                 customerId: selectedCustomerId,
-                vehicleId: selectedVehicleId,
+                assetId: selectedAssetId,
+                assetType,
                 bookingId: intakeMode === 'booking' ? selectedBookingId : undefined,
-                serviceId: serviceId || undefined,
                 assignedMechanicId: assignedMechanicId || undefined,
                 reportedIssue,
-                ...totals,
+                laborCost: aiSuggestions?.estimatedLaborCost || 0,
                 userId: currentUser.userId,
-                aiSuggestions: aiSuggestions ? {
-                    tasks: aiSuggestions.suggestedTasks,
-                    parts: aiSuggestions.requiredParts
-                } : undefined
+                aiSuggestions: aiSuggestions ? { tasks: aiSuggestions.suggestedTasks, parts: aiSuggestions.requiredParts } : undefined
             } as any);
 
             if (intakeMode === 'booking' && selectedBookingId) {
                 updateBookingStatus(selectedBookingId, 'Checked In', currentUser.userId);
             }
 
-            toast({ title: "Operation Initialized", description: `Dossier ${jobCardId.toUpperCase().slice(-6)} created.` });
             router.push(`/job-cards/${jobCardId}`);
         } catch (error: any) {
             toast({ variant: "destructive", title: "Intake Failed", description: error.message });
@@ -252,133 +203,91 @@ export function NewJobCardPage() {
                             <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.3em] opacity-60">Initializing Forensic Repair Dossier</p>
                         </div>
                     </div>
-                    
-                    <div className="flex bg-muted/50 p-1.5 rounded-2xl border border-border/50">
-                        <Button 
-                            variant={intakeMode === 'booking' ? 'secondary' : 'ghost'} 
-                            onClick={() => { setIntakeMode('booking'); setSelectedBookingId(''); }}
-                            className="h-10 text-[10px] font-black uppercase tracking-widest px-6 rounded-xl transition-all"
-                        >
-                            Queue Intake
-                        </Button>
-                        <Button 
-                            variant={intakeMode === 'walkin' ? 'secondary' : 'ghost'} 
-                            onClick={() => { setIntakeMode('walkin'); setSelectedBookingId(''); }}
-                            className="h-10 text-[10px] font-black uppercase tracking-widest px-6 rounded-xl transition-all"
-                        >
-                            Direct Intake
-                        </Button>
-                    </div>
                 </div>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-8 space-y-8">
-                    <Card className="rounded-[2.5rem] overflow-hidden border-border/50 bg-card shadow-sm">
-                        <CardHeader className="bg-muted/30 border-b p-8">
+                    <Card className="rounded-[2.5rem] border-border/50 bg-card shadow-sm overflow-hidden">
+                        <CardHeader className="bg-muted/30 border-b p-8 flex flex-row items-center justify-between">
                             <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4 text-green-500" /> Personnel & Asset Registry
+                                <ShieldCheck className="h-4 w-4 text-green-500" /> Registry Identification
                             </CardTitle>
+                            <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
+                                <Button size="sm" variant={intakeMode === 'booking' ? 'secondary' : 'ghost'} onClick={() => setIntakeMode('booking')} className="h-8 text-[9px] font-black uppercase rounded-lg px-4">Queue</Button>
+                                <Button size="sm" variant={intakeMode === 'walkin' ? 'secondary' : 'ghost'} onClick={() => setIntakeMode('walkin')} className="h-8 text-[9px] font-black uppercase rounded-lg px-4">Walk-in</Button>
+                            </div>
                         </CardHeader>
                         <CardContent className="p-8 space-y-6">
-                            {intakeMode === 'booking' ? (
+                            <div className="flex items-center gap-2 p-1 rounded-2xl bg-muted/30 border">
+                                <Button type="button" variant={assetType === 'Vehicle' ? 'secondary' : 'ghost'} onClick={() => handleAssetTypeChange('Vehicle')} className="flex-1 h-10 text-[9px] font-black uppercase rounded-xl gap-2"><Car className="h-3.5 w-3.5" /> Vehicle</Button>
+                                <Button type="button" variant={assetType === 'Plant' ? 'secondary' : 'ghost'} onClick={() => handleAssetTypeChange('Plant')} className="flex-1 h-10 text-[9px] font-black uppercase rounded-xl gap-2"><Hammer className="h-3.5 w-3.5" /> Plant</Button>
+                            </div>
+
+                            {intakeMode === 'booking' && (
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
-                                        <Calendar className="h-3 w-3 text-indigo-500" /> Appointment Queue
-                                    </Label>
-                                    <Select value={selectedBookingId} onValueChange={setSelectedBookingId}>
-                                        <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none font-bold">
-                                            <SelectValue placeholder="Search appointment registry..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-border/50">
-                                            {bookings?.map(b => (
-                                                <SelectItem key={b.bookingId || (b as any).id} value={b.bookingId || (b as any).id} className="font-bold text-xs py-3">
-                                                    #{ (b.bookingId || (b as any).id).toUpperCase().slice(-8)} • {b.bookingDate} • {customers?.find(c => c.customerId === b.customerId || (c as any).id === b.customerId)?.fullName || 'Trace Pending'}
-                                                </SelectItem>
-                                            ))}
-                                            {(!bookings || bookings.length === 0) && <SelectItem value="none" disabled>Queue empty.</SelectItem>}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
-                                            <User className="h-3 w-3 text-primary" /> Client Identification
-                                        </Label>
-                                        <Select value={selectedCustomerId} onValueChange={setSelectedCustomerId}>
-                                            <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none font-bold">
-                                                <SelectValue placeholder="Identify client..." />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-border/50">
-                                                {customers?.map(c => (
-                                                    <SelectItem key={c.customerId || (c as any).id} value={c.customerId || (c as any).id} className="font-bold text-xs uppercase py-3">{c.fullName}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
-                                            <Car className="h-3 w-3 text-primary" /> Registered Asset
-                                        </Label>
-                                        <Select value={selectedVehicleId} onValueChange={setSelectedVehicleId} disabled={!selectedCustomerId}>
-                                            <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none font-bold">
-                                                {vLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SelectValue placeholder="Identify unit..." />}
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-xl border-border/50">
-                                                {vehicles?.map(v => (
-                                                    <SelectItem key={v.vehicleId || (v as any).id} value={v.vehicleId || (v as any).id} className="font-bold text-xs uppercase py-3">{v.make} {v.model} ({v.numberPlate})</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><Calendar className="h-3 w-3 text-indigo-500" /> Appointment Selection</Label>
+                                    <SearchableSelect 
+                                        options={bookings?.map(b => ({ value: b.bookingId, label: `INTAKE #${b.bookingId.toUpperCase().slice(-6)}`, description: `${b.bookingDate} • ${b.preferredTime}` })) || []}
+                                        value={selectedBookingId}
+                                        onValueChange={setSelectedBookingId}
+                                        placeholder="Identify scheduled intake..."
+                                    />
                                 </div>
                             )}
 
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><User className="h-3 w-3 text-primary" /> Client Authority</Label>
+                                    <SearchableSelect 
+                                        options={customers?.map(c => ({ value: c.customerId, label: c.fullName, description: c.phone })) || []}
+                                        value={selectedCustomerId}
+                                        onValueChange={setSelectedCustomerId}
+                                        placeholder="Search customer registry..."
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">{assetType === 'Vehicle' ? <Car className="h-3 w-3" /> : <Hammer className="h-3 w-3" />} Technical Asset</Label>
+                                    <SearchableSelect 
+                                        options={assetType === 'Vehicle' 
+                                            ? vehicles?.map(v => ({ value: v.vehicleId, label: `${v.make} ${v.model}`, description: v.numberPlate })) || []
+                                            : plants?.map(p => ({ value: p.id, label: p.name, description: p.assetId })) || []
+                                        }
+                                        value={selectedAssetId}
+                                        onValueChange={setSelectedAssetId}
+                                        disabled={!selectedCustomerId}
+                                        placeholder="Identify unit..."
+                                    />
+                                </div>
+                            </div>
+
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
-                                    <UserCheck className="h-3 w-3 text-primary" /> Technical Assignment
-                                </Label>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><UserCheck className="h-3 w-3 text-primary" /> Technical Assignment</Label>
                                 <Select value={assignedMechanicId} onValueChange={setAssignedMechanicId}>
-                                    <SelectTrigger className="h-14 rounded-2xl bg-muted/30 border-none font-bold">
-                                        <SelectValue placeholder="Assign lead technician..." />
+                                    <SelectTrigger className="h-14 rounded-2xl bg-muted/20 border-none font-bold">
+                                        <SelectValue placeholder="Assign lead personnel..." />
                                     </SelectTrigger>
                                     <SelectContent className="rounded-xl border-border/50">
                                         {technicians.map(m => (
-                                            <SelectItem key={m.userId || (m as any).id} value={m.userId || (m as any).id} className="font-bold text-xs uppercase py-3">
-                                                {m.fullName} ({m.role.split(' ')[0]})
-                                            </SelectItem>
+                                            <SelectItem key={m.userId} value={m.userId} className="font-bold text-xs uppercase py-3">{m.fullName} ({m.role.split(' ')[0]})</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
-                                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest mt-1 ml-1 italic">Assigning from expanded technical force strength.</p>
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="rounded-[2.5rem] overflow-hidden border-border/50 bg-card shadow-sm">
-                        <CardHeader className="bg-muted/30 border-b p-8 flex flex-row items-center justify-between space-y-0">
+                        <CardHeader className="bg-muted/30 border-b p-8 flex flex-row items-center justify-between">
                             <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-2">
                                 <AlertCircle className="h-4 w-4 text-orange-500" /> Operational Diagnosis
                             </CardTitle>
-                            <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={handleAiAnalyze}
-                                disabled={isAiLoading || !reportedIssue || !selectedVehicleId}
-                                className="h-9 gap-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-primary/5 text-primary border-primary/20 hover:bg-primary/10 transition-all"
-                            >
-                                {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                                AI Assistance
+                            <Button variant="outline" size="sm" onClick={handleAiAnalyze} disabled={isAiLoading || !reportedIssue || !selectedAssetId} className="h-9 gap-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-primary/5 text-primary border-primary/20">
+                                {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} AI Assistance
                             </Button>
                         </CardHeader>
                         <CardContent className="p-8">
-                            <Textarea 
-                                placeholder="Enter physical symptoms or technical drift observations..." 
-                                value={reportedIssue}
-                                onChange={(e) => setReportedIssue(e.target.value)}
-                                className="min-h-[160px] rounded-[1.5rem] bg-muted/20 border-none resize-none p-6 font-medium text-sm leading-relaxed"
-                            />
+                            <Textarea value={reportedIssue} onChange={(e) => setReportedIssue(e.target.value)} placeholder="Record technical drift or reported symptoms..." className="min-h-[160px] rounded-[1.5rem] bg-muted/10 border-none resize-none p-6 font-medium text-sm leading-relaxed" />
                         </CardContent>
                     </Card>
                 </div>
@@ -396,80 +305,41 @@ export function NewJobCardPage() {
                                 </CardHeader>
                                 <CardContent className="p-8 space-y-8 relative z-10">
                                     <div className="space-y-4">
-                                        <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2"><Wrench className="h-3 w-3 text-primary" /> Tasks</h4>
+                                        <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-white/40 flex items-center gap-2"><Wrench className="h-3 w-3 text-primary" /> Roadmap</h4>
                                         <ul className="space-y-2.5">
                                             {aiSuggestions.suggestedTasks.map((task: string, i: number) => (
                                                 <li key={i} className="flex items-start gap-3">
                                                     <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5 opacity-50" />
-                                                    <span className="text-[11px] font-bold text-white/80 leading-relaxed uppercase tracking-tight">{task}</span>
+                                                    <span className="text-[11px] font-bold text-white/80 uppercase tracking-tight">{task}</span>
                                                 </li>
                                             ))}
                                         </ul>
                                     </div>
-
                                     <Separator className="bg-white/10" />
-
                                     <div className="flex justify-between items-end">
                                         <div>
                                             <p className="text-[9px] font-black uppercase tracking-[0.3em] text-primary">Est. Labor Yield</p>
                                             <p className="text-3xl font-black text-white"><CurrencyFormat value={aiSuggestions.estimatedLaborCost} /></p>
                                         </div>
-                                        <Badge className="bg-primary/20 text-primary border-none text-[8px] font-black">NEURAL_SYNC</Badge>
+                                        <Badge className="bg-primary/20 text-primary border-none text-[8px] font-black uppercase">Neural Sync</Badge>
                                     </div>
                                 </CardContent>
-                                <div className="absolute left-0 bottom-0 right-0 h-1 bg-gradient-to-r from-primary to-indigo-500" />
                             </Card>
-                            
-                            <Button 
-                                className="w-full h-16 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
-                                onClick={handleCreate}
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ClipboardPlus className="h-5 w-5 mr-3" />}
-                                Commit Certified Dossier
+                            <Button className="w-full h-16 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20" onClick={handleCreate} disabled={isSubmitting}>
+                                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ClipboardPlus className="h-5 w-5 mr-3" />} Commit Certified Dossier
                             </Button>
                         </div>
                     ) : (
                         <div className="space-y-6">
-                            {selectedVehicleId && jobHistory && jobHistory.length > 0 && (
-                                <Card className="rounded-3xl border-border/50 bg-card overflow-hidden">
-                                    <CardHeader className="bg-muted/30 border-b p-6">
-                                        <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground flex items-center gap-2">
-                                            <History className="h-4 w-4 text-primary" /> Asset History
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-0">
-                                        <div className="max-h-[300px] overflow-y-auto divide-y">
-                                            {jobHistory.map(job => (
-                                                <div key={job.jobCardId || (job as any).id} className="p-4 flex items-center justify-between hover:bg-muted/10">
-                                                    <div className="space-y-0.5">
-                                                        <p className="text-[10px] font-black uppercase truncate max-w-[140px]">{job.reportedIssue}</p>
-                                                        <p className="text-[8px] font-bold text-muted-foreground uppercase"><FormattedDate date={job.createdAt} formatString="dd MMM yyyy" /></p>
-                                                    </div>
-                                                    <JobStatusBadge status={job.status} className="text-[7px]" />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            )}
-
-                            <Button 
-                                className="w-full h-16 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20 transition-all hover:scale-[1.01]"
-                                onClick={handleCreate}
-                                disabled={!selectedCustomerId || !selectedVehicleId || !reportedIssue || isSubmitting}
-                            >
-                                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ClipboardPlus className="h-5 w-5 mr-3" />}
-                                Manual Intake
+                            <Button className="w-full h-16 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20" onClick={handleCreate} disabled={!selectedCustomerId || !selectedAssetId || !reportedIssue || isSubmitting}>
+                                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ClipboardPlus className="h-5 w-5 mr-3" />} Manual Intake
                             </Button>
                         </div>
                     )}
                 </div>
             </div>
-            
-            <footer className="bg-muted/30 px-8 py-6 border-t flex items-center justify-center rounded-b-[2.5rem]">
-                <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.5em]">Makros System Technical Operations • Internal Intake Registry</p>
-            </footer>
         </div>
     );
 }
+
+export default NewJobCardPage;
