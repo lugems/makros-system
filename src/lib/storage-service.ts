@@ -19,6 +19,12 @@ export const uploadVehiclePhoto = async (vehicleId: string, file: File) => {
   return getDownloadURL(snapshot.ref);
 };
 
+export const uploadPlantPhoto = async (assetId: string, file: File) => {
+  const fileRef = ref(storage, `plant-photos/${assetId}/${Date.now()}_${file.name}`);
+  const snapshot = await uploadBytes(fileRef, file);
+  return getDownloadURL(snapshot.ref);
+};
+
 export const uploadJobCardPhoto = async (jobCardId: string, file: File) => {
   const fileRef = ref(storage, `job-card-photos/${jobCardId}/${Date.now()}_${file.name}`);
   const snapshot = await uploadBytes(fileRef, file);

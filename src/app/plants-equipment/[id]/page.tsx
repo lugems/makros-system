@@ -34,7 +34,8 @@ import {
     Settings,
     Clock,
     FileSearch,
-    PowerOff
+    PowerOff,
+    FileText
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,7 @@ import { updatePlantStatus, decommissionPlant } from '@/services/plants-service'
 import { UpdateMeterDialog } from '@/components/plants-equipment/update-meter-dialog';
 import { EditPlantDialog } from '@/components/plants-equipment/edit-plant-dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { PlantPhotoUpload } from '@/components/plants-equipment/plant-photo-upload';
 
 export default function PlantDetailsPage() {
     const params = useParams();
@@ -74,7 +76,7 @@ export default function PlantDetailsPage() {
     const [isDecommissionAlertOpen, setIsDecommissionAlertOpen] = useState(false);
 
     const isAuthorized = useMemo(() => 
-        ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Senior Mechanic / Lead Mechanic', 'Inventory Officer'].includes(role || '')
+        ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Senior Mechanic / Lead Mechanic', 'Inventory Officer', 'Accountant'].includes(role || '')
     , [role]);
 
     const plantRef = useMemoFirebase(() => {
@@ -196,7 +198,7 @@ export default function PlantDetailsPage() {
                                 <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Technical Overview</TabsTrigger>
                                 <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Service Ledger</TabsTrigger>
                                 <TabsTrigger value="maintenance" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Maintenance Plan</TabsTrigger>
-                                <TabsTrigger value="docs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Documentation</TabsTrigger>
+                                <TabsTrigger value="docs" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Documentation & Imagery</TabsTrigger>
                             </TabsList>
                         </div>
 
@@ -235,7 +237,7 @@ export default function PlantDetailsPage() {
                             {plant.notes && (
                                 <div className="space-y-4">
                                     <div className="flex items-center gap-3 text-muted-foreground px-2">
-                                        <AlertCircle className="h-3.5 w-3.5" />
+                                        <AlertTriangle className="h-3.5 w-3.5" />
                                         <h3 className="font-black uppercase text-[10px] tracking-[0.2em] text-foreground">Operational Remarks</h3>
                                     </div>
                                     <div className="bg-orange-500/[0.03] border border-orange-500/10 p-6 rounded-[2rem] relative overflow-hidden">
@@ -282,8 +284,28 @@ export default function PlantDetailsPage() {
                             </div>
                         </TabsContent>
 
-                        <TabsContent value="docs" className="space-y-8 focus-visible:outline-none animate-in fade-in duration-500">
-                            <RelatedCommunications assetId={id} assetType="Plant" onLogInteraction={() => {}} />
+                        <TabsContent value="docs" className="space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-3 text-muted-foreground px-2">
+                                    <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
+                                        <Camera className="h-4 w-4" />
+                                    </div>
+                                    <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Technical Imagery Registry</h3>
+                                </div>
+                                <PlantPhotoUpload assetId={id} />
+                            </div>
+
+                            <Separator className="opacity-50" />
+
+                            <div className="space-y-6">
+                                <div className="flex items-center gap-3 text-muted-foreground px-2">
+                                    <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
+                                        <FileText className="h-4 w-4" />
+                                    </div>
+                                    <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Interaction History</h3>
+                                </div>
+                                <RelatedCommunications assetId={id} assetType="Plant" onLogInteraction={() => {}} />
+                            </div>
                         </TabsContent>
                     </Tabs>
                 </div>
