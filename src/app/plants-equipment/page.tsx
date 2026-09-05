@@ -25,7 +25,8 @@ import {
     ClipboardList,
     LayoutGrid,
     List,
-    Hammer
+    Hammer,
+    ShieldAlert
 } from 'lucide-react';
 import PageHeader from '@/components/layout/page-header';
 import { LoadingState } from '@/components/shared/loading-state';
@@ -116,6 +117,25 @@ export default function PlantsPage() {
     // Handle early returns for authentication and loading states
     if (authLoading || (!isAuthorized && !authLoading)) return <LoadingState />;
     if (isLoading) return <LoadingState />;
+
+    if (!isAuthorized) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 animate-in fade-in duration-500">
+                <div className="h-20 w-20 rounded-[2.5rem] bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-lg shadow-destructive/10">
+                    <ShieldAlert className="h-10 w-10 text-destructive" />
+                </div>
+                <div className="text-center space-y-2">
+                    <h3 className="text-2xl font-black uppercase tracking-tight">Access Restricted</h3>
+                    <p className="text-muted-foreground text-sm max-w-sm mx-auto font-medium leading-relaxed italic">
+                        Plant & Equipment registry access is limited to authorized personnel.
+                    </p>
+                </div>
+                <Button variant="outline" onClick={() => router.push('/dashboard')} className="rounded-xl font-black uppercase tracking-widest text-[10px] h-11 px-8">
+                    Return to Command
+                </Button>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">

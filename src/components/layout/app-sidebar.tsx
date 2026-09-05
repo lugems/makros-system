@@ -29,7 +29,8 @@ import {
   LogOut, 
   Plus, 
   ShieldCheck, 
-  MessageSquare
+  MessageSquare,
+  Hammer
 } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useAuth } from "@/contexts/auth-context"
@@ -39,6 +40,7 @@ const navItems = [
   { name: 'Dashboard', href: '/dashboard', icon: HomeIcon },
   { name: 'Customers', href: '/customers', icon: UsersIcon },
   { name: 'Vehicles', href: '/vehicles', icon: CarIcon },
+  { name: 'Plant & Equipment', href: '/plants-equipment', icon: Hammer },
   { name: 'Bookings', href: '/bookings', icon: BookIcon },
   { name: 'Services', href: '/services', icon: WrenchIcon },
   { name: 'Job Cards', href: '/job-cards', icon: ClipboardListIcon },
