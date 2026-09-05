@@ -55,6 +55,11 @@ const TECHNICIAN_ROLES = [
   "Auto Body / Panel Beater", "Painter", "Tyre & Wheel Technician", "Car Wash / Detailing Technician",
 ];
 
+/**
+ * @fileOverview Technical Intake Terminal.
+ * Synchronized with the polymorphic ecosystem and hardened for long-term scalability.
+ * Utilizes searchable selectors for high-density registries.
+ */
 export function NewJobCardPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -66,12 +71,6 @@ export function NewJobCardPage() {
     const { user: currentUser, isLoading: authLoading } = useAuth();
     const db = useFirestore();
 
-    const isAuthorized = useMemo(() => {
-        const allowedRoles = ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Senior Mechanic / Lead Mechanic'];
-        return currentUser && allowedRoles.includes(currentUser.role);
-    }, [currentUser]);
-
-    // State
     const [intakeMode, setIntakeMode] = useState<'booking' | 'walkin'>(bookingIdFromUrl ? 'booking' : 'walkin');
     const [assetType, setAssetType] = useState<AssetType>(assetTypeFromUrl || 'Vehicle');
     const [selectedBookingId, setSelectedBookingId] = useState<string>(bookingIdFromUrl || '');
@@ -83,16 +82,14 @@ export function NewJobCardPage() {
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [aiSuggestions, setAiSuggestions] = useState<any>(null);
 
-    // Queries
     const bookingsQuery = useMemoFirebase(() => query(collection(db, 'bookings'), where('status', 'in', ['Confirmed', 'Pending', 'Checked In'])), [db]);
     const customersQuery = useMemoFirebase(() => query(collection(db, 'customers'), orderBy('fullName', 'asc')), [db]);
     const usersQuery = useMemoFirebase(() => query(collection(db, 'users'), where('status', '==', 'Active')), [db]);
 
-    const { data: bookings } = useCollection<Booking>(bookingsQuery as any);
-    const { data: customers } = useCollection<Customer>(customersQuery as any);
-    const { data: allStaff } = useCollection<StaffMember>(usersQuery as any);
+    const { data: bookings, loading: bLoading } = useCollection<Booking>(bookingsQuery as any);
+    const { data: customers, loading: cLoading } = useCollection<Customer>(customersQuery as any);
+    const { data: allStaff, loading: sLoading } = useCollection<StaffMember>(usersQuery as any);
 
-    // Asset Queries - Filtered by Customer + AssetType
     const vehiclesQuery = useMemoFirebase(() => {
         if (!selectedCustomerId || assetType !== 'Vehicle') return null;
         return query(collection(db, 'vehicles'), where('customerId', '==', selectedCustomerId));
@@ -108,14 +105,12 @@ export function NewJobCardPage() {
 
     const technicians = useMemo(() => allStaff?.filter(s => TECHNICIAN_ROLES.includes(s.role)) || [], [allStaff]);
 
-    // Effect: Handle asset classification changes
     const handleAssetTypeChange = (type: AssetType) => {
         setAssetType(type);
         setSelectedAssetId('');
         setAiSuggestions(null);
     };
 
-    // Effect: Handle customer changes (reset asset)
     useEffect(() => {
         if (intakeMode === 'walkin') {
             setSelectedAssetId('');
@@ -123,7 +118,6 @@ export function NewJobCardPage() {
         }
     }, [selectedCustomerId, intakeMode]);
 
-    // Effect: Sync booking selection
     useEffect(() => {
         if (intakeMode === 'booking' && selectedBookingId && bookings) {
             const b = bookings.find(b => b.bookingId === selectedBookingId || (b as any).id === selectedBookingId);
@@ -192,6 +186,16 @@ export function NewJobCardPage() {
         }
     };
 
+    const technicianOptions = useMemo(() => [
+        { value: '', label: 'Auto-Assign Bay (No Preference)', icon: <UserCheck className="h-4 w-4" /> },
+        ...technicians.map(m => ({
+            value: m.userId,
+            label: m.fullName,
+            description: m.role.toUpperCase(),
+            icon: <User className="h-4 w-4" />
+        }))
+    ], [technicians]);
+
     if (authLoading) return <LoadingState />;
 
     return (
@@ -207,7 +211,7 @@ export function NewJobCardPage() {
                         </div>
                         <div>
                             <h1 className="text-4xl font-black tracking-tighter uppercase font-headline">Technical Intake</h1>
-                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.3em] opacity-60">Initializing Forensic Repair Dossier</p>
+                            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.3em] opacity-60">Forensic Repair Dossier Initialization</p>
                         </div>
                     </div>
                 </div>
@@ -218,7 +222,7 @@ export function NewJobCardPage() {
                     <Card className="rounded-[2.5rem] border-border/50 bg-card shadow-sm overflow-hidden">
                         <CardHeader className="bg-muted/30 border-b p-8 flex flex-row items-center justify-between">
                             <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-2">
-                                <ShieldCheck className="h-4 w-4 text-green-500" /> Registry Identification
+                                <ShieldCheck className="h-4 w-4 text-green-500" /> Registry Parameters
                             </CardTitle>
                             <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
                                 <Button size="sm" variant={intakeMode === 'booking' ? 'secondary' : 'ghost'} onClick={() => setIntakeMode('booking')} className="h-8 text-[9px] font-black uppercase rounded-lg px-4">Queue</Button>
@@ -233,24 +237,26 @@ export function NewJobCardPage() {
 
                             {intakeMode === 'booking' && (
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><Calendar className="h-3 w-3 text-indigo-500" /> Appointment Selection</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><Calendar className="h-3 w-3 text-indigo-500" /> Scheduled Intake</Label>
                                     <SearchableSelect 
                                         options={bookings?.map(b => ({ value: b.bookingId, label: `INTAKE #${b.bookingId.toUpperCase().slice(-6)}`, description: `${b.bookingDate} • ${b.preferredTime}` })) || []}
                                         value={selectedBookingId}
                                         onValueChange={setSelectedBookingId}
-                                        placeholder="Identify scheduled intake..."
+                                        placeholder="Identify from schedule..."
+                                        isLoading={bLoading}
                                     />
                                 </div>
                             )}
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><User className="h-3 w-3 text-primary" /> Client Authority</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><User className="h-3 w-3 text-primary" /> Account Authority</Label>
                                     <SearchableSelect 
                                         options={customers?.map(c => ({ value: c.customerId, label: c.fullName, description: c.phone })) || []}
                                         value={selectedCustomerId}
                                         onValueChange={setSelectedCustomerId}
-                                        placeholder="Search customer registry..."
+                                        placeholder="Identify client..."
+                                        isLoading={cLoading}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -270,17 +276,14 @@ export function NewJobCardPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><UserCheck className="h-3 w-3 text-primary" /> Technical Assignment</Label>
-                                <Select value={assignedMechanicId} onValueChange={setAssignedMechanicId}>
-                                    <SelectTrigger className="h-14 rounded-2xl bg-muted/20 border-none font-bold">
-                                        <SelectValue placeholder="Assign lead personnel..." />
-                                    </SelectTrigger>
-                                    <SelectContent className="rounded-xl border-border/50">
-                                        {technicians.map(m => (
-                                            <SelectItem key={m.userId} value={m.userId} className="font-bold text-xs uppercase py-3">{m.fullName} ({m.role.split(' ')[0]})</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1"><UserCheck className="h-3 w-3 text-primary" /> Personnel Assignment</Label>
+                                <SearchableSelect 
+                                    options={technicianOptions}
+                                    value={assignedMechanicId}
+                                    onValueChange={setAssignedMechanicId}
+                                    placeholder="Assign technical lead..."
+                                    isLoading={sLoading}
+                                />
                             </div>
                         </CardContent>
                     </Card>
@@ -288,10 +291,10 @@ export function NewJobCardPage() {
                     <Card className="rounded-[2.5rem] overflow-hidden border-border/50 bg-card shadow-sm">
                         <CardHeader className="bg-muted/30 border-b p-8 flex flex-row items-center justify-between">
                             <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-foreground flex items-center gap-2">
-                                <AlertCircle className="h-4 w-4 text-orange-500" /> Operational Diagnosis
+                                <AlertCircle className="h-4 w-4 text-orange-500" /> Operational Symptoms
                             </CardTitle>
                             <Button variant="outline" size="sm" onClick={handleAiAnalyze} disabled={isAiLoading || !reportedIssue || !selectedAssetId} className="h-9 gap-2 text-[10px] font-black uppercase tracking-widest rounded-xl bg-primary/5 text-primary border-primary/20">
-                                {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} AI Assistance
+                                {isAiLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />} AI Roadmap
                             </Button>
                         </CardHeader>
                         <CardContent className="p-8">
@@ -307,9 +310,9 @@ export function NewJobCardPage() {
                                 <CardHeader className="relative z-10 border-b border-white/10 p-8">
                                     <div className="flex items-center gap-2 text-primary mb-1">
                                         <Sparkles className="h-4 w-4 fill-primary" />
-                                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">AI Roadmap</span>
+                                        <span className="text-[10px] font-black uppercase tracking-[0.3em]">AI Blueprint</span>
                                     </div>
-                                    <CardTitle className="text-xl font-black uppercase tracking-tight">Blueprint Generated</CardTitle>
+                                    <CardTitle className="text-xl font-black uppercase tracking-tight">Strategy Generated</CardTitle>
                                 </CardHeader>
                                 <CardContent className="p-8 space-y-8 relative z-10">
                                     <div className="space-y-4">
@@ -318,7 +321,7 @@ export function NewJobCardPage() {
                                             {aiSuggestions.suggestedTasks.map((task: string, i: number) => (
                                                 <li key={i} className="flex items-start gap-3">
                                                     <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0 mt-0.5 opacity-50" />
-                                                    <span className="text-[11px] font-bold text-white/80 uppercase tracking-tight">{task}</span>
+                                                    <span className="text-[11px] font-bold text-white/80 uppercase tracking-tight line-clamp-2">{task}</span>
                                                 </li>
                                             ))}
                                         </ul>
@@ -326,7 +329,7 @@ export function NewJobCardPage() {
                                     <Separator className="bg-white/10" />
                                     <div className="flex justify-between items-end">
                                         <div>
-                                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-primary">Est. Labor Yield</p>
+                                            <p className="text-[9px] font-black uppercase tracking-[0.3em] text-primary">Est. Labor Cost</p>
                                             <p className="text-3xl font-black text-white"><CurrencyFormat value={aiSuggestions.estimatedLaborCost} /></p>
                                         </div>
                                         <Badge className="bg-primary/20 text-primary border-none text-[8px] font-black uppercase">Neural Sync</Badge>
@@ -334,20 +337,25 @@ export function NewJobCardPage() {
                                 </CardContent>
                             </Card>
                             <Button className="w-full h-16 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20" onClick={handleCreate} disabled={isSubmitting}>
-                                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ClipboardPlus className="h-5 w-5 mr-3" />} Commit Certified Dossier
+                                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ClipboardPlus className="h-5 w-5 mr-3" />} Initialize bay dossier
                             </Button>
                         </div>
                     ) : (
                         <div className="space-y-6">
                             <Button className="w-full h-16 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] shadow-xl shadow-primary/20" onClick={handleCreate} disabled={!selectedCustomerId || !selectedAssetId || !reportedIssue || isSubmitting}>
-                                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ClipboardPlus className="h-5 w-5 mr-3" />} Manual Intake
+                                {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ClipboardPlus className="h-5 w-5 mr-3" />} Commit manual intake
                             </Button>
                         </div>
                     )}
+                    
+                    <div className="p-8 rounded-[2.5rem] border border-border/50 bg-card shadow-sm flex flex-col items-center text-center space-y-4">
+                        <div className="h-16 w-16 rounded-[1.5rem] bg-muted flex items-center justify-center">
+                            <ShieldCheck className="h-8 w-8 opacity-20 text-primary" />
+                        </div>
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">Certified Registry protocol active</h4>
+                    </div>
                 </div>
             </div>
         </div>
     );
 }
-
-export default NewJobCardPage;

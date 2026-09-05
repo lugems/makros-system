@@ -41,6 +41,7 @@ interface SearchableSelectProps {
 /**
  * @fileOverview A professional, Dialog-compatible searchable selector.
  * Hardened to handle Radix focus-trap behavior and large datasets.
+ * Synchronized across the polymorphic workshop ecosystem.
  */
 export function SearchableSelect({
   options,
@@ -84,7 +85,7 @@ export function SearchableSelect({
       <PopoverContent 
         className="w-[--radix-popover-trigger-width] p-0 rounded-2xl border-border/50 shadow-2xl overflow-hidden z-[60]" 
         align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()} // Critical for Dialog compatibility
+        onOpenAutoFocus={(e) => e.preventDefault()} // Critical for Dialog focus-trap compatibility
       >
         <Command className="bg-background">
           <CommandInput 
@@ -107,20 +108,20 @@ export function SearchableSelect({
                   className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors rounded-lg mx-1 my-0.5"
                 >
                   <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-3">
-                      <div className="h-8 w-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary/50 group-aria-selected:text-primary transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="h-8 w-8 rounded-lg bg-primary/5 flex items-center justify-center text-primary/50 group-aria-selected:text-primary transition-colors shrink-0">
                         {option.icon || <Check className={cn("h-4 w-4 opacity-0", value === option.value && "opacity-100")} />}
                       </div>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-black uppercase tracking-tight">{option.label}</span>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-black uppercase tracking-tight truncate">{option.label}</span>
                         {option.description && (
-                          <span className="text-[10px] font-bold text-muted-foreground uppercase opacity-60 leading-none mt-1">
+                          <span className="text-[9px] font-bold text-muted-foreground uppercase opacity-60 leading-none mt-1 truncate">
                             {option.description}
                           </span>
                         )}
                       </div>
                     </div>
-                    {value === option.value && <Check className="h-4 w-4 text-primary" />}
+                    {value === option.value && <Check className="h-4 w-4 text-primary shrink-0 ml-2" />}
                   </div>
                 </CommandItem>
               ))}

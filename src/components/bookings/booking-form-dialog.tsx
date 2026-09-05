@@ -56,20 +56,20 @@ const BookingFormDialog: React.FC<BookingFormDialogProps> = ({ isOpen, onClose, 
   const servicesQuery = useMemoFirebase(() => query(collection(db, 'services'), where('status', '==', 'Active')), [db]);
   const staffQuery = useMemoFirebase(() => query(collection(db, 'users'), where('status', '==', 'Active')), [db]);
 
-  const { data: customers } = useCollection<Customer>(customersQuery as any);
-  const { data: services } = useCollection<MakrosService>(servicesQuery as any);
-  const { data: allStaff } = useCollection<StaffMember>(staffQuery as any);
+  const { data: customers, loading: cLoading } = useCollection<Customer>(customersQuery as any);
+  const { data: services, loading: sLoading } = useCollection<MakrosService>(servicesQuery as any);
+  const { data: allStaff, loading: staffLoading } = useCollection<StaffMember>(staffQuery as any);
 
   // Asset Queries
   const vehiclesQuery = useMemoFirebase(() => {
-      if (!formData.customerId) return null;
+      if (!formData.customerId || assetType !== 'Vehicle') return null;
       return query(collection(db, 'vehicles'), where('customerId', '==', formData.customerId));
-  }, [db, formData.customerId]);
+  }, [db, formData.customerId, assetType]);
 
   const plantsQuery = useMemoFirebase(() => {
-      if (!formData.customerId) return null;
+      if (!formData.customerId || assetType !== 'Plant') return null;
       return query(collection(db, 'plantsAndEquipment'), where('ownerId', '==', formData.customerId));
-  }, [db, formData.customerId]);
+  }, [db, formData.customerId, assetType]);
 
   const { data: vehicles, loading: vLoading } = useCollection<Vehicle>(vehiclesQuery as any);
   const { data: plants, loading: pLoading } = useCollection<PlantEquipment>(plantsQuery as any);
@@ -116,6 +116,16 @@ const BookingFormDialog: React.FC<BookingFormDialogProps> = ({ isOpen, onClose, 
       }
   }, [assetType, vehicles, plants]);
 
+  const technicianOptions = useMemo(() => [
+    { value: 'unassigned', label: 'Auto-Assign Bay (No Preference)', icon: <UserCheck className="h-4 w-4" /> },
+    ...technicians.map(m => ({
+        value: m.userId,
+        label: m.fullName,
+        description: m.role.toUpperCase(),
+        icon: <User className="h-4 w-4" />
+    }))
+  ], [technicians]);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[92dvh] flex-col overflow-hidden p-0 sm:max-w-[560px] border-border/50">
@@ -138,7 +148,6 @@ const BookingFormDialog: React.FC<BookingFormDialogProps> = ({ isOpen, onClose, 
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col">
           <DialogBody>
             <div className="space-y-8 px-8 py-6">
-              {/* Asset Type Toggle */}
               <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-muted/50 border border-border/50">
                   <Button 
                     type="button"
@@ -160,20 +169,21 @@ const BookingFormDialog: React.FC<BookingFormDialogProps> = ({ isOpen, onClose, 
 
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
-                  <User className="h-3 w-3 text-primary" /> Customer Context
+                  <User className="h-3 w-3 text-primary" /> Customer context
                 </Label>
                 <SearchableSelect 
                     options={customerOptions}
                     value={formData.customerId}
                     onValueChange={(val) => handleValueChange('customerId', val)}
                     placeholder="Identify client authority..."
+                    isLoading={cLoading}
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
-                    {assetType === 'Vehicle' ? <Car className="h-3 w-3 text-primary" /> : <Hammer className="h-3 w-3 text-primary" />}
+                    {assetType === 'Vehicle' ? <Car className="h-3 w-3" /> : <Hammer className="h-3 w-3" />}
                     Target Asset
                   </Label>
                   <SearchableSelect 
@@ -235,27 +245,20 @@ const BookingFormDialog: React.FC<BookingFormDialogProps> = ({ isOpen, onClose, 
 
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
-                  <UserCheck className="h-3 w-3 text-primary" /> Technical Assignment
+                  <UserCheck className="h-3 w-3 text-primary" /> Technical assignment
                 </Label>
-                <Select 
-                  value={formData.assignedMechanicId || ''} 
+                <SearchableSelect 
+                  options={technicianOptions}
+                  value={formData.assignedMechanicId}
                   onValueChange={(val) => handleValueChange('assignedMechanicId', val)}
-                >
-                  <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none font-bold">
-                    <SelectValue placeholder="Auto-assign bay..." />
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-border/50">
-                    <SelectItem value="unassigned" className="italic font-bold">No Preference</SelectItem>
-                    {technicians?.map(m => (
-                      <SelectItem key={m.userId} value={m.userId} className="font-bold uppercase text-xs">{m.fullName} ({m.role.split(' ')[0]})</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Auto-assign bay..."
+                  isLoading={staffLoading}
+                />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
-                  <MessageSquare className="h-3 w-3 text-primary" /> Incident Documentation
+                  <MessageSquare className="h-3 w-3 text-primary" /> Incident documentation
                 </Label>
                 <Textarea 
                   value={formData.notes || ''} 

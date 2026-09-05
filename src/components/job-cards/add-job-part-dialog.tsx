@@ -15,12 +15,12 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Package, Hash, Plus, Warehouse } from 'lucide-react';
 import { InventoryItem } from '@/types/inventory';
 import { addPartToJobCardTransaction } from '@/services/job-cards-service';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { SearchableSelect } from '@/components/shared/searchable-select';
 
 export function AddJobPartDialog({ jobCardId }: { jobCardId: string }) {
   const { user } = useAuth();
@@ -41,13 +41,12 @@ export function AddJobPartDialog({ jobCardId }: { jobCardId: string }) {
     return query(collection(db, 'inventory'), where('status', '==', 'Active')) as any;
   }, [db, isAuthorized]);
 
-  const { data: inventory } = useCollection<InventoryItem>(inventoryQuery);
+  const { data: inventory, loading: invLoading } = useCollection<InventoryItem>(inventoryQuery);
 
   const handleSubmit = async () => {
     if (!user || !itemId) return;
 
     try {
-        // Support decimal points for items like oil (e.g. 4.5L)
         await addPartToJobCardTransaction(jobCardId, itemId, parseFloat(quantity), user.userId);
         setOpen(false);
         setItemId('');
@@ -57,6 +56,16 @@ export function AddJobPartDialog({ jobCardId }: { jobCardId: string }) {
         toast({ variant: "destructive", title: "Allocation Failed", description: error.message });
     }
   };
+
+  const inventoryOptions = useMemo(() => 
+    inventory?.map(item => ({
+        value: item.itemId,
+        label: item.itemName,
+        description: `${item.quantity} Units Available • Rate: ${item.sellingPrice.toLocaleString()} Ush`,
+        icon: <Package className="h-4 w-4" />
+    })) || [],
+    [inventory]
+  );
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -79,19 +88,13 @@ export function AddJobPartDialog({ jobCardId }: { jobCardId: string }) {
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                   <Warehouse className="h-3 w-3 text-primary" /> Select SKU from Inventory
               </Label>
-              <Select onValueChange={setItemId} value={itemId}>
-                <SelectTrigger className="rounded-xl h-14 bg-muted/50 border-none font-bold">
-                  <SelectValue placeholder="Search inventory catalog..." />
-                </SelectTrigger>
-                <SelectContent className="rounded-xl border-border/50">
-                  {inventory?.map(item => (
-                    <SelectItem key={item.itemId} value={item.itemId} className="text-xs font-bold uppercase py-3">
-                      {item.itemName} ({item.quantity} Units Available)
-                    </SelectItem>
-                  ))}
-                  {(!inventory || inventory.length === 0) && <SelectItem value="none" disabled>No verified stock found</SelectItem>}
-                </SelectContent>
-              </Select>
+              <SearchableSelect 
+                options={inventoryOptions}
+                value={itemId}
+                onValueChange={setItemId}
+                placeholder="Search inventory catalog..."
+                isLoading={invLoading}
+              />
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
