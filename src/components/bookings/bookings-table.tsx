@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -31,15 +32,16 @@ interface BookingsTableProps {
 /**
  * @fileOverview Technical registry table for service intakes.
  * Synchronizes with real-time assets and client dossiers for forensic accuracy.
+ * Handles polymorphic asset resolution (Vehicle vs Plant).
  */
 export function BookingsTable({ bookings, onSelect, selectedId }: BookingsTableProps) {
   const db = useFirestore();
 
   // Live Technical Streams (Stabilized)
-  const custQuery = useMemoFirebase(() => query(collection(db, 'customers')) as Query<Customer>, [db]);
-  const vehQuery = useMemoFirebase(() => query(collection(db, 'vehicles')) as Query<Vehicle>, [db]);
-  const plantQuery = useMemoFirebase(() => query(collection(db, 'plantsAndEquipment')) as Query<PlantEquipment>, [db]);
-  const srvQuery = useMemoFirebase(() => query(collection(db, 'services')) as Query<MakrosService>, [db]);
+  const custQuery = useMemoFirebase(() => query(collection(db, 'customers')), [db]);
+  const vehQuery = useMemoFirebase(() => query(collection(db, 'vehicles')), [db]);
+  const plantQuery = useMemoFirebase(() => query(collection(db, 'plantsAndEquipment')), [db]);
+  const srvQuery = useMemoFirebase(() => query(collection(db, 'services')), [db]);
 
   const { data: customers } = useCollection<Customer>(custQuery as any);
   const { data: vehicles } = useCollection<Vehicle>(vehQuery as any);
@@ -62,6 +64,7 @@ export function BookingsTable({ bookings, onSelect, selectedId }: BookingsTableP
             const customer = customers?.find(c => (c.customerId === booking.customerId || (c as any).id === booking.customerId));
             const isActive = selectedId === booking.bookingId;
             
+            // POLYMORPHIC RESOLUTION
             const assetType = booking.assetType || 'Vehicle';
             const assetId = booking.assetId || booking.vehicleId;
             

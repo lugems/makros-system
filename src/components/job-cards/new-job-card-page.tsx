@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy, Query } from 'firebase/firestore';
+import { collection, query, where, orderBy, doc, getDoc } from 'firebase/firestore';
 import { JobCardStatus, JobCard } from '@/types/job-card';
 import { AssetType } from '@/types/asset';
 import { Booking } from '@/types/booking';
@@ -58,7 +59,7 @@ const TECHNICIAN_ROLES = [
 /**
  * @fileOverview Technical Intake Terminal.
  * Synchronized with the polymorphic ecosystem and hardened for long-term scalability.
- * Utilizes searchable selectors for high-density registries.
+ * Implements strict asset-aware initialization and AI roadmap generation.
  */
 export function NewJobCardPage() {
     const router = useRouter();
@@ -82,14 +83,16 @@ export function NewJobCardPage() {
     const [isAiLoading, setIsAiLoading] = useState(false);
     const [aiSuggestions, setAiSuggestions] = useState<any>(null);
 
+    // technical Registry Streams
     const bookingsQuery = useMemoFirebase(() => query(collection(db, 'bookings'), where('status', 'in', ['Confirmed', 'Pending', 'Checked In'])), [db]);
     const customersQuery = useMemoFirebase(() => query(collection(db, 'customers'), orderBy('fullName', 'asc')), [db]);
     const usersQuery = useMemoFirebase(() => query(collection(db, 'users'), where('status', '==', 'Active')), [db]);
 
     const { data: bookings, loading: bLoading } = useCollection<Booking>(bookingsQuery as any);
     const { data: customers, loading: cLoading } = useCollection<Customer>(customersQuery as any);
-    const { data: allStaff, loading: sLoading } = useCollection<StaffMember>(usersQuery as any);
+    const { data: allStaff, loading: staffLoading } = useCollection<StaffMember>(usersQuery as any);
 
+    // Polymorphic Asset Queries
     const vehiclesQuery = useMemoFirebase(() => {
         if (!selectedCustomerId || assetType !== 'Vehicle') return null;
         return query(collection(db, 'vehicles'), where('customerId', '==', selectedCustomerId));
@@ -104,6 +107,25 @@ export function NewJobCardPage() {
     const { data: plants, loading: pLoading } = useCollection<PlantEquipment>(plantsQuery as any);
 
     const technicians = useMemo(() => allStaff?.filter(s => TECHNICIAN_ROLES.includes(s.role)) || [], [allStaff]);
+
+    // Handle initial state calibration from URL or parent module
+    useEffect(() => {
+        if (assetIdFromUrl && assetTypeFromUrl && customers) {
+            // If we have an asset ID from URL, we need to resolve its owner
+            const resolveOwner = async () => {
+                const col = assetTypeFromUrl === 'Vehicle' ? 'vehicles' : 'plantsAndEquipment';
+                const assetSnap = await getDoc(doc(db, col, assetIdFromUrl));
+                if (assetSnap.exists()) {
+                    const data = assetSnap.data();
+                    const ownerId = data.customerId || data.ownerId;
+                    setSelectedCustomerId(ownerId);
+                    setAssetType(assetTypeFromUrl);
+                    setSelectedAssetId(assetIdFromUrl);
+                }
+            };
+            resolveOwner();
+        }
+    }, [assetIdFromUrl, assetTypeFromUrl, db, customers]);
 
     const handleAssetTypeChange = (type: AssetType) => {
         setAssetType(type);
@@ -202,7 +224,7 @@ export function NewJobCardPage() {
         <div className="space-y-10 animate-in fade-in duration-700 pb-20">
             <header className="flex flex-col gap-2">
                 <Button variant="ghost" size="sm" onClick={() => router.back()} className="-ml-3 h-8 text-[10px] font-black uppercase tracking-widest gap-2 text-muted-foreground hover:text-primary">
-                    <ArrowLeft className="h-3 w-3" /> Back
+                    <ArrowLeft className="h-3 w-3" /> Back to force
                 </Button>
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-4">
@@ -232,7 +254,7 @@ export function NewJobCardPage() {
                         <CardContent className="p-8 space-y-6">
                             <div className="flex items-center gap-2 p-1 rounded-2xl bg-muted/30 border">
                                 <Button type="button" variant={assetType === 'Vehicle' ? 'secondary' : 'ghost'} onClick={() => handleAssetTypeChange('Vehicle')} className="flex-1 h-10 text-[9px] font-black uppercase rounded-xl gap-2"><Car className="h-3.5 w-3.5" /> Vehicle</Button>
-                                <Button type="button" variant={assetType === 'Plant' ? 'secondary' : 'ghost'} onClick={() => handleAssetTypeChange('Plant')} className="flex-1 h-10 text-[9px] font-black uppercase rounded-xl gap-2"><Hammer className="h-3.5 w-3.5" /> Plant</Button>
+                                <Button type="button" variant={assetType === 'Plant' ? 'secondary' : 'ghost'} onClick={() => handleAssetTypeChange('Plant')} className="flex-1 h-10 text-[9px] font-black uppercase rounded-xl gap-2"><Hammer className="h-3.5 w-3.5" /> Plant & Equipment</Button>
                             </div>
 
                             {intakeMode === 'booking' && (
@@ -260,7 +282,10 @@ export function NewJobCardPage() {
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">{assetType === 'Vehicle' ? <Car className="h-3 w-3" /> : <Hammer className="h-3 w-3" />} Technical Asset</Label>
+                                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
+                                        {assetType === 'Vehicle' ? <Car className="h-3 w-3 text-primary" /> : <Hammer className="h-3 w-3 text-primary" />} 
+                                        Technical Asset
+                                    </Label>
                                     <SearchableSelect 
                                         options={assetType === 'Vehicle' 
                                             ? vehicles?.map(v => ({ value: v.vehicleId, label: `${v.make} ${v.model}`, description: v.numberPlate })) || []
@@ -282,7 +307,7 @@ export function NewJobCardPage() {
                                     value={assignedMechanicId}
                                     onValueChange={setAssignedMechanicId}
                                     placeholder="Assign technical lead..."
-                                    isLoading={sLoading}
+                                    isLoading={staffLoading}
                                 />
                             </div>
                         </CardContent>

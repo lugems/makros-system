@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -85,8 +86,8 @@ const TECHNICIAN_ROLES = [
 
 /**
  * @fileOverview Technical Repair Dossier.
- * Synchronized with the Polymorphic Ecosystem and hardened for scalability.
- * Implements strict truncation protocols for Midnight Slate UI density.
+ * Synchronized with the Polymorphic Ecosystem and hardened for strict asset resolution.
+ * Supports both Vehicles and Plant assets within a unified work order flow.
  */
 export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
     const { user: currentUser, role: currentRole } = useAuth();
@@ -123,10 +124,14 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
     }, [db, jobCard?.customerId]);
 
     const assetRef = useMemoFirebase(() => {
-        if (!db || !jobCard?.assetId || !jobCard?.assetType) return null;
-        const col = jobCard.assetType === 'Vehicle' ? 'vehicles' : 'plantsAndEquipment';
-        return doc(db, col, jobCard.assetId);
-    }, [db, jobCard?.assetId, jobCard?.assetType]);
+        if (!db || !jobCard) return null;
+        // POLYMORPHIC RESOLUTION: Priority based on stored assetType
+        const type = jobCard.assetType || 'Vehicle'; // Fallback for legacy
+        const id = jobCard.assetId || jobCard.vehicleId;
+        if (!id) return null;
+        const col = type === 'Vehicle' ? 'vehicles' : 'plantsAndEquipment';
+        return doc(db, col, id);
+    }, [db, jobCard]);
 
     const mechRef = useMemoFirebase(() => {
         if (!db || !jobCard?.assignedMechanicId) return null;
@@ -262,7 +267,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                 ...data,
                 jobCardId,
                 customerId: jobCard?.customerId,
-                vehicleId: jobCard?.assetType === 'Vehicle' ? jobCard.assetId : undefined,
+                vehicleId: jobCard?.assetType === 'Vehicle' ? (jobCard.assetId || jobCard.vehicleId) : undefined,
                 toName: customer.fullName,
                 toRole: 'Customer',
                 module: 'Job Card'
@@ -351,7 +356,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start px-8">
                 <div className="lg:col-span-8 space-y-10">
                     <Tabs defaultValue="roadmap" className="w-full">
                         <div className="bg-card border border-border/50 rounded-2xl p-1.5 mb-8 shadow-sm overflow-x-auto custom-scrollbar">
@@ -385,7 +390,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                                 <Card className="rounded-3xl border-border/50 bg-card overflow-hidden shadow-sm">
                                     <CardHeader className="bg-muted/30 p-5 border-b">
                                         <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                            {jobCard.assetType === 'Vehicle' ? <Car className="h-3.5 w-3.5 text-primary" /> : <Hammer className="h-3.5 w-3.5 text-primary" />}
+                                            {jobCard.assetType === 'Plant' ? <Hammer className="h-3.5 w-3.5 text-primary" /> : <Car className="h-3.5 w-3.5 text-primary" />}
                                             Technical Asset
                                         </CardTitle>
                                     </CardHeader>
@@ -393,16 +398,19 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                                         <div className="flex items-center justify-between">
                                             <div className="min-w-0">
                                                 <p className="font-black text-sm uppercase tracking-tight truncate">
-                                                    {jobCard.assetType === 'Vehicle' ? `${asset?.make} ${asset?.model}` : asset?.name}
+                                                    {jobCard.assetType === 'Plant' ? asset?.name : `${asset?.make} ${asset?.model}`}
                                                 </p>
                                                 <Badge variant="outline" className="text-[10px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase mt-1">
-                                                    {jobCard.assetType === 'Vehicle' ? asset?.numberPlate : asset?.assetId}
+                                                    {jobCard.assetType === 'Plant' ? asset?.assetId : asset?.numberPlate}
                                                 </Badge>
                                             </div>
                                             <div className="text-right shrink-0 ml-4">
                                                 <p className="text-[9px] font-black text-muted-foreground uppercase leading-none">Telemetry</p>
                                                 <p className="text-xs font-black mt-1 uppercase">
-                                                    {jobCard.assetType === 'Vehicle' ? `${asset?.mileage?.toLocaleString() || 0} KM` : `${asset?.meterReading?.toLocaleString() || 0} ${getMeterUnit(asset?.meterType)}`}
+                                                    {jobCard.assetType === 'Plant' 
+                                                        ? `${asset?.meterReading?.toLocaleString() || 0} ${getMeterUnit(asset?.meterType)}`
+                                                        : `${asset?.mileage?.toLocaleString() || 0} KM`
+                                                    }
                                                 </p>
                                             </div>
                                         </div>
