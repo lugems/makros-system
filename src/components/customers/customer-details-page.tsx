@@ -253,14 +253,14 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Electronic Mail</label>
                                             <p className="text-sm font-bold flex items-center gap-2 break-all">
-                                                <MailIcon className="h-4 w-4 text-primary shrink-0" />
+                                                <Mail className="h-4 w-4 text-primary shrink-0" />
                                                 {customer.email || 'NO_DIGITAL_ADDRESS'}
                                             </p>
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Authority</label>
                                             <p className="text-sm font-bold flex items-center gap-2">
-                                                <PhoneIcon className="h-4 w-4 text-primary shrink-0" />
+                                                <Phone className="h-4 w-4 text-primary shrink-0" />
                                                 {customer.phone}
                                             </p>
                                         </div>
