@@ -39,6 +39,7 @@ import { DataTablePagination } from '@/components/shared/data-table-pagination';
 /**
  * @fileOverview Industrial Plant & Equipment Registry.
  * Polymorphic companion to the Vehicle Registry.
+ * Hardened redirection protocol to avoid "update while rendering" errors.
  */
 export default function PlantsPage() {
     const isMobile = useMediaQuery("(max-width: 768px)");
@@ -50,6 +51,14 @@ export default function PlantsPage() {
         ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Senior Mechanic / Lead Mechanic', 'Inventory Officer'].includes(role || '')
     , [role]);
 
+    // Redirection Protocol: Moved to useEffect to comply with React rendering lifecycle
+    useEffect(() => {
+        if (!authLoading && !isAuthorized) {
+            router.push('/dashboard');
+        }
+    }, [authLoading, isAuthorized, router]);
+
+    // Real-time Technical Streams
     const plantsQuery = useMemoFirebase(() => {
         if (!db || !isAuthorized) return null;
         return query(collection(db, 'plantsAndEquipment'), orderBy('createdAt', 'desc'));
@@ -104,12 +113,9 @@ export default function PlantsPage() {
         return filteredPlants.slice(start, start + pageSize);
     }, [filteredPlants, currentPage, pageSize]);
 
-    if (!isAuthorized && !authLoading) {
-        router.push('/dashboard');
-        return null;
-    }
-
-    if (isLoading || authLoading) return <LoadingState />;
+    // Handle early returns for authentication and loading states
+    if (authLoading || (!isAuthorized && !authLoading)) return <LoadingState />;
+    if (isLoading) return <LoadingState />;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
