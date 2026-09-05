@@ -22,7 +22,9 @@ import {
     Wrench,
     Plus,
     Pencil,
-    Loader2
+    Loader2,
+    Hammer,
+    Binary
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +39,7 @@ import { doc, collection, query, where, orderBy, DocumentReference, Query } from
 import { LoadingState } from '@/components/shared/loading-state';
 import { Customer } from '@/types/customer';
 import { Vehicle } from '@/types/vehicle';
+import { PlantEquipment } from '@/types/plant-equipment';
 import { JobCard } from '@/types/job-card';
 import { Invoice } from '@/types/invoice';
 import { StaffMember } from '@/types/staff';
@@ -52,7 +55,7 @@ import { updateStaffRecord } from '@/services/users-service';
 
 /**
  * @fileOverview High-fidelity "Account Dossier" view for a customer.
- * Synchronized with the 'users' collection for profile imagery to ensure system-wide consistency.
+ * Synchronized with the polymorphic workshop core to display both Vehicles and Plant & Equipment.
  */
 const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => {
     const router = useRouter();
@@ -62,20 +65,20 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
     const fileInputRef = useRef<HTMLInputElement>(null);
     
     // 1. Primary Record Fetch (Stabilized)
-    // Customer collection stores CRM metadata (address, status)
     const customerRef = useMemoFirebase(() => doc(db, 'customers', params.customerId) as DocumentReference<Customer>, [db, params.customerId]);
     const { data: customer, loading: customerLoading } = useDoc<Customer>(customerRef as any);
 
-    // Identity Record Fetch (Source of Truth for photoUrl)
     const userProfileRef = useMemoFirebase(() => doc(db, 'users', params.customerId) as DocumentReference<StaffMember>, [db, params.customerId]);
     const { data: userProfile, loading: profileLoading } = useDoc<StaffMember>(userProfileRef as any);
 
-    // 2. Linked Registries Fetch (Stabilized)
+    // 2. Linked Polymorphic Registries
     const vehiclesQuery = useMemoFirebase(() => query(collection(db, 'vehicles'), where('customerId', '==', params.customerId)) as Query<Vehicle>, [db, params.customerId]);
+    const plantsQuery = useMemoFirebase(() => query(collection(db, 'plantsAndEquipment'), where('ownerId', '==', params.customerId)) as Query<PlantEquipment>, [db, params.customerId]);
     const jobsQuery = useMemoFirebase(() => query(collection(db, 'jobCards'), where('customerId', '==', params.customerId), orderBy('createdAt', 'desc')) as Query<JobCard>, [db, params.customerId]);
     const invoicesQuery = useMemoFirebase(() => query(collection(db, 'invoices'), where('customerId', '==', params.customerId), orderBy('issuedAt', 'desc')) as Query<Invoice>, [db, params.customerId]);
 
     const { data: clientVehicles, loading: vehLoading } = useCollection<Vehicle>(vehiclesQuery as any);
+    const { data: clientPlants, loading: plantLoading } = useCollection<PlantEquipment>(plantsQuery as any);
     const { data: clientJobs, loading: jobLoading } = useCollection<JobCard>(jobsQuery as any);
     const { data: clientInvoices, loading: invLoading } = useCollection<Invoice>(invoicesQuery as any);
 
@@ -83,9 +86,9 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
     const [isCommSubmitting, setIsCommSubmitting] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
 
-    const isLoading = customerLoading || profileLoading || vehLoading || jobLoading || invLoading;
+    const isLoading = customerLoading || profileLoading || vehLoading || plantLoading || jobLoading || invLoading;
 
-    const totalSpent = React.useMemo(() => {
+    const totalSpent = useMemo(() => {
         return clientInvoices?.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0) || 0;
     }, [clientInvoices]);
 
@@ -114,13 +117,9 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
 
         setIsUploading(true);
         try {
-            // Upload to storage using customer ID (matches user ID)
             const downloadUrl = await uploadStaffPhoto(customer.customerId, file);
-            
-            // ATOMIC SYNC: Source of truth for photos is always the 'users' collection
             await updateStaffRecord(customer.customerId, { photoUrl: downloadUrl }, currentUser.userId);
-            
-            toast({ title: "Profile Synchronized", description: "Identification imagery has been updated in the master registry." });
+            toast({ title: "Profile Synchronized", description: "Identification imagery updated in the master registry." });
         } catch (error: any) {
             toast({ 
                 variant: "destructive", 
@@ -144,7 +143,7 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
             <div className="p-20 text-center border-2 border-dashed rounded-3xl opacity-40">
                 <User className="h-12 w-12 mx-auto mb-4" />
                 <p className="text-sm font-medium italic">Account profile not located in technical registry.</p>
-                <Button variant="link" onClick={() => router.back()} className="mt-4">Return to Registry</Button>
+                <Button variant="link" onClick={() => router.push('/customers')} className="mt-4">Return to Registry</Button>
             </div>
         );
     }
@@ -172,7 +171,7 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                     disabled={isUploading}
                                     className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
                                 >
-                                    {isUploading ? <Loader2 className="h-8 w-8 text-white animate-spin" /> : <Pencil className="h-8 w-8 text-white" />}
+                                    {isUploading ? <Loader2 className="h-8 w-8 text-white animate-spin" /> : <Pencil className="h-6 w-6 text-white" />}
                                 </button>
                             )}
                             <input 
@@ -225,12 +224,11 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
             </div>
 
             <div className="px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
-                {/* Main Content Column */}
                 <div className="lg:col-span-8 space-y-10">
                     <Tabs defaultValue="overview" className="w-full">
                         <div className="bg-card border border-border/50 rounded-2xl p-1.5 mb-8 shadow-sm overflow-x-auto custom-scrollbar">
                             <TabsList className="bg-transparent h-auto gap-1 p-0 flex justify-start w-full min-w-max">
-                                <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Overview</TabsTrigger>
+                                <TabsTrigger value="overview" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Technical Overview</TabsTrigger>
                                 <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Service History</TabsTrigger>
                                 <TabsTrigger value="communications" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Interaction History</TabsTrigger>
                             </TabsList>
@@ -245,7 +243,7 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                         </div>
                                         <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Personnel Registry Dossier</h3>
                                     </div>
-                                    <Button variant="ghost" size="sm" onClick={() => router.back()} className="text-[10px] font-black uppercase tracking-widest gap-2 w-fit">
+                                    <Button variant="ghost" size="sm" onClick={() => router.push('/customers')} className="text-[10px] font-black uppercase tracking-widest gap-2 w-fit">
                                         <ArrowLeft className="h-3 w-3" /> Back to registry
                                     </Button>
                                 </div>
@@ -255,14 +253,14 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Electronic Mail</label>
                                             <p className="text-sm font-bold flex items-center gap-2 break-all">
-                                                <Mail className="h-4 w-4 text-primary shrink-0" />
+                                                <MailIcon className="h-4 w-4 text-primary shrink-0" />
                                                 {customer.email || 'NO_DIGITAL_ADDRESS'}
                                             </p>
                                         </div>
                                         <div className="space-y-1">
                                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Contact Authority</label>
                                             <p className="text-sm font-bold flex items-center gap-2">
-                                                <Phone className="h-4 w-4 text-primary shrink-0" />
+                                                <PhoneIcon className="h-4 w-4 text-primary shrink-0" />
                                                 {customer.phone}
                                             </p>
                                         </div>
@@ -286,42 +284,67 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                 </div>
                             </div>
 
-                            {/* Asset Register (Vehicles) */}
+                            {/* Polymorphic Asset Register */}
                             <div className="space-y-6">
                                 <div className="flex items-center gap-3 text-muted-foreground px-2">
                                     <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
-                                        <Car className="h-4 w-4" />
+                                        <Layers className="h-4 w-4" />
                                     </div>
                                     <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Registered Technical Assets</h3>
                                 </div>
                                 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {clientVehicles && clientVehicles.length > 0 ? (
-                                        clientVehicles.map(vehicle => (
-                                            <div 
-                                                key={vehicle.vehicleId}
-                                                onClick={() => router.push(`/vehicles/${vehicle.vehicleId}`)}
-                                                className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all cursor-pointer flex items-center justify-between shadow-sm"
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
-                                                        <Car className="h-5 w-5" />
-                                                    </div>
-                                                    <div className="min-w-0">
-                                                        <p className="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate">
-                                                            {vehicle.make} {vehicle.model}
-                                                        </p>
-                                                        <Badge variant="outline" className="text-[9px] font-mono font-black mt-1 py-0 border-primary/20 text-primary bg-primary/5">
-                                                            {vehicle.numberPlate}
-                                                        </Badge>
-                                                    </div>
+                                    {/* Render Vehicles */}
+                                    {clientVehicles?.map(vehicle => (
+                                        <div 
+                                            key={vehicle.vehicleId}
+                                            onClick={() => router.push(`/vehicles/${vehicle.vehicleId}`)}
+                                            className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all cursor-pointer flex items-center justify-between shadow-sm"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                    <Car className="h-5 w-5" />
                                                 </div>
-                                                <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-all shrink-0" />
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate">
+                                                        {vehicle.make} {vehicle.model}
+                                                    </p>
+                                                    <Badge variant="outline" className="text-[9px] font-mono font-black mt-1 py-0 border-primary/20 text-primary bg-primary/5">
+                                                        {vehicle.numberPlate}
+                                                    </Badge>
+                                                </div>
                                             </div>
-                                        ))
-                                    ) : (
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-all shrink-0" />
+                                        </div>
+                                    ))}
+
+                                    {/* Render Plant & Equipment */}
+                                    {clientPlants?.map(plant => (
+                                        <div 
+                                            key={plant.id}
+                                            onClick={() => router.push(`/plants-equipment/${plant.id}`)}
+                                            className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all cursor-pointer flex items-center justify-between shadow-sm"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                                    <Hammer className="h-5 w-5" />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate">
+                                                        {plant.name}
+                                                    </p>
+                                                    <Badge variant="outline" className="text-[9px] font-mono font-black mt-1 py-0 border-primary/20 text-primary bg-primary/5">
+                                                        {plant.assetId}
+                                                    </Badge>
+                                                </div>
+                                            </div>
+                                            <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-all shrink-0" />
+                                        </div>
+                                    ))}
+
+                                    {(!clientVehicles || clientVehicles.length === 0) && (!clientPlants || clientPlants.length === 0) && (
                                         <div className="col-span-full py-12 text-center border-2 border-dashed rounded-3xl opacity-40">
-                                            <p className="text-sm font-medium italic">No vehicles registered to this account.</p>
+                                            <p className="text-sm font-medium italic">No technical assets registered to this account.</p>
                                         </div>
                                     )}
                                 </div>
@@ -329,7 +352,6 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                         </TabsContent>
 
                         <TabsContent value="history" className="space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
-                            {/* Historical Traces (Job Cards) */}
                             <div className="space-y-6">
                                 <div className="flex items-center gap-3 text-muted-foreground px-2">
                                     <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
@@ -391,8 +413,8 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                         <CardContent className="p-8 space-y-8">
                             <div className="grid grid-cols-2 gap-4 text-center sm:text-left">
                                 <div className="space-y-1">
-                                    <p className="text-3xl sm:text-4xl font-black tracking-tighter text-primary">{clientVehicles?.length || 0}</p>
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">Fleet Units</p>
+                                    <p className="text-3xl sm:text-4xl font-black tracking-tighter text-primary">{(clientVehicles?.length || 0) + (clientPlants?.length || 0)}</p>
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em]">Total Fleet Units</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-3xl sm:text-4xl font-black tracking-tighter text-indigo-500">{clientJobs?.length || 0}</p>
