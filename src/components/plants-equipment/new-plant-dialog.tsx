@@ -24,6 +24,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@/types/customer';
 import { SearchableSelect } from '@/components/shared/searchable-select';
+import { Separator } from '@/components/ui/separator';
 
 const plantSchema = z.object({
   ownerId: z.string().min(1, "Owner is required"),
@@ -164,7 +165,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                                 <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl><SelectTrigger className="h-11 bg-muted/20 border-none rounded-xl font-bold"><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
-                                        {['Excavator', 'Bulldozer', 'Grader', 'Loader', 'Forklift', 'Generator', 'Workshop Machine', 'Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                        {['Excavator', 'Bulldozer', 'Grader', 'Loader', 'Forklift', 'Crane', 'Tractor', 'Generator', 'Compressor', 'Welding Equipment', 'Hydraulic Equipment', 'Pump', 'Workshop Machine', 'Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </FormItem>
@@ -239,7 +240,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                         name="meterType"
                         render={({ field }) => (
                             <FormItem className="space-y-2">
-                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Telemetry Protocol</FormLabel>
+                                <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Telemetry Protocol</Label>
                                 <Select onValueChange={field.onChange} value={field.value}>
                                     <FormControl><SelectTrigger className="h-11 bg-muted/20 border-none rounded-xl font-bold"><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
@@ -317,4 +318,24 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
       </DialogContent>
     </Dialog>
   );
+}
+
+function ShieldCheck(props: any) {
+    return (
+        <svg
+            {...props}
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+            <path d="m9 12 2 2 4-4" />
+        </svg>
+    )
 }
