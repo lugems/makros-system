@@ -16,6 +16,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Hammer, User, Tag, Hash, Calendar, Loader2, Gauge, Fuel, Binary, MapPin } from 'lucide-react';
@@ -58,7 +59,6 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [enrollmentResult, setEnrollmentResult] = useState<any>(null);
 
   const form = useForm<PlantFormData>({
     resolver: zodResolver(plantSchema),
@@ -169,6 +169,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                                         {['Excavator', 'Bulldozer', 'Grader', 'Loader', 'Forklift', 'Crane', 'Tractor', 'Generator', 'Compressor', 'Welding Equipment', 'Hydraulic Equipment', 'Pump', 'Workshop Machine', 'Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -182,6 +183,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                             <FormItem className="space-y-2">
                                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Make</FormLabel>
                                 <FormControl><Input {...field} className="h-11 bg-muted/20 border-none rounded-xl font-bold" /></FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -192,6 +194,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                             <FormItem className="space-y-2">
                                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Model</FormLabel>
                                 <FormControl><Input {...field} className="h-11 bg-muted/20 border-none rounded-xl font-bold" /></FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -202,6 +205,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                             <FormItem className="space-y-2">
                                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Year</FormLabel>
                                 <FormControl><Input type="number" {...field} className="h-11 bg-muted/20 border-none rounded-xl font-bold" /></FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -217,6 +221,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                                     <Hash className="h-3 w-3" /> Asset / Fleet ID
                                 </FormLabel>
                                 <FormControl><Input placeholder="Internal Ref..." {...field} className="h-11 bg-background border-none rounded-xl font-black uppercase tracking-tighter" /></FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -229,6 +234,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                                     <Binary className="h-3 w-3" /> Serial Number
                                 </FormLabel>
                                 <FormControl><Input placeholder="VIN equivalent..." {...field} className="h-11 bg-background border-none rounded-xl font-black uppercase" /></FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -248,6 +254,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                                         {['Hour Meter', 'Odometer - KM', 'Odometer - Miles', 'Cycle Counter', 'None'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -260,6 +267,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                                     <Gauge className="h-3 w-3 text-primary" /> Current Reading
                                 </FormLabel>
                                 <FormControl><Input type="number" step="any" {...field} className="h-11 bg-muted/20 border-none rounded-xl font-black text-primary" /></FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -276,6 +284,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                                     <Fuel className="h-3 w-3 text-primary" /> Power Configuration
                                 </FormLabel>
                                 <FormControl><Input placeholder="e.g. Diesel, Electric" {...field} className="h-11 bg-muted/20 border-none rounded-xl font-bold" /></FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -288,13 +297,14 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                                     <MapPin className="h-3 w-3 text-primary" /> Primary Location
                                 </FormLabel>
                                 <FormControl><Input placeholder="Project site or branch..." {...field} className="h-11 bg-muted/20 border-none rounded-xl font-bold" /></FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
                 </div>
 
                 <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Technical Remarks</Label>
+                    <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Technical Remarks</Label>
                     <Textarea 
                         placeholder="Enrollment notes, damaged components, or specific service requirements..." 
                         {...form.register('notes')}
@@ -310,8 +320,12 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                     disabled={isSubmitting}
                     className="w-full h-14 font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.01]"
                 >
-                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : <ShieldCheck className="h-5 w-5 mr-3" />}
-                    Complete Technical Enrollment
+                    {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin mr-3" /> : (
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="h-5 w-5" />
+                        <span>Complete Technical Enrollment</span>
+                      </div>
+                    )}
                 </Button>
             </DialogFooter>
           </form>
@@ -321,10 +335,10 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
   );
 }
 
-function ShieldCheck(props: any) {
+function ShieldCheck({ className }: { className?: string }) {
     return (
         <svg
-            {...props}
+            className={className}
             xmlns="http://www.w3.org/2000/svg"
             width="24"
             height="24"
