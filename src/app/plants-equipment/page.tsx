@@ -43,14 +43,18 @@ import { DataTablePagination } from '@/components/shared/data-table-pagination';
 export default function PlantsPage() {
     const isMobile = useMediaQuery("(max-width: 768px)");
     const router = useRouter();
-    const { user: currentUser, role } = useAuth();
+    const { user: currentUser, role, isLoading: authLoading } = useAuth();
     const db = useFirestore();
 
     const isAuthorized = useMemo(() => 
         ['Makros System Owner', 'Workshop Manager', 'Receptionist', 'Senior Mechanic / Lead Mechanic', 'Inventory Officer'].includes(role || '')
     , [role]);
 
-    const plantsQuery = useMemoFirebase(() => query(collection(db, 'plantsAndEquipment'), orderBy('createdAt', 'desc')), [db]);
+    const plantsQuery = useMemoFirebase(() => {
+        if (!db || !isAuthorized) return null;
+        return query(collection(db, 'plantsAndEquipment'), orderBy('createdAt', 'desc'));
+    }, [db, isAuthorized]);
+    
     const customersQuery = useMemoFirebase(() => query(collection(db, 'customers')), [db]);
     const jobsQuery = useMemoFirebase(() => query(collection(db, 'jobCards')), [db]);
 
@@ -88,7 +92,7 @@ export default function PlantsPage() {
                 p.model.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 p.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 p.serialNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                customer?.fullName.toLowerCase().includes(searchTerm.toLowerCase());
+                (customer?.fullName || '').toLowerCase().includes(searchTerm.toLowerCase());
             
             const matchesStatus = statusFilter === 'All' || p.status === statusFilter;
             return matchesSearch && matchesStatus;
@@ -105,7 +109,7 @@ export default function PlantsPage() {
         return null;
     }
 
-    if (isLoading) return <LoadingState />;
+    if (isLoading || authLoading) return <LoadingState />;
 
     return (
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
