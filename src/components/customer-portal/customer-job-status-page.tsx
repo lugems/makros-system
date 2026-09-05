@@ -2,8 +2,8 @@
 
 import React, { useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useDoc } from '@/firebase';
+import { collection, query, where, orderBy, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -23,15 +23,18 @@ import {
     Hash,
     History,
     ChevronRight,
-    Search
+    Search,
+    Car,
+    Hammer,
+    Gauge
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { JobCardPhotoUpload } from '@/components/job-cards/job-card-photo-upload';
+import { getMeterUnit } from '@/services/asset-resolver-service';
 
 /**
  * @fileOverview Technical tracking interface for customers.
- * Displays own repair dossiers, real-time status transitions, and forensic evidence.
- * Stabilized with useMemoFirebase for loop-resistant sync.
+ * Displays own repair dossiers, real-time status transitions, and polymorphic asset telemetry.
  */
 export default function CustomerJobStatusPage() {
     const { user } = useAuth();
@@ -112,70 +115,7 @@ export default function CustomerJobStatusPage() {
                     {/* Main: Details */}
                     <main className="lg:col-span-8 space-y-8">
                         {activeJob ? (
-                            <>
-                                <Card className="rounded-[2.5rem] overflow-hidden border-border/50 bg-slate-900 text-white shadow-2xl relative animate-in slide-in-from-right-4 duration-500">
-                                    <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
-                                        <Activity className="h-64 w-64" />
-                                    </div>
-                                    <CardHeader className="p-10 pb-6 relative z-10">
-                                        <div className="flex items-center gap-3 text-primary mb-4">
-                                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
-                                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Live System Sync</span>
-                                        </div>
-                                        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-                                            <div className="space-y-2">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Operation Status</p>
-                                                <h2 className="text-5xl font-black tracking-tighter uppercase font-headline text-primary">{activeJob.status}</h2>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">Entry Timestamp</p>
-                                                <p className="text-lg font-black text-white"><FormattedDate date={activeJob.createdAt} formatString="dd MMM yyyy" /></p>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="p-10 pt-0 relative z-10">
-                                        <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
-                                            <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-2">Diagnosis Log</p>
-                                            <p className="text-sm font-medium leading-relaxed italic text-white/80">&quot;{activeJob.reportedIssue}&quot;</p>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-
-                                {/* Technical Documentation */}
-                                <section className="space-y-6">
-                                    <div className="flex items-center gap-3 text-muted-foreground px-2">
-                                        <Camera className="h-4 w-4" />
-                                        <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Forensic Evidence</h3>
-                                    </div>
-                                    <div className="bg-card border border-border/50 rounded-[2.5rem] p-8 shadow-sm">
-                                        <JobCardPhotoUpload jobCardId={activeJob.jobCardId} />
-                                    </div>
-                                </section>
-
-                                {/* Roadmap */}
-                                <section className="space-y-6">
-                                    <div className="flex items-center gap-3 text-muted-foreground px-2">
-                                        <Wrench className="h-4 w-4" />
-                                        <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Technical Roadmap</h3>
-                                    </div>
-                                    <div className="grid gap-3">
-                                        {activeJob.tasks?.map((task: any, idx: number) => (
-                                            <div key={idx} className="bg-card p-5 rounded-2xl border border-border/50 flex items-center justify-between group hover:border-primary/40 transition-all">
-                                                <div className="flex items-center gap-5">
-                                                    <div className={cn(
-                                                        "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
-                                                        task.status === 'Completed' ? "bg-green-500/10 text-green-600 border border-green-200" : "bg-muted border border-border/50 text-muted-foreground"
-                                                    )}>
-                                                        {task.status === 'Completed' ? <CheckCircle2 className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
-                                                    </div>
-                                                    <p className="text-xs font-black uppercase tracking-tight">{task.taskDescription}</p>
-                                                </div>
-                                                <Badge variant="outline" className="text-[8px] font-black uppercase">{task.status}</Badge>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </section>
-                            </>
+                            <JobDetailTerminal job={activeJob} />
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center p-20 border-2 border-dashed rounded-[3rem] opacity-30">
                                 <Search className="h-12 w-12 mb-4" />
@@ -195,6 +135,111 @@ export default function CustomerJobStatusPage() {
                     </p>
                 </div>
             )}
+        </div>
+    );
+}
+
+function JobDetailTerminal({ job }: { job: any }) {
+    const db = useFirestore();
+    
+    // Resolve Asset based on Polymorphic Type
+    const assetType = job.assetType || 'Vehicle';
+    const assetId = job.assetId || job.vehicleId;
+    const col = assetType === 'Vehicle' ? 'vehicles' : 'plantsAndEquipment';
+    
+    const assetRef = useMemoFirebase(() => doc(db, col, assetId), [db, col, assetId]);
+    const { data: asset, loading } = useDoc<any>(assetRef as any);
+
+    if (loading) return <LoadingState />;
+
+    const unitLabel = assetType === 'Vehicle' ? 'Odometer' : 'Usage Meter';
+    const meterValue = assetType === 'Vehicle' ? asset?.mileage : asset?.meterReading;
+    const unit = assetType === 'Vehicle' ? 'KM' : getMeterUnit(asset?.meterType);
+
+    return (
+        <div className="space-y-8 animate-in slide-in-from-right-4 duration-500">
+            <Card className="rounded-[2.5rem] overflow-hidden border-border/50 bg-slate-900 text-white shadow-2xl relative">
+                <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
+                    <Activity className="h-64 w-64" />
+                </div>
+                <CardHeader className="p-10 pb-6 relative z-10">
+                    <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3 text-primary">
+                            <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.4em]">Live System Sync</span>
+                        </div>
+                        <Badge variant="outline" className="text-[9px] font-mono border-white/20 text-white/60">
+                            UNIT: {asset?.numberPlate || asset?.assetId || 'RECOVERY_PENDING'}
+                        </Badge>
+                    </div>
+                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+                        <div className="space-y-2">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Operation Status</p>
+                            <h2 className="text-5xl font-black tracking-tighter uppercase font-headline text-primary">{job.status}</h2>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-[10px] font-black uppercase tracking-widest text-white/40 mb-1">{unitLabel}</p>
+                            <div className="flex items-center justify-end gap-2 text-white">
+                                <Gauge className="h-4 w-4 text-primary opacity-60" />
+                                <p className="text-xl font-black tabular-nums">{meterValue?.toLocaleString() || 0} <span className="text-xs">{unit}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="p-10 pt-0 relative z-10">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-6 backdrop-blur-sm">
+                        <div className="flex items-center gap-2 text-primary mb-2">
+                            {assetType === 'Vehicle' ? <Car className="h-3 w-3" /> : <Hammer className="h-3 w-3" />}
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em]">{assetType} Identification</p>
+                        </div>
+                        <p className="text-lg font-black uppercase tracking-tight mb-3">
+                            {assetType === 'Vehicle' ? `${asset?.make} ${asset?.model}` : asset?.name}
+                        </p>
+                        <Separator className="bg-white/10 mb-3" />
+                        <p className="text-sm font-medium leading-relaxed italic text-white/80">&quot;{job.reportedIssue}&quot;</p>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Technical Documentation */}
+            <section className="space-y-6">
+                <div className="flex items-center gap-3 text-muted-foreground px-2">
+                    <Camera className="h-4 w-4" />
+                    <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Forensic Evidence Registry</h3>
+                </div>
+                <div className="bg-card border border-border/50 rounded-[2.5rem] p-8 shadow-sm">
+                    <JobCardPhotoUpload jobCardId={job.jobCardId} />
+                </div>
+            </section>
+
+            {/* Roadmap */}
+            <section className="space-y-6">
+                <div className="flex items-center gap-3 text-muted-foreground px-2">
+                    <Wrench className="h-4 w-4" />
+                    <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Technical Roadmap</h3>
+                </div>
+                <div className="grid gap-3">
+                    {job.tasks?.map((task: any, idx: number) => (
+                        <div key={idx} className="bg-card p-5 rounded-2xl border border-border/50 flex items-center justify-between group hover:border-primary/40 transition-all">
+                            <div className="flex items-center gap-5">
+                                <div className={cn(
+                                    "h-10 w-10 rounded-xl flex items-center justify-center transition-all",
+                                    task.status === 'Completed' ? "bg-green-500/10 text-green-600 border border-green-200" : "bg-muted border border-border/50 text-muted-foreground"
+                                )}>
+                                    {task.status === 'Completed' ? <CheckCircle2 className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                                </div>
+                                <p className="text-xs font-black uppercase tracking-tight">{task.taskDescription}</p>
+                            </div>
+                            <Badge variant="outline" className="text-[8px] font-black uppercase">{task.status}</Badge>
+                        </div>
+                    ))}
+                    {(!job.tasks || job.tasks.length === 0) && (
+                        <div className="py-12 text-center bg-muted/5 border-2 border-dashed rounded-3xl opacity-30">
+                            <p className="text-xs font-medium italic">No task traces registered in roadmap.</p>
+                        </div>
+                    )}
+                </div>
+            </section>
         </div>
     );
 }

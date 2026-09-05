@@ -3,24 +3,46 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Booking } from '@/types/booking';
-import useMakrosStore from '@/store/makros-store';
+import { Customer } from '@/types/customer';
+import { Vehicle } from '@/types/vehicle';
+import { PlantEquipment } from '@/types/plant-equipment';
+import { MakrosService } from '@/types/makros-service';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { BookingStatusBadge } from './booking-status-badge';
-import { Calendar, Clock, User, ArrowRight, Wrench, Car, Fingerprint } from 'lucide-react';
+import { Calendar, Clock, User, ArrowRight, Wrench, Car, Fingerprint, Hammer } from 'lucide-react';
 import { FormattedDate } from '@/components/shared/formatted-date';
 import { Button } from '@/components/ui/button';
-import { MakrosService } from '@/types/makros-service';
+import { LoadingState } from '@/components/shared/loading-state';
 
 interface BookingCardProps {
   booking: Booking;
   onSelect: (booking: Booking) => void;
 }
 
+/**
+ * @fileOverview High-density Intake Card with real-time polymorphic asset resolution.
+ */
 export function BookingCard({ booking, onSelect }: BookingCardProps) {
-  const { customers, vehicles, services } = useMakrosStore();
+  const db = useFirestore();
+
+  // Real-time Technical Lookups
+  const custRef = useMemoFirebase(() => doc(db, 'customers', booking.customerId), [db, booking.customerId]);
+  const srvRef = useMemoFirebase(() => doc(db, 'services', booking.serviceId), [db, booking.serviceId]);
   
-  const customer = customers.find(c => (c.customerId === booking.customerId || (c as any).id === booking.customerId));
-  const vehicle = vehicles.find(v => (v.vehicleId === booking.vehicleId || (v as any).id === booking.vehicleId));
-  const service = services.find(s => (s.serviceId === booking.serviceId || (s as any).id === booking.serviceId));
+  const assetType = booking.assetType || 'Vehicle';
+  const assetId = booking.assetId || booking.vehicleId;
+  const col = assetType === 'Vehicle' ? 'vehicles' : 'plantsAndEquipment';
+  const assetRef = useMemoFirebase(() => assetId ? doc(db, col, assetId) : null, [db, col, assetId]);
+
+  const { data: customer } = useDoc<Customer>(custRef as any);
+  const { data: asset } = useDoc<any>(assetRef as any);
+  const { data: service } = useDoc<MakrosService>(srvRef as any);
+
+  // Asset Display Logic
+  const isVehicle = assetType === 'Vehicle';
+  const name = isVehicle ? `${asset?.make || ''} ${asset?.model || ''}` : (asset?.name || 'Unit Trace...');
+  const refLabel = isVehicle ? asset?.numberPlate : asset?.assetId;
 
   return (
     <Card 
@@ -49,11 +71,13 @@ export function BookingCard({ booking, onSelect }: BookingCardProps) {
       <CardContent className="space-y-4 px-5 flex-1">
         <div className="bg-muted/30 p-3 rounded-2xl border border-dashed border-border/50">
             <div className="flex items-center gap-2 mb-2">
-                <Car className="h-3.5 w-3.5 text-primary/50" />
-                <span className="text-[11px] font-black uppercase tracking-tight text-foreground/80">{vehicle?.make} {vehicle?.model || 'Generic Unit'}</span>
+                {isVehicle ? <Car className="h-3.5 w-3.5 text-primary/50" /> : <Hammer className="h-3.5 w-3.5 text-primary/50" />}
+                <span className="text-[11px] font-black uppercase tracking-tight text-foreground/80 truncate">
+                    {name}
+                </span>
             </div>
             <p className="text-[9px] font-mono font-black text-primary bg-primary/5 w-fit px-2 py-0.5 rounded border border-primary/10 uppercase">
-                {vehicle?.numberPlate || 'NO_PLATE'}
+                {refLabel || 'NO_REF'}
             </p>
         </div>
 
@@ -84,7 +108,6 @@ export function BookingCard({ booking, onSelect }: BookingCardProps) {
         </Button>
       </CardFooter>
       
-      {/* Interactive left bar */}
       <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary/20 scale-y-0 group-hover:scale-y-100 transition-transform origin-top duration-300" />
     </Card>
   );

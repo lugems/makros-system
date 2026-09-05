@@ -1,10 +1,9 @@
-
 'use client';
 
 import React, { useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, Query } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { JobCard } from '@/types/job-card';
 import { Customer } from '@/types/customer';
 import { Vehicle } from '@/types/vehicle';
@@ -35,13 +34,13 @@ interface JobCardsTableProps {
 
 /**
  * @fileOverview Technical registry table for workshop operations.
- * Implements strict polymorphic resolution to distinguish between Vehicles and Plant.
+ * Hardened polymorphic resolution with "Unified Discovery" fallback for legacy records.
  */
 export function JobCardsTable({ jobCards, canManage, onDelete }: JobCardsTableProps) {
   const db = useFirestore();
   const router = useRouter();
 
-  // Resolve Names Context (Stable Queries)
+  // Real-time Technical Context (Stabilized)
   const customersQuery = useMemoFirebase(() => query(collection(db, 'customers')), [db]);
   const vehiclesQuery = useMemoFirebase(() => query(collection(db, 'vehicles')), [db]);
   const plantsQuery = useMemoFirebase(() => query(collection(db, 'plantsAndEquipment')), [db]);
@@ -55,7 +54,7 @@ export function JobCardsTable({ jobCards, canManage, onDelete }: JobCardsTablePr
   return (
     <Table>
       <TableHeader>
-        <TableRow className="bg-muted/50 uppercase text-[10px] font-black tracking-[0.2em] text-muted-foreground">
+        <TableRow className="bg-muted/50 uppercase text-[10px] font-black tracking-[0.2em] text-muted-foreground border-none">
           <TableHead className="px-6 py-4">Job Identity & Lead</TableHead>
           <TableHead className="px-6 py-4">Technical Asset</TableHead>
           <TableHead className="px-6 py-4">Client Dossier</TableHead>
@@ -66,22 +65,28 @@ export function JobCardsTable({ jobCards, canManage, onDelete }: JobCardsTablePr
       </TableHeader>
       <TableBody>
         {jobCards.map((job) => {
-          const customer = customers?.find(c => c.customerId === job.customerId);
+          const customer = customers?.find(c => (c.customerId === job.customerId || (c as any).id === job.customerId));
           const mechanic = users?.find(u => u.userId === job.assignedMechanicId);
           
-          // POLYMORPHIC RESOLUTION: Priority based on stored assetType
-          const assetType = job.assetType || 'Vehicle';
+          // POLYMORPHIC RESOLUTION: Priority based on stored assetType with Discovery Fallback
+          let assetType = job.assetType;
           const assetId = job.assetId || job.vehicleId;
+
+          if (!assetType && assetId) {
+              const existsInVehicles = vehicles?.some(v => (v.vehicleId === assetId || (v as any).id === assetId));
+              assetType = existsInVehicles ? 'Vehicle' : 'Plant';
+          }
           
           let assetLabel = 'Registry Trace...';
           let assetSubLabel = 'NO_REF';
+          const isVehicle = assetType === 'Vehicle';
           
-          if (assetType === 'Vehicle') {
-              const v = vehicles?.find(v => v.vehicleId === assetId);
+          if (isVehicle) {
+              const v = vehicles?.find(v => (v.vehicleId === assetId || (v as any).id === assetId));
               assetLabel = v ? `${v.make} ${v.model}` : assetLabel;
               assetSubLabel = v?.numberPlate || assetSubLabel;
           } else {
-              const p = plants?.find(p => p.id === assetId);
+              const p = plants?.find(p => (p.id === assetId || (p as any).id === assetId));
               assetLabel = p ? p.name : assetLabel;
               assetSubLabel = p?.assetId || assetSubLabel;
           }
@@ -113,7 +118,7 @@ export function JobCardsTable({ jobCards, canManage, onDelete }: JobCardsTablePr
               <TableCell className="px-6 py-4">
                 <div className="space-y-1">
                   <div className="flex items-center gap-1.5">
-                    {assetType === 'Vehicle' ? <Car className="h-3.5 w-3.5 text-primary/50" /> : <Hammer className="h-3.5 w-3.5 text-primary/50" />}
+                    {isVehicle ? <Car className="h-3.5 w-3.5 text-primary/50" /> : <Hammer className="h-3.5 w-3.5 text-primary/50" />}
                     <span className="text-xs font-black uppercase tracking-tight">
                         {assetLabel}
                     </span>

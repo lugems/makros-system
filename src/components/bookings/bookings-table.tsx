@@ -1,10 +1,9 @@
-
 'use client';
 
 import React from 'react';
 import { Booking } from '@/types/booking';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, Query } from 'firebase/firestore';
+import { collection, query } from 'firebase/firestore';
 import { Customer } from '@/types/customer';
 import { Vehicle } from '@/types/vehicle';
 import { PlantEquipment } from '@/types/plant-equipment';
@@ -20,7 +19,7 @@ import {
     TableRow 
 } from '@/components/ui/table';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Calendar, Clock, Wrench, Car, Hash, ChevronRight, Hammer } from 'lucide-react';
+import { Calendar, Clock, Car, Hash, ChevronRight, Hammer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface BookingsTableProps {
@@ -31,8 +30,7 @@ interface BookingsTableProps {
 
 /**
  * @fileOverview Technical registry table for service intakes.
- * Synchronizes with real-time assets and client dossiers for forensic accuracy.
- * Handles polymorphic asset resolution (Vehicle vs Plant).
+ * Hardened polymorphic resolution ensuring legacy records fall back to discovery lookups.
  */
 export function BookingsTable({ bookings, onSelect, selectedId }: BookingsTableProps) {
   const db = useFirestore();
@@ -52,7 +50,7 @@ export function BookingsTable({ bookings, onSelect, selectedId }: BookingsTableP
     <div className="rounded-2xl border bg-card overflow-hidden shadow-sm">
       <Table>
         <TableHeader>
-          <TableRow className="bg-muted/50 uppercase text-[10px] font-black tracking-[0.2em] text-muted-foreground">
+          <TableRow className="bg-muted/50 uppercase text-[10px] font-black tracking-[0.2em] text-muted-foreground border-none">
             <TableHead className="px-6 py-4">Client Identity & Reference</TableHead>
             <TableHead className="px-6 py-4">Technical Asset</TableHead>
             <TableHead className="px-6 py-4 text-center">Schedule</TableHead>
@@ -64,14 +62,21 @@ export function BookingsTable({ bookings, onSelect, selectedId }: BookingsTableP
             const customer = customers?.find(c => (c.customerId === booking.customerId || (c as any).id === booking.customerId));
             const isActive = selectedId === booking.bookingId;
             
-            // POLYMORPHIC RESOLUTION
-            const assetType = booking.assetType || 'Vehicle';
+            // POLYMORPHIC RESOLUTION: Force type or use discovery fallback for legacy
+            let assetType = booking.assetType;
             const assetId = booking.assetId || booking.vehicleId;
+
+            if (!assetType && assetId) {
+                // Discovery Fallback: Check vehicle registry first
+                const existsInVehicles = vehicles?.some(v => (v.vehicleId === assetId || (v as any).id === assetId));
+                assetType = existsInVehicles ? 'Vehicle' : 'Plant';
+            }
             
-            let assetLabel = 'Unit Trace...';
+            let assetLabel = 'Registry Trace...';
             let assetRef = 'NO_REF';
+            const isVehicle = assetType === 'Vehicle';
             
-            if (assetType === 'Vehicle') {
+            if (isVehicle) {
                 const v = vehicles?.find(v => (v.vehicleId === assetId || (v as any).id === assetId));
                 assetLabel = v ? `${v.make} ${v.model}` : assetLabel;
                 assetRef = v?.numberPlate || assetRef;
@@ -113,7 +118,7 @@ export function BookingsTable({ bookings, onSelect, selectedId }: BookingsTableP
                 <TableCell className="px-6 py-4">
                   <div className="space-y-1">
                     <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-tight text-foreground/80">
-                        {assetType === 'Vehicle' ? <Car className="h-3.5 w-3.5 text-primary/50" /> : <Hammer className="h-3.5 w-3.5 text-primary/50" />}
+                        {isVehicle ? <Car className="h-3.5 w-3.5 text-primary/50" /> : <Hammer className="h-3.5 w-3.5 text-primary/50" />}
                         {assetLabel}
                     </div>
                     <p className="text-[10px] font-mono text-primary bg-primary/5 w-fit px-2 py-0.5 rounded font-black border border-primary/10 uppercase">
