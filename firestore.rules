@@ -25,6 +25,43 @@ service cloud.firestore {
       return isAuthenticated() && role != '' && role != 'Customer';
     }
 
+    function isInventoryManager() {
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && role in ['Makros System Owner', 'Workshop Manager', 'Inventory Officer', 'Accountant'];
+    }
+
+    function isReceptionist() {
+      return isAuthenticated() && getUserData().get('role', '') == 'Receptionist';
+    }
+
+    function isAccountant() {
+      return isAuthenticated() && getUserData().get('role', '') == 'Accountant';
+    }
+
+    function isInventoryOfficer() {
+      return isAuthenticated() && getUserData().get('role', '') == 'Inventory Officer';
+    }
+
+    function isQualityControl() {
+        return isAuthenticated() && getUserData().get('role', '') == 'Quality Control Officer';
+    }
+
+    function isTechnician() {
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && role in [
+        'Senior Mechanic / Lead Mechanic', 
+        'Mechanic', 
+        'Diagnostic Technician', 
+        'Auto-Wiring Technician', 
+        'Welding Lead Technician', 
+        'Welding Technician', 
+        'Auto Body / Panel Beater', 
+        'Painter', 
+        'Tyre & Wheel Technician', 
+        'Car Wash / Detailing Technician'
+      ];
+    }
+
     function isCustomer() {
       return isAuthenticated() && (getUserData().get('role', '') == 'Customer' || exists(/databases/$(database)/documents/customers/$(request.auth.uid)));
     }
@@ -51,7 +88,7 @@ service cloud.firestore {
 
     // --- PLANT & EQUIPMENT ---
     match /plantsAndEquipment/{assetId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+      allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
       allow write: if isStaff();
     }
 
@@ -88,7 +125,7 @@ service cloud.firestore {
     match /inventory/{itemId} {
       allow read: if isStaff();
       allow update: if isStaff(); 
-      allow create, delete: if isManager() || getUserData().get('role', '') == 'Inventory Officer';
+      allow create, delete: if isInventoryManager();
     }
     
     match /stockMovements/{movementId} {
@@ -97,10 +134,21 @@ service cloud.firestore {
       allow update, delete: if false; 
     }
 
+    match /suppliers/{supplierId} {
+      allow read: if isInventoryManager();
+      allow write: if isInventoryManager();
+    }
+
     // --- INVOICES & PAYMENTS ---
     match /invoices/{invoiceId} {
       allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
       allow write: if isStaff() && getUserData().get('role', '') != 'Mechanic';
+
+      match /payments/{paymentId} {
+        allow read: if isStaff() || (isAuthenticated() && get(/databases/$(database)/documents/invoices/$(invoiceId)).data.customerId == request.auth.uid);
+        allow create: if isStaff() && getUserData().get('role', '') != 'Mechanic';
+        allow update, delete: if false;
+      }
     }
     
     match /payments/{paymentId} {
@@ -109,12 +157,30 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    // --- COMMUNICATION LOGS ---
+    // --- COMMUNICATION LOGS (Forensic Interactions) ---
     match /communicationLogs/{logId} {
-      allow read: if isStaff() || (isCustomer() && resource.data.customerId == request.auth.uid && resource.data.isCustomerVisible == true);
+      allow read: if isStaff() 
+        || (isCustomer() && resource.data.customerId == request.auth.uid && resource.data.isCustomerVisible == true);
+
       allow create: if isStaff() || isCustomer();
-      allow update: if isStaff();
+
+      allow update: if isManager()
+        || isReceptionist()
+        || isAccountant()
+        || isInventoryOfficer()
+        || (
+          isTechnician() &&
+          resource.data.jobCardId != null &&
+          get(/databases/$(database)/documents/jobCards/$(resource.data.jobCardId)).data.assignedMechanicId == request.auth.uid
+        );
+
       allow delete: if isOwner();
+    }
+
+    // --- SETTINGS ---
+    match /settings/{doc} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner();
     }
 
     // --- AUDIT LOGS ---
@@ -122,12 +188,6 @@ service cloud.firestore {
       allow read: if isStaff();
       allow create: if isAuthenticated();
       allow update, delete: if false;
-    }
-    
-    // --- SETTINGS ---
-    match /settings/{doc} {
-      allow read: if isAuthenticated();
-      allow write: if isOwner();
     }
   }
 }
