@@ -88,7 +88,7 @@ service cloud.firestore {
 
     // --- PLANT & EQUIPMENT ---
     match /plantsAndEquipment/{assetId} {
-      allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
+      allow read: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
       allow write: if isStaff();
     }
 

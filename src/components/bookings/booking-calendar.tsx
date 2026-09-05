@@ -15,6 +15,7 @@ import { FormattedDate } from '@/components/shared/formatted-date';
 import { BookingStatusBadge } from './booking-status-badge';
 import { Clock, Users, Car, ChevronRight, Hash, Sparkles, LayoutGrid, Hammer, CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
 
 interface BookingCalendarProps {
   bookings: Booking[];
@@ -27,12 +28,19 @@ interface BookingCalendarProps {
  */
 export function BookingCalendar({ bookings, onSelect }: BookingCalendarProps) {
   const db = useFirestore();
+  const { role } = useAuth();
+  const isStaff = role && role !== 'Customer';
   
   // Real-time Technical Context (Stabilized)
   const custQuery = useMemoFirebase(() => query(collection(db, 'customers')), [db]);
   const vehQuery = useMemoFirebase(() => query(collection(db, 'vehicles')), [db]);
-  const plantQuery = useMemoFirebase(() => query(collection(db, 'plantsAndEquipment')), [db]);
   const srvQuery = useMemoFirebase(() => query(collection(db, 'services')), [db]);
+
+  // Gated machinery query to prevent permission errors during auth sync
+  const plantQuery = useMemoFirebase(() => {
+    if (!db || !isStaff) return null;
+    return query(collection(db, 'plantsAndEquipment'));
+  }, [db, isStaff]);
 
   const { data: customers } = useCollection<Customer>(custQuery as any);
   const { data: vehicles } = useCollection<Vehicle>(vehQuery as any);

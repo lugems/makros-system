@@ -21,6 +21,7 @@ import {
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Calendar, Clock, Car, Hash, ChevronRight, Hammer } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
 
 interface BookingsTableProps {
   bookings: Booking[];
@@ -34,12 +35,19 @@ interface BookingsTableProps {
  */
 export function BookingsTable({ bookings, onSelect, selectedId }: BookingsTableProps) {
   const db = useFirestore();
+  const { role } = useAuth();
+  const isStaff = role && role !== 'Customer';
 
   // Live Technical Streams (Stabilized)
   const custQuery = useMemoFirebase(() => query(collection(db, 'customers')), [db]);
   const vehQuery = useMemoFirebase(() => query(collection(db, 'vehicles')), [db]);
-  const plantQuery = useMemoFirebase(() => query(collection(db, 'plantsAndEquipment')), [db]);
   const srvQuery = useMemoFirebase(() => query(collection(db, 'services')), [db]);
+
+  // Gated machinery query to prevent permission errors for non-staff
+  const plantQuery = useMemoFirebase(() => {
+    if (!db || !isStaff) return null;
+    return query(collection(db, 'plantsAndEquipment'));
+  }, [db, isStaff]);
 
   const { data: customers } = useCollection<Customer>(custQuery as any);
   const { data: vehicles } = useCollection<Vehicle>(vehQuery as any);

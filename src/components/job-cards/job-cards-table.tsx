@@ -23,8 +23,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Wrench, Car, User, Fingerprint, Clock, MoreHorizontal, Eye, Trash2, Hammer, ChevronRight } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/auth-context';
 
 interface JobCardsTableProps {
   jobCards: JobCard[];
@@ -39,12 +40,19 @@ interface JobCardsTableProps {
 export function JobCardsTable({ jobCards, canManage, onDelete }: JobCardsTableProps) {
   const db = useFirestore();
   const router = useRouter();
+  const { role } = useAuth();
+  const isStaff = role && role !== 'Customer';
 
   // Real-time Technical Context (Stabilized)
   const customersQuery = useMemoFirebase(() => query(collection(db, 'customers')), [db]);
   const vehiclesQuery = useMemoFirebase(() => query(collection(db, 'vehicles')), [db]);
-  const plantsQuery = useMemoFirebase(() => query(collection(db, 'plantsAndEquipment')), [db]);
   const usersQuery = useMemoFirebase(() => query(collection(db, 'users')), [db]);
+  
+  // Gated machinery query to prevent permission errors
+  const plantsQuery = useMemoFirebase(() => {
+    if (!db || !isStaff) return null;
+    return query(collection(db, 'plantsAndEquipment'));
+  }, [db, isStaff]);
 
   const { data: customers } = useCollection<Customer>(customersQuery as any);
   const { data: vehicles } = useCollection<Vehicle>(vehiclesQuery as any);
