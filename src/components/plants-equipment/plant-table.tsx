@@ -1,15 +1,37 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PlantEquipment } from '@/types/plant-equipment';
+import { PlantEquipment, PlantStatus } from '@/types/plant-equipment';
 import { Customer } from '@/types/customer';
-import { Hammer, User, Fingerprint, Gauge, MoreHorizontal, Eye, ChevronRight } from 'lucide-react';
+import { 
+    Hammer, 
+    User, 
+    Fingerprint, 
+    Gauge, 
+    MoreHorizontal, 
+    Eye, 
+    ChevronRight, 
+    Plus, 
+    Edit, 
+    Trash2, 
+    Activity,
+    ShieldAlert,
+    PowerOff,
+    CheckCircle2
+} from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { getMeterUnit } from '@/services/asset-resolver-service';
+import { updatePlantStatus, decommissionPlant } from '@/services/plants-service';
+import { useAuth } from '@/contexts/auth-context';
+import { useToast } from '@/hooks/use-toast';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { UpdateMeterDialog } from './update-meter-dialog';
+import { EditPlantDialog } from './edit-plant-dialog';
 
 interface PlantTableProps {
   plants: PlantEquipment[];
@@ -18,6 +40,35 @@ interface PlantTableProps {
 
 export function PlantTable({ plants, customers }: PlantTableProps) {
   const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  const [selectedPlant, setSelectedPlant] = useState<PlantEquipment | null>(null);
+  const [isUpdateMeterOpen, setIsUpdateMeterOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [plantToDecommission, setPlantToDecommission] = useState<PlantEquipment | null>(null);
+
+  const handleStatusShift = async (id: string, status: PlantStatus) => {
+      if (!user) return;
+      try {
+        await updatePlantStatus(id, status, user.userId);
+        toast({ title: "Status Synchronized", description: `Asset state shifted to ${status}.` });
+      } catch (err: any) {
+        toast({ variant: "destructive", title: "Shift Failed", description: err.message });
+      }
+  };
+
+  const handleDecommission = async () => {
+      if (plantToDecommission && user) {
+          try {
+              await decommissionPlant(plantToDecommission.id, user.userId);
+              toast({ title: "Asset Decommissioned", description: "Technical authority revoked for this unit." });
+              setPlantToDecommission(null);
+          } catch (err: any) {
+              toast({ variant: "destructive", title: "Operation Failed", description: err.message });
+          }
+      }
+  };
 
   return (
     <div className="rounded-3xl border bg-card overflow-hidden shadow-sm premium-shadow">
@@ -36,6 +87,7 @@ export function PlantTable({ plants, customers }: PlantTableProps) {
           {plants.map((plant) => {
             const customer = customers.find(c => c.customerId === plant.ownerId);
             const unit = getMeterUnit(plant.meterType);
+            const isActive = plant.status === 'Active';
 
             return (
               <TableRow 
@@ -85,16 +137,51 @@ export function PlantTable({ plants, customers }: PlantTableProps) {
                 <TableCell className="px-8 py-6">
                   <Badge variant="outline" className={cn(
                       "text-[8px] font-black uppercase tracking-widest px-3 py-0.5 rounded-lg",
-                      plant.status === 'Active' ? "bg-green-500/5 text-green-600 border-green-200" : "bg-muted text-muted-foreground"
+                      isActive ? "bg-green-500/5 text-green-600 border-green-200" : "bg-muted text-muted-foreground"
                   )}>
                     {plant.status}
                   </Badge>
                 </TableCell>
-                <TableCell className="px-8 py-6 text-right">
-                  <div className="flex items-center justify-end gap-2">
-                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
+                <TableCell className="px-8 py-6 text-right" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex justify-end items-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl group-hover:bg-primary group-hover:text-white transition-all shadow-sm">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="rounded-2xl p-2 w-64 shadow-2xl border-border/50">
+                            <DropdownMenuLabel className="text-[9px] font-black uppercase text-muted-foreground px-3 py-2">Lifecycle Actions</DropdownMenuLabel>
+                            
+                            <DropdownMenuItem onClick={() => router.push(`/job-cards/new?assetId=${plant.id}&assetType=Plant`)} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
+                                <Plus className="h-4 w-4 text-primary" /> Create Work Order
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setSelectedPlant(plant); setIsUpdateMeterOpen(true); }} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
+                                <Gauge className="h-4 w-4 text-indigo-500" /> Update Telemetry
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuSeparator className="opacity-50" />
+                            
+                            <DropdownMenuItem onClick={() => router.push(`/plants-equipment/${plant.id}`)} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
+                                <Eye className="h-4 w-4 text-primary" /> Technical Dossier
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { setSelectedPlant(plant); setIsEditOpen(true); }} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
+                                <Edit className="h-4 w-4 text-primary" /> Edit Record
+                            </DropdownMenuItem>
+                            
+                            <DropdownMenuSeparator className="opacity-50" />
+                            
+                            <DropdownMenuItem onClick={() => handleStatusShift(plant.id, 'Under Repair')} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
+                                <Activity className="h-4 w-4 text-orange-500" /> Mark Under Repair
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleStatusShift(plant.id, 'Out of Service')} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest">
+                                <PowerOff className="h-4 w-4 text-red-500" /> Out of Service
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setPlantToDecommission(plant)} className="rounded-lg gap-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-destructive">
+                                <Trash2 className="h-4 w-4" /> Decommission
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <ChevronRight className="h-4 w-4 text-muted-foreground/20 group-hover:text-primary transition-all group-hover:translate-x-1" />
                   </div>
                 </TableCell>
@@ -103,6 +190,36 @@ export function PlantTable({ plants, customers }: PlantTableProps) {
           })}
         </TableBody>
       </Table>
+
+      {selectedPlant && (
+          <>
+            <UpdateMeterDialog 
+                plant={selectedPlant} 
+                isOpen={isUpdateMeterOpen} 
+                onClose={() => setIsUpdateMeterOpen(false)} 
+            />
+            <EditPlantDialog 
+                plant={selectedPlant} 
+                isOpen={isEditOpen} 
+                onClose={() => setIsEditOpen(false)} 
+            />
+          </>
+      )}
+
+      <AlertDialog open={!!plantToDecommission} onOpenChange={(o) => !o && setPlantToDecommission(null)}>
+          <AlertDialogContent className="rounded-3xl border-border/50">
+              <AlertDialogHeader>
+                  <AlertDialogTitle className="text-xl font-black uppercase tracking-tight">Decommission technical Asset?</AlertDialogTitle>
+                  <AlertDialogDescription className="text-sm font-medium leading-relaxed italic">
+                      This action will forensically decommission <span className="font-bold text-foreground">{(plantToDecommission as any)?.name}</span>. Historical work orders and technical logs will be preserved, but the unit will be removed from the active fleet.
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter className="gap-3">
+                  <AlertDialogCancel className="h-11 rounded-xl font-black uppercase text-[10px] tracking-widest">Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDecommission} className="h-11 rounded-xl bg-destructive hover:bg-destructive/90 font-black uppercase text-[10px] tracking-widest border-none text-white shadow-xl shadow-destructive/20">Authorize Decommissioning</AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
