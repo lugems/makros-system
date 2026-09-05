@@ -20,7 +20,10 @@ import {
     TrendingUp, 
     ShieldCheck,
     Receipt,
-    Activity
+    Activity,
+    Landmark,
+    CreditCard,
+    Binary
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -29,6 +32,7 @@ import Link from 'next/link';
 /**
  * @fileOverview High-fidelity Billing Dossier for customers.
  * Stabilized with useMemoFirebase for loop-resistant sync of financial records.
+ * Features verified bank authority details for authorized settlements.
  */
 export default function CustomerInvoicesPage() {
     const { user } = useAuth();
@@ -163,16 +167,26 @@ export default function CustomerInvoicesPage() {
                             <Separator className="bg-white/10" />
                             <div className="space-y-4">
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Bank Authority</p>
-                                    <p className="text-[11px] font-black uppercase text-white tracking-tight">STANBIC BANK: 9030017839968</p>
+                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+                                        <Landmark className="h-3 w-3" /> Bank Authority
+                                    </p>
+                                    <p className="text-[11px] font-black uppercase text-white tracking-tight">Stanbic Bank</p>
                                     <p className="text-[9px] font-bold text-white/60 uppercase">Garden City Branch</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Account Name</p>
+                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">Account Title</p>
                                     <p className="text-[11px] font-black uppercase text-white tracking-tight">MAKROS HOLDINGS UGANDA LIMITED</p>
                                 </div>
                                 <div className="space-y-1">
-                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest">SWIFT / BIC</p>
+                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+                                        <CreditCard className="h-3 w-3" /> Account No
+                                    </p>
+                                    <p className="text-[11px] font-mono font-black text-primary tracking-widest">00000789564444</p>
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="text-[9px] font-black text-white/40 uppercase tracking-widest flex items-center gap-2">
+                                        <Binary className="h-3 w-3" /> SWIFT / BIC
+                                    </p>
                                     <p className="text-[11px] font-mono font-black text-primary uppercase">SBICUGKX</p>
                                 </div>
                             </div>
