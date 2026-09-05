@@ -16,6 +16,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Hammer, Tag, Hash, Loader2, Gauge, Fuel, Binary, MapPin } from 'lucide-react';
@@ -57,19 +58,19 @@ export function EditPlantDialog({ plant, isOpen, onClose }: EditPlantDialogProps
   const form = useForm<PlantFormData>({
     resolver: zodResolver(plantSchema),
     defaultValues: {
-      name: plant.name,
-      category: plant.category,
-      make: plant.make,
-      model: plant.model,
-      serialNumber: plant.serialNumber,
-      yearOfManufacture: plant.yearOfManufacture,
-      assetId: plant.assetId,
-      powerType: plant.powerType,
+      name: plant.name || '',
+      category: plant.category || '',
+      make: plant.make || '',
+      model: plant.model || '',
+      serialNumber: plant.serialNumber || '',
+      yearOfManufacture: plant.yearOfManufacture || '',
+      assetId: plant.assetId || '',
+      powerType: plant.powerType || '',
       engineNumber: plant.engineNumber || '',
       manufacturer: plant.manufacturer || '',
       location: plant.location || '',
-      condition: plant.condition,
-      status: plant.status,
+      condition: plant.condition || 'Good',
+      status: plant.status || 'Active',
       notes: plant.notes || ''
     }
   });
@@ -77,19 +78,19 @@ export function EditPlantDialog({ plant, isOpen, onClose }: EditPlantDialogProps
   useEffect(() => {
     if (isOpen) {
       form.reset({
-        name: plant.name,
-        category: plant.category,
-        make: plant.make,
-        model: plant.model,
-        serialNumber: plant.serialNumber,
-        yearOfManufacture: plant.yearOfManufacture,
-        assetId: plant.assetId,
-        powerType: plant.powerType,
+        name: plant.name || '',
+        category: plant.category || '',
+        make: plant.make || '',
+        model: plant.model || '',
+        serialNumber: plant.serialNumber || '',
+        yearOfManufacture: plant.yearOfManufacture || '',
+        assetId: plant.assetId || '',
+        powerType: plant.powerType || '',
         engineNumber: plant.engineNumber || '',
         manufacturer: plant.manufacturer || '',
         location: plant.location || '',
-        condition: plant.condition,
-        status: plant.status,
+        condition: plant.condition || 'Good',
+        status: plant.status || 'Active',
         notes: plant.notes || ''
       });
     }

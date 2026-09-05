@@ -123,7 +123,6 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
             <DialogBody>
               <div className="space-y-8 px-8 py-6">
-                {/* Ownership Context */}
                 <div className="space-y-4">
                     <FormField
                         control={form.control}
@@ -147,7 +146,6 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
 
                 <Separator className="opacity-50" />
 
-                {/* Machine Identification */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                         control={form.control}
@@ -243,7 +241,6 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                     />
                 </div>
 
-                {/* Telemetry Configuration */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                         control={form.control}
@@ -251,7 +248,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                         render={({ field }) => (
                             <FormItem className="space-y-2">
                                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Telemetry Protocol</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger className="h-11 bg-muted/20 border-none rounded-xl font-bold"><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         {['Hour Meter', 'Odometer - KM', 'Odometer - Miles', 'Cycle Counter', 'None'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
@@ -276,7 +273,6 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                     />
                 </div>
 
-                {/* Technical Meta */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                         control={form.control}
