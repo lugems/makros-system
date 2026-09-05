@@ -1,3 +1,5 @@
+import { AssetType } from './asset';
+
 /**
  * @fileOverview Type definitions for the workshop job cards.
  */
@@ -39,12 +41,12 @@ export interface JobPart {
   createdAt: string;
 }
 
-export type PartUsed = JobPart;
-
 export interface JobCard {
   jobCardId: string;
   customerId: string;
-  vehicleId: string;
+  assetId: string;
+  assetType: AssetType;
+  vehicleId?: string; // Legacy support
   bookingId?: string;
   assignedMechanicId?: string;
   reportedIssue: string;

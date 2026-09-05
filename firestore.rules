@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // --- Basic Auth Helper ---
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // --- User Data Helper ---
+    function getUserData() {
+      return request.auth != null ? (exists(/databases/$(database)/documents/users/$(request.auth.uid)) ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data : {}) : {};
+    }
+
+    // --- Role-Based Access Helpers ---
+    function isOwner() {
+      return isAuthenticated() && getUserData().get('role', '') == 'Makros System Owner';
+    }
+
+    function isManager() {
+      return isAuthenticated() && getUserData().get('role', '') in ['Makros System Owner', 'Workshop Manager'];
+    }
+
+    function isStaff() {
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && role != '' && role != 'Customer';
+    }
+
+    function isCustomer() {
+      return isAuthenticated() && (getUserData().get('role', '') == 'Customer' || exists(/databases/$(database)/documents/customers/$(request.auth.uid)));
+    }
+
+    // --- USERS ---
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if (isAuthenticated() && request.auth.uid == userId) || isManager();
+      allow update: if (isAuthenticated() && request.auth.uid == userId) || isManager();
+      allow delete: if isOwner();
+    }
+
+    // --- CUSTOMERS ---
+    match /customers/{customerId} {
+      allow read: if isStaff() || (isAuthenticated() && request.auth.uid == customerId);
+      allow write: if isStaff() && (isOwner() || isManager() || getUserData().get('role', '') == 'Receptionist');
+    }
+
+    // --- VEHICLES ---
+    match /vehicles/{vehicleId} {
+      allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
+      allow write: if isStaff();
+    }
+
+    // --- PLANT & EQUIPMENT ---
+    match /plantsAndEquipment/{assetId} {
+      allow read: if isStaff() || (isAuthenticated() && resource.data.ownerId == request.auth.uid);
+      allow write: if isStaff();
+    }
+
+    // --- BOOKINGS ---
+    match /bookings/{bookingId} {
+      allow read: if isStaff() || (isAuthenticated() && (resource.data.customerId == request.auth.uid || request.resource.data.customerId == request.auth.uid));
+      allow create: if isAuthenticated();
+      allow update: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
+      allow delete: if isStaff();
+    }
+
+    // --- SERVICES ---
+    match /services/{serviceId} {
+      allow read: if isAuthenticated();
+      allow write: if isManager();
+    }
+
+    // --- JOB CARDS ---
+    match /jobCards/{jobCardId} {
+      allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
+      allow write: if isStaff();
+
+      match /tasks/{taskId} {
+        allow read: if isStaff() || (isAuthenticated() && get(/databases/$(database)/documents/jobCards/$(jobCardId)).data.customerId == request.auth.uid);
+        allow write: if isStaff();
+      }
+      match /partsUsed/{partId} {
+        allow read: if isStaff() || (isAuthenticated() && get(/databases/$(database)/documents/jobCards/$(jobCardId)).data.customerId == request.auth.uid);
+        allow write: if isStaff();
+      }
+    }
+
+    // --- INVENTORY & STOCK ---
+    match /inventory/{itemId} {
+      allow read: if isStaff();
+      allow update: if isStaff(); 
+      allow create, delete: if isManager() || getUserData().get('role', '') == 'Inventory Officer';
+    }
+    
+    match /stockMovements/{movementId} {
+      allow read: if isStaff();
+      allow create: if isStaff();
+      allow update, delete: if false; 
+    }
+
+    // --- INVOICES & PAYMENTS ---
+    match /invoices/{invoiceId} {
+      allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
+      allow write: if isStaff() && getUserData().get('role', '') != 'Mechanic';
+    }
+    
+    match /payments/{paymentId} {
+      allow read: if isStaff() || (isAuthenticated() && resource.data.customerId == request.auth.uid);
+      allow create: if isStaff() && getUserData().get('role', '') != 'Mechanic';
+      allow update, delete: if false;
+    }
+
+    // --- COMMUNICATION LOGS ---
+    match /communicationLogs/{logId} {
+      allow read: if isStaff() || (isCustomer() && resource.data.customerId == request.auth.uid && resource.data.isCustomerVisible == true);
+      allow create: if isStaff() || isCustomer();
+      allow update: if isStaff();
+      allow delete: if isOwner();
+    }
+
+    // --- AUDIT LOGS ---
+    match /auditLogs/{logId} {
+      allow read: if isStaff();
+      allow create: if isAuthenticated();
+      allow update, delete: if false;
+    }
+    
+    // --- SETTINGS ---
+    match /settings/{doc} {
+      allow read: if isAuthenticated();
+      allow write: if isOwner();
+    }
+  }
+}

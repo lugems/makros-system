@@ -1,3 +1,5 @@
+import { AssetType } from './asset';
+
 /**
  * @fileOverview Type definitions for the booking module.
  */
@@ -13,7 +15,9 @@ export type BookingStatus =
 export interface Booking {
   bookingId: string;
   customerId: string;
-  vehicleId: string;
+  assetId: string;
+  assetType: AssetType;
+  vehicleId?: string; // Legacy
   serviceId: string;
   assignedMechanicId?: string;
   bookingDate: string; // ISO Date string (YYYY-MM-DD)

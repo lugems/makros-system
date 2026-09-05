@@ -1,0 +1,53 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isStaff() {
+      let role = getUserData().get('role', '');
+      return isAuthenticated() && role != '' && role != 'Customer';
+    }
+
+    function isCustomer() {
+      return isAuthenticated() && getUserData().get('role', '') == 'Customer';
+    }
+
+    function isValidSize() {
+      return request.resource.size < 5 * 1024 * 1024;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    // Plant Photos: Staff manage, Customers view their own
+    match /plant-photos/{assetId}/{allPaths=**} {
+      allow read: if isStaff() || (isCustomer() && firestore.get(/databases/(default)/documents/plantsAndEquipment/$(assetId)).data.ownerId == request.auth.uid);
+      allow write: if isStaff() && isValidSize() && isImage();
+    }
+
+    // Vehicle Photos
+    match /vehicle-photos/{vehicleId}/{allPaths=**} {
+      allow read: if isStaff() || (isCustomer() && firestore.get(/databases/(default)/documents/vehicles/$(vehicleId)).data.customerId == request.auth.uid);
+      allow write: if isStaff() && isValidSize() && isImage();
+    }
+
+    // Job Card Photos
+    match /job-card-photos/{jobCardId}/{allPaths=**} {
+      allow read: if isStaff() || (isCustomer() && firestore.get(/databases/(default)/documents/jobCards/$(jobCardId)).data.customerId == request.auth.uid);
+      allow write: if isStaff() && isValidSize() && isImage();
+    }
+
+    // Profile Photos
+    match /staff-profile-photos/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if (request.auth.uid == userId || getUserData().role == 'Makros System Owner') && isValidSize() && isImage();
+    }
+  }
+}
