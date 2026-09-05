@@ -30,7 +30,12 @@ import {
     Download,
     FileText,
     Hammer,
-    Receipt
+    Receipt,
+    Binary,
+    Calendar,
+    MapPin,
+    Gauge,
+    ChevronRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -245,8 +250,8 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
         try {
             await removePartFromJobCardTransaction(jobCardId, partId, currentUser.userId);
             toast({ title: "Allocation Revoked", description: "Stock has been restored to inventory." });
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Action Failed", description: error.message });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Action Failed", description: "Technical error during restoration." });
         } finally {
             setIsRemovingPart(null);
         }
@@ -263,8 +268,8 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
         try {
             deleteJobTask(jobCardId, taskId, currentUser.userId);
             toast({ title: "Task Purged", description: "Record removed from repair roadmap." });
-        } catch (error: any) {
-            toast({ variant: "destructive", title: "Delete Failed", description: error.message });
+        } catch (error) {
+            toast({ variant: "destructive", title: "Delete Failed", description: "Registry permission error." });
         }
     };
 
@@ -346,7 +351,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                 <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
                     <Button asChild variant="outline" className="flex-1 sm:flex-none h-12 px-8 font-black uppercase tracking-widest text-[10px] rounded-xl bg-background border-border/50 hover:bg-muted">
                         <PDFDownloadLink 
-                            document={<JobCardPDFDocument jobCard={jobCard} customer={customer} vehicle={jobCard.assetType === 'Vehicle' ? asset : null} tasks={tasks} parts={parts} mechanic={mechanic} settings={settings} invoiceNumber={linkedInvoice?.invoiceNumber} />} 
+                            document={<JobCardPDFDocument jobCard={jobCard} customer={customer} vehicle={asset} tasks={tasks} parts={parts} mechanic={mechanic} settings={settings} invoiceNumber={linkedInvoice?.invoiceNumber} />} 
                             fileName={pdfFileName}
                         >
                             {({ loading }) => (
@@ -371,7 +376,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start px-4 sm:px-8">
                 <div className="lg:col-span-8 space-y-10">
                     <Tabs defaultValue="roadmap" className="w-full">
                         <div className="bg-card border border-border/50 rounded-2xl p-1.5 mb-8 shadow-sm overflow-x-auto custom-scrollbar">
@@ -402,6 +407,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                                         </div>
                                     </CardContent>
                                 </Card>
+
                                 <Card className="rounded-3xl border-border/50 bg-card overflow-hidden shadow-sm">
                                     <CardHeader className="bg-muted/30 p-5 border-b">
                                         <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
@@ -410,25 +416,71 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                                         </CardTitle>
                                     </CardHeader>
                                     <CardContent className="p-6">
-                                        <div className="flex items-center justify-between">
-                                            <div className="min-w-0">
-                                                <p className="font-black text-sm uppercase tracking-tight truncate">
-                                                    {jobCard.assetType === 'Plant' ? asset?.name : `${asset?.make} ${asset?.model}`}
-                                                </p>
-                                                <Badge variant="outline" className="text-[9px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase mt-1">
-                                                    {jobCard.assetType === 'Plant' ? asset?.assetId : asset?.numberPlate}
-                                                </Badge>
+                                        {jobCard.assetType === 'Plant' ? (
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <div className="min-w-0">
+                                                        <p className="font-black text-sm uppercase tracking-tight truncate">{asset?.name || 'Technical Unit'}</p>
+                                                        <div className="flex items-center gap-2 mt-1.5">
+                                                            <Badge variant="outline" className="text-[9px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase">
+                                                                ID: {asset?.assetId}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right shrink-0">
+                                                        <p className="text-[9px] font-black text-muted-foreground uppercase leading-none mb-1">Status</p>
+                                                        <Badge variant="outline" className="text-[8px] font-black uppercase px-2 h-5 bg-muted/50">{asset?.status}</Badge>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
+                                                    <div>
+                                                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
+                                                            <Binary className="h-2.5 w-2.5" /> Serial S/N
+                                                        </p>
+                                                        <p className="text-[10px] font-mono font-bold text-foreground truncate">{asset?.serialNumber || 'AWAITING_SYNC'}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1 justify-end">
+                                                            <Gauge className="h-2.5 w-2.5" /> Telemetry
+                                                        </p>
+                                                        <p className="text-[10px] font-black text-primary uppercase">
+                                                            {asset?.meterReading?.toLocaleString() || 0} {getMeterUnit(asset?.meterType)}
+                                                        </p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div className="text-right shrink-0 ml-4">
-                                                <p className="text-[9px] font-black text-muted-foreground uppercase leading-none">Telemetry</p>
-                                                <p className="text-xs font-black mt-1 uppercase">
-                                                    {jobCard.assetType === 'Plant' 
-                                                        ? `${asset?.meterReading?.toLocaleString() || 0} ${getMeterUnit(asset?.meterType)}`
-                                                        : `${asset?.mileage?.toLocaleString() || 0} KM`
-                                                    }
-                                                </p>
+                                        ) : (
+                                            <div className="space-y-4">
+                                                <div className="flex justify-between items-start gap-4">
+                                                    <div className="min-w-0">
+                                                        <p className="font-black text-sm uppercase tracking-tight truncate">{asset?.make} {asset?.model}</p>
+                                                        <div className="flex items-center gap-2 mt-1.5">
+                                                            <Badge variant="outline" className="text-[9px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase">
+                                                                {asset?.numberPlate}
+                                                            </Badge>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right shrink-0">
+                                                        <p className="text-[9px] font-black text-muted-foreground uppercase leading-none mb-1">Mfg Year</p>
+                                                        <p className="text-xs font-black text-foreground">{asset?.year || 'N/A'}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
+                                                    <div>
+                                                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
+                                                            <Fingerprint className="h-2.5 w-2.5" /> VIN / Chassis
+                                                        </p>
+                                                        <p className="text-[10px] font-mono font-bold text-foreground truncate">{asset?.vin || 'NOT_RECORDED'}</p>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1 justify-end">
+                                                            <Gauge className="h-2.5 w-2.5" /> Odometer
+                                                        </p>
+                                                        <p className="text-[10px] font-black text-primary uppercase">{asset?.mileage?.toLocaleString() || 0} KM</p>
+                                                    </div>
+                                                </div>
                                             </div>
-                                        </div>
+                                        )}
                                     </CardContent>
                                 </Card>
                             </div>

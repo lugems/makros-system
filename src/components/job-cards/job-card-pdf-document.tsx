@@ -7,10 +7,12 @@ import { Customer } from '@/types/customer';
 import { Vehicle } from '@/types/vehicle';
 import { StaffMember } from '@/types/staff';
 import { WorkshopSettings } from '@/types/settings';
+import { getMeterUnit } from '@/services/asset-resolver-service';
 
 /**
  * @fileOverview High-fidelity Job Card PDF Document Template.
  * Optimized for forensic repair documentation and technical archival.
+ * Synchronized for Polymorphic Asset support (Vehicles and Plant).
  */
 
 // Register fonts for professional technical typography
@@ -212,7 +214,7 @@ const styles = StyleSheet.create({
 interface JobCardPDFDocumentProps {
   jobCard: JobCard;
   customer: Customer | null;
-  vehicle: Vehicle | null;
+  vehicle: any | null; // This is the polymorphic asset (Vehicle or Plant)
   tasks: JobTask[] | null;
   parts: JobPart[] | null;
   mechanic: StaffMember | null;
@@ -223,13 +225,23 @@ interface JobCardPDFDocumentProps {
 export function JobCardPDFDocument({ 
   jobCard, 
   customer, 
-  vehicle, 
+  vehicle: asset, 
   tasks, 
   parts, 
   mechanic, 
   settings,
   invoiceNumber
 }: JobCardPDFDocumentProps) {
+  const isPlant = jobCard.assetType === 'Plant';
+  const assetName = isPlant ? safeText(asset?.name) : `${safeText(asset?.make)} ${safeText(asset?.model)}`;
+  const assetIDLabel = isPlant ? 'Asset ID' : 'Number Plate';
+  const assetIDVal = isPlant ? safeText(asset?.assetId) : safeText(asset?.numberPlate);
+  const telemetryLabel = isPlant ? 'Telemetry' : 'Odometer';
+  const telemetryUnit = isPlant ? getMeterUnit(asset?.meterType) : 'KM';
+  const telemetryVal = isPlant ? safeText(asset?.meterReading?.toLocaleString()) : safeText(asset?.mileage?.toLocaleString());
+  const technicalRefLabel = isPlant ? 'Serial S/N' : 'VIN';
+  const technicalRefVal = isPlant ? safeText(asset?.serialNumber) : safeText(asset?.vin || asset?.chassisNumber);
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -263,16 +275,17 @@ export function JobCardPDFDocument({
             <Text style={styles.valSmall}>{safeText(customer?.address)}</Text>
           </View>
           <View style={styles.col}>
-            <Text style={styles.sectionHeader}>Technical Asset</Text>
-            <Text style={styles.valBig}>{safeText(vehicle?.make)} {safeText(vehicle?.model)}</Text>
-            <Text style={styles.valSmall}>Plate: {safeText(vehicle?.numberPlate)}</Text>
-            <Text style={styles.valSmall}>Odometer: {safeText(vehicle?.mileage)} KM</Text>
+            <Text style={styles.sectionHeader}>{isPlant ? 'Equipment Identity' : 'Vehicle Identity'}</Text>
+            <Text style={styles.valBig}>{assetName}</Text>
+            <Text style={styles.valSmall}>{assetIDLabel}: {assetIDVal}</Text>
+            <Text style={styles.valSmall}>{telemetryLabel}: {telemetryVal} {telemetryUnit}</Text>
+            <Text style={styles.valSmall}>{technicalRefLabel}: {technicalRefVal}</Text>
           </View>
           <View style={styles.col}>
             <Text style={styles.sectionHeader}>Personnel</Text>
             <Text style={styles.valBig}>{safeText(mechanic?.fullName || 'Unassigned')}</Text>
             <Text style={styles.valSmall}>Lead Technician</Text>
-            <Text style={styles.valSmall}>{safeText(mechanic?.specialization)}</Text>
+            <Text style={styles.valSmall}>{safeText(mechanic?.role || mechanic?.specialization)}</Text>
           </View>
         </View>
 
