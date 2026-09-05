@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +22,7 @@ import { Banknote, Smartphone, Wallet, CreditCard, Hash, DollarSign, Receipt, Lo
 import { recordPaymentTransaction } from '@/services/payments-service';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
+import { SearchableSelect } from '@/components/shared/searchable-select';
 
 export const paymentFormSchema = z.object({
   invoiceId: z.string().min(1, { message: "Target invoice is required" }),
@@ -47,6 +48,15 @@ export function RecordPaymentForm({ onSubmit, invoices, isSubmitting: externalIs
   const [internalIsSubmitting, setInternalIsSubmitting] = useState(false);
 
   const isSubmitting = externalIsSubmitting || internalIsSubmitting;
+
+  const invoiceOptions = useMemo(() => invoices.map(invoice => {
+    const id = invoice.invoiceId || (invoice as any).id;
+    return {
+      value: id,
+      label: invoice.invoiceNumber || id.slice(-6),
+      description: `Balance: ${invoice.balance.toLocaleString()} Ush`,
+    };
+  }), [invoices]);
 
   const form = useForm<z.infer<typeof paymentFormSchema>>({
     resolver: zodResolver(paymentFormSchema),
@@ -103,24 +113,18 @@ export function RecordPaymentForm({ onSubmit, invoices, isSubmitting: externalIs
               <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                 <Receipt className="h-3 w-3" /> Settlement Target
               </FormLabel>
-              <Select onValueChange={handleInvoiceChange} value={field.value} disabled={invoices.length === 1}>
-                <FormControl>
-                  <SelectTrigger className="rounded-xl h-11 bg-muted/50 dark:bg-muted/10 border-none font-bold">
-                    <SelectValue placeholder="Select active invoice balance..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent className="rounded-xl border-border/50">
-                  {invoices.map(invoice => {
-                      const id = invoice.invoiceId || (invoice as any).id;
-                      return (
-                        <SelectItem key={id} value={id} className="text-[10px] font-bold uppercase tracking-tight">
-                        {invoice.invoiceNumber || id.slice(-6)} • Bal: {invoice.balance.toLocaleString()} Ush
-                        </SelectItem>
-                      );
-                  })}
-                  {invoices.length === 0 && <SelectItem value="none" disabled>No outstanding balances</SelectItem>}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <SearchableSelect
+                  options={invoiceOptions}
+                  value={field.value}
+                  onValueChange={handleInvoiceChange}
+                  placeholder={invoices.length === 0 ? 'No outstanding balances' : 'Select active invoice balance...'}
+                  searchPlaceholder="Search invoice number or balance..."
+                  emptyText="No matching invoice found."
+                  disabled={invoices.length <= 1}
+                  className="h-11 bg-muted/50"
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

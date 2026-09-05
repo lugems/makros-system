@@ -224,7 +224,7 @@ const SuppliersPageContent = () => {
                     <AlertTriangle className="h-4 w-4 text-orange-500 opacity-50" />
                 </CardHeader>
                 <CardContent className="px-8 pb-8">
-                    <div className="text-4xl font-black tracking-tighter text-orange-600">{stats.lowStockItemsCount}</div>
+                    <div className="text-4xl font-black tracking-tighter text-orange-600">{stats.lowStockAlerts}</div>
                     <p className='text-[9px] font-bold text-muted-foreground uppercase mt-1'>Replenishment Alerts</p>
                 </CardContent>
             </Card>

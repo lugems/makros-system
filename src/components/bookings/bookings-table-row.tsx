@@ -25,7 +25,7 @@ const BookingsTableRow: React.FC<BookingsTableRowProps> = ({ booking, onSelect }
         <div className="text-sm font-medium text-gray-900">{vehicle?.make} {vehicle?.model}</div>
         <div className="text-sm text-gray-500">{vehicle?.numberPlate}</div>
       </td>
-      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service?.name}</td>
+      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{service?.serviceName}</td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
         {new Date(booking.bookingDate).toLocaleDateString()}
       </td>

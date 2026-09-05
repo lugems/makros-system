@@ -22,7 +22,7 @@ const COLLECTION_NAME = 'communicationLogs';
  * Captures sender identity and contextual dossier links.
  */
 export const createNotification = async (
-  data: Omit<CommunicationLog, 'logId' | 'createdAt' | 'updatedAt' | 'fromName' | 'fromRole' | 'fromUserId'>, 
+  data: Omit<CommunicationLog, 'logId' | 'createdAt' | 'updatedAt' | 'fromName' | 'fromRole' | 'fromUserId' | 'createdBy'>,
   userId: string
 ) => {
   const docRef = doc(collection(db, COLLECTION_NAME));

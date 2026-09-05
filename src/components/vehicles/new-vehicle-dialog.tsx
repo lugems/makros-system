@@ -25,6 +25,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { Car, User, Hash, Calendar as CalendarIcon, FileText, Loader2, Gauge, Fuel, Binary } from 'lucide-react';
 import { Customer } from '@/types/customer';
+import { SearchableSelect } from '@/components/shared/searchable-select';
 
 const vehicleFormSchema = z.object({
   make: z.string().min(1, "Make is required"),
@@ -62,6 +63,12 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
   
   const customersQuery = useMemo(() => query(collection(db, 'customers'), orderBy('fullName', 'asc')) as any, [db]);
   const { data: customers } = useCollection<Customer>(customersQuery);
+
+  const customerOptions = useMemo(() => (customers || []).map(customer => ({
+    value: customer.customerId,
+    label: customer.fullName,
+    description: customer.phone || customer.email,
+  })), [customers]);
   
   const form = useForm<VehicleFormValues>({
     resolver: zodResolver(vehicleFormSchema),
@@ -111,20 +118,17 @@ export function NewVehicleDialog({ isOpen, onClose }: NewVehicleDialogProps) {
                       <FormLabel className="text-[10px] font-black uppercase tracking-widest flex items-center gap-2 text-muted-foreground">
                         <User className="h-3 w-3 text-primary" /> Vehicle Owner
                       </FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="bg-muted/50 border-none rounded-xl h-11">
-                            <SelectValue placeholder="Search client database..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent className="rounded-xl">
-                          {customers?.map((c) => (
-                            <SelectItem key={c.customerId} value={c.customerId} className="font-bold uppercase text-xs">
-                              {c.fullName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <FormControl>
+                        <SearchableSelect
+                          options={customerOptions}
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          placeholder="Select vehicle owner..."
+                          searchPlaceholder="Search owner name, phone, or email..."
+                          emptyText="No matching vehicle owner found."
+                          className="h-11 bg-muted/50"
+                        />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}

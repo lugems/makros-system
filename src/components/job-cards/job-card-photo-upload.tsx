@@ -28,7 +28,7 @@ export function JobCardPhotoUpload({ jobCardId }: JobCardPhotoUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  const canUpload = ['Makros System Owner', 'Workshop Manager', 'Mechanic'].includes(role);
+  const canUpload = Boolean(role && ['Makros System Owner', 'Workshop Manager', 'Mechanic'].includes(role));
 
   const loadPhotos = async () => {
     setIsLoading(true);

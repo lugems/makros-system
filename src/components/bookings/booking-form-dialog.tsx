@@ -126,6 +126,14 @@ const BookingFormDialog: React.FC<BookingFormDialogProps> = ({ isOpen, onClose, 
     }))
   ], [technicians]);
 
+  const serviceOptions = useMemo(() =>
+    services?.map(service => ({
+      value: service.serviceId,
+      label: service.serviceName,
+    })) || [],
+    [services]
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="flex max-h-[92dvh] flex-col overflow-hidden p-0 sm:max-w-[560px] border-border/50">
@@ -200,19 +208,15 @@ const BookingFormDialog: React.FC<BookingFormDialogProps> = ({ isOpen, onClose, 
                   <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 ml-1">
                     <Wrench className="h-3 w-3 text-primary" /> Catalog Service
                   </Label>
-                  <Select 
-                    value={formData.serviceId || ''} 
+                  <SearchableSelect
+                    options={serviceOptions}
+                    value={formData.serviceId}
                     onValueChange={(val) => handleValueChange('serviceId', val)}
-                  >
-                    <SelectTrigger className="h-12 rounded-xl bg-muted/20 border-none font-bold">
-                      <SelectValue placeholder="Select service..." />
-                    </SelectTrigger>
-                    <SelectContent className="rounded-xl border-border/50">
-                      {services?.map(s => (
-                        <SelectItem key={s.serviceId} value={s.serviceId} className="font-bold uppercase text-xs">{s.serviceName}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder="Select service..."
+                    searchPlaceholder="Search service catalog..."
+                    emptyText="No matching service found."
+                    isLoading={sLoading}
+                  />
                 </div>
               </div>
 

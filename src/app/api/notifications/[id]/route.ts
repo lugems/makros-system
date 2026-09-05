@@ -4,7 +4,7 @@ import { makrosMockData } from '@/data/mock-data';
 // GET a single notification by ID
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const notification = makrosMockData.notifications.find(n => n.notificationId === id);
+    const notification = makrosMockData.notifications.find(n => n.logId === id);
     if (!notification) {
         return new NextResponse('Notification not found', { status: 404 });
     }
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const updatedNotification = await req.json();
-    const index = makrosMockData.notifications.findIndex(n => n.notificationId === id);
+    const index = makrosMockData.notifications.findIndex(n => n.logId === id);
     if (index === -1) {
         return new NextResponse('Notification not found', { status: 404 });
     }
@@ -26,7 +26,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 // DELETE a single notification by ID
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const index = makrosMockData.notifications.findIndex(n => n.notificationId === id);
+    const index = makrosMockData.notifications.findIndex(n => n.logId === id);
     if (index === -1) {
         return new NextResponse('Notification not found', { status: 404 });
     }

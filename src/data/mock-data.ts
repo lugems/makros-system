@@ -122,6 +122,8 @@ export const mockBookings: Booking[] = [
   {
     bookingId: "book-001",
     customerId: "cust-001",
+    assetId: "veh-001",
+    assetType: "Vehicle",
     vehicleId: "veh-001",
     serviceId: "svc-001",
     bookingDate: "2026-05-28",
@@ -136,6 +138,8 @@ export const mockJobCards: JobCard[] = [
   {
     jobCardId: "job-001",
     customerId: "cust-001",
+    assetId: "veh-001",
+    assetType: "Vehicle",
     vehicleId: "veh-001",
     bookingId: "book-001",
     assignedMechanicId: "user-003",
@@ -326,6 +330,7 @@ export const mockWorkshopSettings: WorkshopSettings = {
   invoicePrefix: "INV",
   invoiceStartNumber: 1001,
   receiptPrefix: "REC",
+  receiptStartNumber: 1001,
   receiptFooterNote: "Thank you for trusting Makros System Workshop.",
   paymentMethods: {
     cash: true,

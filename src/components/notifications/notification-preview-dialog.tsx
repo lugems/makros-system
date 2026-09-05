@@ -2,6 +2,7 @@
 'use client';
 
 import React from 'react';
+import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogBody, DialogFooter } from '@/components/ui/dialog';
 import { CommunicationLog } from '@/types/notification';
 import { FormattedDate } from '@/components/shared/formatted-date';

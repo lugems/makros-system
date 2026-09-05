@@ -33,6 +33,8 @@ export function NewJobCardDialog() {
         jobCardId,
         bookingId,
         customerId: booking.customerId,
+        assetId: booking.assetId || booking.vehicleId || '',
+        assetType: booking.assetType || 'Vehicle',
         vehicleId: booking.vehicleId,
         assignedMechanicId: mechanicId,
         reportedIssue: booking.notes || 'Service requested from booking.',

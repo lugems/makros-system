@@ -89,7 +89,7 @@ export function NotificationList({ notifications, onPreview }: NotificationListP
                         <span className="text-xs font-black uppercase tracking-tight truncate group-hover:text-primary transition-colors">
                             {note.subject}
                         </span>
-                        {note.isInternalOnly && <Lock className="h-3 w-3 text-muted-foreground/40" title="Internal Only" />}
+                        {note.isInternalOnly && <span title="Internal Only"><Lock className="h-3 w-3 text-muted-foreground/40" /></span>}
                     </div>
                     <div className="flex items-center gap-2">
                         <Badge variant="outline" className={cn("text-[7px] font-black uppercase tracking-widest h-4", getDirectionStyle(note.direction))}>

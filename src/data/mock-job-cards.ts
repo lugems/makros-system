@@ -6,6 +6,8 @@ export const mockJobCards: JobCard[] = [
         jobCardId: 'JC001',
         bookingId: 'B001',
         customerId: 'C001',
+        assetId: 'V001',
+        assetType: 'Vehicle',
         vehicleId: 'V001',
         reportedIssue: 'Customer waiting.',
         status: JobCardStatus.InProgress,

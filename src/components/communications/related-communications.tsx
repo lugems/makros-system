@@ -14,6 +14,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface RelatedCommunicationsProps {
+  assetId?: string;
+  assetType?: string;
   customerId?: string;
   vehicleId?: string;
   jobCardId?: string;
@@ -28,6 +30,7 @@ interface RelatedCommunicationsProps {
  * Filters the communication registry based on the provided dossier ID.
  */
 export function RelatedCommunications({ 
+  assetId,
   customerId, 
   vehicleId, 
   jobCardId, 
@@ -44,6 +47,7 @@ export function RelatedCommunications({
     if (!db) return null;
     const baseRef = collection(db, 'communicationLogs');
     
+    if (assetId) return query(baseRef, where('assetId', '==', assetId), orderBy('createdAt', 'desc'));
     if (customerId) return query(baseRef, where('customerId', '==', customerId), orderBy('createdAt', 'desc'));
     if (vehicleId) return query(baseRef, where('vehicleId', '==', vehicleId), orderBy('createdAt', 'desc'));
     if (jobCardId) return query(baseRef, where('jobCardId', '==', jobCardId), orderBy('createdAt', 'desc'));
@@ -51,7 +55,7 @@ export function RelatedCommunications({
     if (invoiceId) return query(baseRef, where('invoiceId', '==', invoiceId), orderBy('createdAt', 'desc'));
     
     return query(baseRef, orderBy('createdAt', 'desc'));
-  }, [db, customerId, vehicleId, jobCardId, bookingId, invoiceId]);
+  }, [db, assetId, customerId, vehicleId, jobCardId, bookingId, invoiceId]);
 
   const { data: logs, loading } = useCollection<CommunicationLog>(logsQuery as any);
   const [selectedLog, setSelectedLog] = React.useState<CommunicationLog | null>(null);

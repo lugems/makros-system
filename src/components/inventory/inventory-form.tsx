@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -11,6 +12,7 @@ import { DialogBody, DialogFooter } from '@/components/ui/dialog';
 import { Package, Hash, Truck, Banknote, AlertTriangle, Layers, Tag, Activity, Loader2 } from 'lucide-react';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy } from 'firebase/firestore';
+import { SearchableSelect } from '@/components/shared/searchable-select';
 
 const inventoryFormSchema = z.object({
   itemName: z.string().min(1, 'Technical name is required'),
@@ -60,6 +62,29 @@ export function InventoryForm({ onSubmit, item }: InventoryFormProps) {
   const suppliersQuery = useMemoFirebase(() => query(collection(db, 'suppliers'), orderBy('supplierName', 'asc')), [db]);
   const { data: suppliers, loading: sLoading, error: sError } = useCollection<any>(suppliersQuery);
 
+  const categoryOptions = useMemo(() => CATEGORIES.map(category => ({
+    value: category,
+    label: category,
+  })), []);
+
+  const supplierOptions = useMemo(() => {
+    const available = (suppliers || []).filter(supplier =>
+      supplier.status === 'Active' ||
+      supplier.supplierId === item?.supplierId ||
+      supplier.id === item?.supplierId
+    );
+    if (available.length === 0 && !sLoading) {
+      return [{ value: 'GENERAL_VENDOR', label: 'General / External Vendor' }];
+    }
+    return available.map(supplier => ({
+      value: supplier.supplierId || supplier.id,
+      label: supplier.supplierName,
+      description: supplier.status === 'Inactive'
+        ? 'Decommissioned'
+        : supplier.phone || supplier.email,
+    }));
+  }, [suppliers, item?.supplierId, sLoading]);
+
   const form = useForm<InventoryFormValues>({
     resolver: zodResolver(inventoryFormSchema),
     defaultValues: {
@@ -104,18 +129,17 @@ export function InventoryForm({ onSubmit, item }: InventoryFormProps) {
                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 text-muted-foreground">
                   <Tag className="h-3 w-3 text-primary" /> Technical Category
                 </FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-none font-bold">
-                      <SelectValue placeholder="Select type..." />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent className="rounded-xl border-border/50">
-                    {CATEGORIES.map(cat => (
-                        <SelectItem key={cat} value={cat} className="text-xs font-bold uppercase">{cat}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormControl>
+                  <SearchableSelect
+                    options={categoryOptions}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    placeholder="Select category..."
+                    searchPlaceholder="Search technical categories..."
+                    emptyText="No matching category found."
+                    className="h-11 bg-muted/50"
+                  />
+                </FormControl>
                 <FormMessage className="text-[10px] font-bold uppercase" />
               </FormItem>
             )}
@@ -220,21 +244,17 @@ export function InventoryForm({ onSubmit, item }: InventoryFormProps) {
                 <Truck className="h-3 w-3 text-primary" /> Vendor Authority
               </FormLabel>
               <FormControl>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <SelectTrigger className="h-11 rounded-xl bg-muted/50 border-none font-bold">
-                    {sLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <SelectValue placeholder={sError ? "Technical Stream Error" : "Identify Vendor..."} />}
-                  </SelectTrigger>
-                  <SelectContent className="rounded-xl border-border/50">
-                    {suppliers?.filter(s => s.status === 'Active' || s.supplierId === item?.supplierId || s.id === item?.supplierId).map(s => (
-                      <SelectItem key={s.id} value={s.supplierId || s.id} className="font-bold text-xs uppercase">
-                        {s.supplierName} {s.status === 'Inactive' ? '(Decommissioned)' : ''}
-                      </SelectItem>
-                    ))}
-                    {(!suppliers || suppliers.length === 0) && !sLoading && (
-                        <SelectItem value="GENERAL_VENDOR" className="font-bold text-xs uppercase italic text-muted-foreground">General / External Vendor</SelectItem>
-                    )}
-                  </SelectContent>
-                </Select>
+                <SearchableSelect
+                  options={supplierOptions}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder={sError ? 'Technical Stream Error' : 'Identify vendor...'}
+                  searchPlaceholder="Search vendor name, phone, or email..."
+                  emptyText="No matching vendor found."
+                  disabled={!!sError}
+                  isLoading={sLoading}
+                  className="h-11 bg-muted/50"
+                />
               </FormControl>
               <FormMessage className="text-[10px] font-bold uppercase" />
             </FormItem>

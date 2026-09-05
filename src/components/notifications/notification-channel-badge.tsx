@@ -4,10 +4,10 @@ import * as React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { MessageSquare, Mail, Phone, Bell, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { NotificationChannel } from '@/types/notification';
+import { CommunicationChannel } from '@/types/notification';
 
 interface NotificationChannelBadgeProps {
-  channel: NotificationChannel;
+  channel: CommunicationChannel;
   className?: string;
 }
 

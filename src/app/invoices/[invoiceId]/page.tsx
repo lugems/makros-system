@@ -72,7 +72,6 @@ export default function Page({ params }: { params: Promise<{ invoiceId: string }
                 invoice={invoice}
                 isOpen={isRecordPaymentOpen}
                 onClose={() => setIsRecordPaymentOpen(false)}
-                invoices={[invoice]}
             />
         )}
     </div>

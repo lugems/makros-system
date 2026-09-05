@@ -8,6 +8,8 @@ export const mockBookings: Booking[] = [
   {
     bookingId: 'B001',
     customerId: 'C001',
+    assetId: 'V001',
+    assetType: 'Vehicle',
     vehicleId: 'V001',
     serviceId: 'S001',
     bookingDate: today.toISOString().split('T')[0],
@@ -21,6 +23,8 @@ export const mockBookings: Booking[] = [
   {
     bookingId: 'B002',
     customerId: 'C002',
+    assetId: 'V002',
+    assetType: 'Vehicle',
     vehicleId: 'V002',
     serviceId: 'S002',
     bookingDate: today.toISOString().split('T')[0],
@@ -33,6 +37,8 @@ export const mockBookings: Booking[] = [
   {
     bookingId: 'B003',
     customerId: 'C001',
+    assetId: 'V003',
+    assetType: 'Vehicle',
     vehicleId: 'V003',
     serviceId: 'S003',
     bookingDate: tomorrow.toISOString().split('T')[0],

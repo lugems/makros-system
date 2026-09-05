@@ -273,7 +273,6 @@ export default function InvoicesPage() {
                     invoice={selectedInvoice}
                     isOpen={isPaymentOpen}
                     onClose={() => setIsRecordPaymentOpen(false)}
-                    invoices={invoices || []}
                 />
             )}
 

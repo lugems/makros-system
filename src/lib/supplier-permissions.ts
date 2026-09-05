@@ -10,7 +10,17 @@ const permissions: Record<UserRole, string[]> = {
   'Inventory Officer': ['create', 'edit', 'delete', 'view', 'deactivate', 'view_items'],
   'Accountant': ['view', 'view_stock_value', 'view_purchase_reports'],
   'Receptionist': [], 
+  'Senior Mechanic / Lead Mechanic': [],
   'Mechanic': [],
+  'Diagnostic Technician': [],
+  'Auto-Wiring Technician': [],
+  'Welding Lead Technician': [],
+  'Welding Technician': [],
+  'Auto Body / Panel Beater': [],
+  'Painter': [],
+  'Tyre & Wheel Technician': [],
+  'Car Wash / Detailing Technician': [],
+  'Quality Control Officer': [],
   'Customer': [],
 };
 

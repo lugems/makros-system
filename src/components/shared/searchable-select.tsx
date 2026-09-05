@@ -4,19 +4,18 @@ import * as React from "react"
 import { Check, ChevronsUpDown, Search, Loader2 } from "lucide-react"
 
 import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command"
 import {
   Popover,
+  PopoverAnchor,
   PopoverContent,
-  PopoverTrigger,
 } from "@/components/ui/popover"
 
 interface Option {
@@ -55,55 +54,75 @@ export function SearchableSelect({
   className
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false)
+  const [search, setSearch] = React.useState("")
 
   const selectedOption = React.useMemo(
     () => options.find((opt) => opt.value === value),
     [options, value]
   )
 
+  const filteredOptions = React.useMemo(() => {
+    const term = search.trim().toLowerCase()
+    if (!term) return options
+    return options.filter((option) =>
+      `${option.label} ${option.description || ""}`.toLowerCase().includes(term)
+    )
+  }, [options, search])
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen)
+    if (!nextOpen) setSearch("")
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
+    <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
+      <PopoverAnchor asChild>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+          <Input
           role="combobox"
           aria-expanded={open}
-          disabled={disabled}
+          disabled={disabled || isLoading}
+          value={open ? search : (selectedOption?.label || "")}
+          placeholder={isLoading ? "Loading options..." : (open ? searchPlaceholder : placeholder)}
+          onFocus={() => handleOpenChange(true)}
+          onClick={() => !open && handleOpenChange(true)}
+          onChange={(event) => {
+            if (!open) setOpen(true)
+            setSearch(event.target.value)
+          }}
           className={cn(
-            "w-full justify-between h-12 px-4 rounded-xl bg-muted/30 border-none font-bold text-sm",
+            "w-full h-12 rounded-xl bg-muted/30 border-none pl-11 pr-10 font-bold text-sm",
             !value && "text-muted-foreground font-medium",
             className
           )}
-        >
-          <div className="flex items-center gap-2 truncate">
-            {isLoading ? <Loader2 className="h-4 w-4 animate-spin opacity-50" /> : selectedOption?.icon}
-            <span className="truncate">{selectedOption ? selectedOption.label : placeholder}</span>
-          </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-[--radix-popover-trigger-width] p-0 rounded-2xl border-border/50 shadow-2xl overflow-hidden z-[60]" 
-        align="start"
-        onOpenAutoFocus={(e) => e.preventDefault()} // Critical for Dialog focus-trap compatibility
-      >
-        <Command className="bg-background">
-          <CommandInput 
-            placeholder={searchPlaceholder} 
-            className="h-12 border-none focus:ring-0 font-bold uppercase text-[10px] tracking-widest"
           />
+          {isLoading
+            ? <Loader2 className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin opacity-50" />
+            : <ChevronsUpDown className="pointer-events-none absolute right-4 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />}
+        </div>
+      </PopoverAnchor>
+      <PopoverContent 
+        className="pointer-events-auto w-[--radix-popover-trigger-width] p-0 rounded-2xl border-border/50 shadow-2xl overflow-hidden z-[60]"
+        align="start"
+        onOpenAutoFocus={(event) => event.preventDefault()}
+      >
+        <Command className="bg-background" shouldFilter={false}>
+          <div className="border-b px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+            {searchPlaceholder}
+          </div>
           <CommandList className="max-h-[300px] overflow-y-auto custom-scrollbar">
             <CommandEmpty className="p-8 text-center text-xs font-medium italic text-muted-foreground">
               {emptyText}
             </CommandEmpty>
             <CommandGroup>
-              {options.map((option) => (
+              {filteredOptions.map((option) => (
                 <CommandItem
                   key={option.value}
                   value={option.label}
                   onSelect={() => {
                     onValueChange(option.value === value ? "" : option.value)
-                    setOpen(false)
+                    handleOpenChange(false)
                   }}
                   className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors rounded-lg mx-1 my-0.5"
                 >

@@ -35,6 +35,8 @@ export function NewBookingDialog() {
     createBooking({
         bookingId,
         customerId,
+        assetId: vehicleId,
+        assetType: 'Vehicle',
         vehicleId,
         serviceId,
         bookingDate,

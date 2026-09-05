@@ -23,7 +23,7 @@ export function VehiclePhotoUpload({ vehicleId }: VehiclePhotoUploadProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  const canUpload = ['Makros System Owner', 'Workshop Manager', 'Mechanic', 'Receptionist'].includes(role);
+  const canUpload = Boolean(role && ['Makros System Owner', 'Workshop Manager', 'Mechanic', 'Receptionist'].includes(role));
 
   const loadPhotos = async () => {
     setIsLoading(true);

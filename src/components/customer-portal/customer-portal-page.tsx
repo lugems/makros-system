@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
 import { collection, query, where, orderBy, limit } from 'firebase/firestore';
@@ -33,6 +34,7 @@ import Link from 'next/link';
  * Utilizes useMemoFirebase to stabilize ownership-gated queries.
  */
 export default function CustomerPortalPage() {
+    const router = useRouter();
     const { user } = useAuth();
     const db = useFirestore();
 

@@ -104,6 +104,8 @@ export default function CustomerBookingsPage() {
         try {
             createBooking({
                 customerId: user.userId,
+                assetId: formData.vehicleId,
+                assetType: 'Vehicle',
                 vehicleId: formData.vehicleId,
                 serviceId: formData.serviceId,
                 bookingDate: formData.bookingDate,

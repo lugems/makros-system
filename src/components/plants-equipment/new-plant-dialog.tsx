@@ -104,6 +104,12 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
       description: c.phone
   }));
 
+  const categoryOptions = [
+    'Excavator', 'Bulldozer', 'Grader', 'Loader', 'Forklift', 'Crane',
+    'Tractor', 'Generator', 'Compressor', 'Welding Equipment',
+    'Hydraulic Equipment', 'Pump', 'Workshop Machine', 'Other'
+  ].map(category => ({ value: category, label: category }));
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="flex max-h-[92dvh] flex-col overflow-hidden p-0 sm:max-w-[700px] border-border/50">
@@ -164,12 +170,17 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                         render={({ field }) => (
                             <FormItem className="space-y-2">
                                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Technical Category</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger className="h-11 bg-muted/20 border-none rounded-xl font-bold"><SelectValue /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {['Excavator', 'Bulldozer', 'Grader', 'Loader', 'Forklift', 'Crane', 'Tractor', 'Generator', 'Compressor', 'Welding Equipment', 'Hydraulic Equipment', 'Pump', 'Workshop Machine', 'Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <FormControl>
+                                  <SearchableSelect
+                                    options={categoryOptions}
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    placeholder="Select category..."
+                                    searchPlaceholder="Search equipment categories..."
+                                    emptyText="No matching category found."
+                                    className="h-11 bg-muted/20"
+                                  />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
