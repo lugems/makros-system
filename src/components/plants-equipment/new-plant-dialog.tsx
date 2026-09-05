@@ -74,6 +74,9 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
       meterType: 'Hour Meter',
       meterReading: 0,
       powerType: 'Diesel',
+      engineNumber: '',
+      manufacturer: '',
+      location: '',
       condition: 'Good',
       status: 'Active',
       notes: ''
@@ -163,7 +166,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
                         render={({ field }) => (
                             <FormItem className="space-y-2">
                                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Technical Category</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl><SelectTrigger className="h-11 bg-muted/20 border-none rounded-xl font-bold"><SelectValue /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         {['Excavator', 'Bulldozer', 'Grader', 'Loader', 'Forklift', 'Crane', 'Tractor', 'Generator', 'Compressor', 'Welding Equipment', 'Hydraulic Equipment', 'Pump', 'Workshop Machine', 'Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
