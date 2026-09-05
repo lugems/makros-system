@@ -21,6 +21,7 @@ import {
     Search
 } from 'lucide-react';
 import { VehiclePhotoUpload } from '@/components/vehicles/vehicle-photo-upload';
+import { PlantPhotoUpload } from '@/components/plants-equipment/plant-photo-upload';
 import { Separator } from '@/components/ui/separator';
 import { getMeterUnit } from '@/services/asset-resolver-service';
 
@@ -159,8 +160,12 @@ function AssetCard({ asset, type }: { asset: any; type: 'Vehicle' | 'Plant' }) {
                         <Camera className="h-4 w-4" />
                         <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Forensic Evidence Registry</h3>
                     </div>
-                    <div className="bg-muted/10 p-6 rounded-[2rem] border border-dashed border-border/50">
-                        <VehiclePhotoUpload vehicleId={id} />
+                    <div className="bg-card border border-border/50 rounded-[2.5rem] p-6 shadow-sm overflow-hidden">
+                        {isVehicle ? (
+                            <VehiclePhotoUpload vehicleId={id} />
+                        ) : (
+                            <PlantPhotoUpload assetId={id} />
+                        )}
                     </div>
                 </div>
             </div>

@@ -27,11 +27,13 @@ export function PlantPhotoUpload({ assetId }: PlantPhotoUploadProps) {
   const [photos, setPhotos] = useState<{ url: string; path: string }[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
 
   const canUpload = ['Makros System Owner', 'Workshop Manager', 'Mechanic', 'Inventory Officer'].includes(role || '');
 
   const loadPhotos = async () => {
     setIsLoading(true);
+    setHasError(false);
     try {
       const folderRef = ref(storage, `plant-photos/${assetId}`);
       const res = await listAll(folderRef);
@@ -43,6 +45,9 @@ export function PlantPhotoUpload({ assetId }: PlantPhotoUploadProps) {
       setPhotos(resolvedPhotos);
     } catch (error: any) {
       console.error('Failed to load industrial imagery:', error);
+      if (error.code === 'storage/unauthorized') {
+        setHasError(true);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -81,6 +86,18 @@ export function PlantPhotoUpload({ assetId }: PlantPhotoUploadProps) {
       toast({ variant: "destructive", title: "Purge Failed", description: "Administrative authority required to decommission evidence." });
     }
   };
+
+  if (hasError) {
+    return (
+        <div className="col-span-full py-12 flex flex-col items-center justify-center text-destructive border-2 border-dashed rounded-[2rem] bg-destructive/5 border-destructive/20">
+            <ShieldAlert className="h-10 w-10 mb-2" />
+            <p className="text-sm font-black uppercase tracking-widest">Access Restricted</p>
+            <p className="text-xs font-medium italic max-w-xs text-center leading-relaxed">
+                Personnel registry UID mismatch detected. Ensure Firestore document ID matches Auth UID for administrative clearance.
+            </p>
+        </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5">
