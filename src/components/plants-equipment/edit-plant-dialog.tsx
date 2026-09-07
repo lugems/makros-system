@@ -24,6 +24,8 @@ import { updatePlant } from '@/services/plants-service';
 import { useAuth } from '@/contexts/auth-context';
 import { useToast } from '@/hooks/use-toast';
 import { PlantEquipment } from '@/types/plant-equipment';
+import { SearchableSelect } from '@/components/shared/searchable-select';
+import { PLANT_EQUIPMENT_CATEGORIES } from './plant-equipment-categories';
 
 const plantSchema = z.object({
   name: z.string().min(1, "Equipment name is required"),
@@ -54,6 +56,11 @@ export function EditPlantDialog({ plant, isOpen, onClose }: EditPlantDialogProps
   const { user } = useAuth();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const categoryOptions = PLANT_EQUIPMENT_CATEGORIES.map(category => ({
+    value: category,
+    label: category,
+  }));
 
   const form = useForm<PlantFormData>({
     resolver: zodResolver(plantSchema),
@@ -147,12 +154,17 @@ export function EditPlantDialog({ plant, isOpen, onClose }: EditPlantDialogProps
                         render={({ field }) => (
                             <FormItem className="space-y-2">
                                 <FormLabel className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Technical Category</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                    <FormControl><SelectTrigger className="h-11 bg-muted/20 border-none rounded-xl font-bold"><SelectValue /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {['Excavator', 'Bulldozer', 'Grader', 'Loader', 'Forklift', 'Crane', 'Tractor', 'Generator', 'Compressor', 'Welding Equipment', 'Pump', 'Other'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <FormControl>
+                                  <SearchableSelect
+                                    options={categoryOptions}
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    placeholder="Select category..."
+                                    searchPlaceholder="Search equipment categories..."
+                                    emptyText="No matching category found."
+                                    className="h-11 bg-muted/20"
+                                  />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}

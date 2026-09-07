@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Customer } from '@/types/customer';
 import { SearchableSelect } from '@/components/shared/searchable-select';
 import { Separator } from '@/components/ui/separator';
+import { PLANT_EQUIPMENT_CATEGORIES } from './plant-equipment-categories';
 
 const plantSchema = z.object({
   ownerId: z.string().min(1, "Owner is required"),
@@ -65,7 +66,7 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
     defaultValues: {
       ownerId: '',
       name: '',
-      category: 'Excavator',
+      category: '',
       make: '',
       model: '',
       serialNumber: '',
@@ -104,11 +105,10 @@ export function NewPlantDialog({ isOpen, onClose, customers }: NewPlantDialogPro
       description: c.phone
   }));
 
-  const categoryOptions = [
-    'Excavator', 'Bulldozer', 'Grader', 'Loader', 'Forklift', 'Crane',
-    'Tractor', 'Generator', 'Compressor', 'Welding Equipment',
-    'Hydraulic Equipment', 'Pump', 'Workshop Machine', 'Other'
-  ].map(category => ({ value: category, label: category }));
+  const categoryOptions = PLANT_EQUIPMENT_CATEGORIES.map(category => ({
+    value: category,
+    label: category,
+  }));
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
