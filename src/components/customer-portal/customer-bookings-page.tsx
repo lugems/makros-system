@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoadingState } from '@/components/shared/loading-state';
+import { SearchableSelect } from '@/components/shared/searchable-select';
 import { FormattedDate } from '@/components/shared/formatted-date';
 import { 
     Calendar, 
@@ -38,7 +39,6 @@ import {
     DialogBody,
     DialogFooter
 } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -76,8 +76,28 @@ export default function CustomerBookingsPage() {
     }, [db]);
 
     const { data: bookings, loading: bLoading } = useCollection<any>(bookingsQuery);
-    const { data: vehicles } = useCollection<any>(vehQuery);
-    const { data: services } = useCollection<any>(srvQuery);
+    const { data: vehicles, loading: vehiclesLoading } = useCollection<any>(vehQuery);
+    const { data: services, loading: servicesLoading } = useCollection<any>(srvQuery);
+
+    const vehicleOptions = useMemo(() => (vehicles || []).flatMap(vehicle => {
+        const value = vehicle.vehicleId || vehicle.id;
+        if (!value) return [];
+        return [{
+            value,
+            label: [vehicle.make, vehicle.model].filter(Boolean).join(' ') || vehicle.numberPlate || 'Registered Vehicle',
+            description: vehicle.numberPlate,
+        }];
+    }), [vehicles]);
+
+    const serviceOptions = useMemo(() => (services || []).flatMap(service => {
+        const value = service.serviceId || service.id;
+        if (!value) return [];
+        return [{
+            value,
+            label: service.serviceName || 'Workshop Service',
+            description: service.category || service.description,
+        }];
+    }), [services]);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -296,43 +316,32 @@ export default function CustomerBookingsPage() {
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                         <Car className="h-3 w-3 text-primary" /> Select Your Asset
                                     </Label>
-                                    <Select 
-                                        value={formData.vehicleId} 
-                                        onValueChange={(val) => setFormData({ ...formData, vehicleId: val })}
-                                    >
-                                        <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none font-bold">
-                                            <SelectValue placeholder="Identify vehicle..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-border/50">
-                                            {vehicles?.map(v => (
-                                                <SelectItem key={v.vehicleId || v.id} value={v.vehicleId || v.id} className="font-bold text-xs uppercase">
-                                                    {v.make} {v.model} ({v.numberPlate})
-                                                </SelectItem>
-                                            ))}
-                                            {(!vehicles || vehicles.length === 0) && <SelectItem value="none" disabled>No units registered</SelectItem>}
-                                        </SelectContent>
-                                    </Select>
+                                    <SearchableSelect
+                                        options={vehicleOptions}
+                                        value={formData.vehicleId}
+                                        onValueChange={(vehicleId) => setFormData(current => ({ ...current, vehicleId }))}
+                                        placeholder="Identify vehicle..."
+                                        searchPlaceholder="Search vehicle, model, or plate..."
+                                        emptyText="No registered vehicle found."
+                                        isLoading={vehiclesLoading}
+                                        className="h-12 bg-muted/30"
+                                    />
                                 </div>
 
                                 <div className="space-y-2">
                                     <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                                         <Wrench className="h-3 w-3 text-primary" /> Desired Service
                                     </Label>
-                                    <Select 
-                                        value={formData.serviceId} 
-                                        onValueChange={(val) => setFormData({ ...formData, serviceId: val })}
-                                    >
-                                        <SelectTrigger className="h-12 rounded-xl bg-muted/30 border-none font-bold">
-                                            <SelectValue placeholder="Identify service category..." />
-                                        </SelectTrigger>
-                                        <SelectContent className="rounded-xl border-border/50">
-                                            {services?.map(s => (
-                                                <SelectItem key={s.serviceId || s.id} value={s.serviceId || s.id} className="font-bold text-xs uppercase">
-                                                    {s.serviceName}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <SearchableSelect
+                                        options={serviceOptions}
+                                        value={formData.serviceId}
+                                        onValueChange={(serviceId) => setFormData(current => ({ ...current, serviceId }))}
+                                        placeholder="Identify service category..."
+                                        searchPlaceholder="Search service name or category..."
+                                        emptyText="No active service found."
+                                        isLoading={servicesLoading}
+                                        className="h-12 bg-muted/30"
+                                    />
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
