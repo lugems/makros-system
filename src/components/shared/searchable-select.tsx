@@ -75,7 +75,7 @@ export function SearchableSelect({
   }
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange} modal={false}>
+    <Popover open={open} onOpenChange={handleOpenChange} modal>
       <PopoverAnchor asChild>
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
@@ -106,6 +106,7 @@ export function SearchableSelect({
         className="pointer-events-auto w-[--radix-popover-trigger-width] p-0 rounded-2xl border-border/50 shadow-2xl overflow-hidden z-[60]"
         align="start"
         onOpenAutoFocus={(event) => event.preventDefault()}
+        onCloseAutoFocus={(event) => event.preventDefault()}
       >
         <Command className="bg-background" shouldFilter={false}>
           <div className="border-b px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
@@ -121,7 +122,7 @@ export function SearchableSelect({
                   key={option.value}
                   value={option.label}
                   onSelect={() => {
-                    onValueChange(option.value === value ? "" : option.value)
+                    onValueChange(option.value)
                     handleOpenChange(false)
                   }}
                   className="px-4 py-3 cursor-pointer hover:bg-muted/50 transition-colors rounded-lg mx-1 my-0.5"
