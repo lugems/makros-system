@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { useFirestore, useCollection, useDoc, useMemoFirebase } from '@/firebase';
 import {
   collection,
   query,
   orderBy,
+  doc,
+  DocumentReference,
 } from 'firebase/firestore';
 import { useAuth } from '@/contexts/auth-context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +19,8 @@ import { Input } from '@/components/ui/input';
 import { DateRangePicker } from '@/components/ui/date-range-picker';
 import { DateRange } from 'react-day-picker';
 import { useRouter } from 'next/navigation';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfDay, endOfDay, format } from 'date-fns';
+import { pdf } from '@react-pdf/renderer';
 
 import {
   ChartBar,
@@ -34,8 +37,13 @@ import {
   ShieldAlert,
   Sparkles,
   Layers,
-  History
+  History,
+  FileSpreadsheet,
+  Loader2,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+import { exportAccountingExcel, exportAccountingCSV } from '@/lib/reports-export';
+import { ReportPDFDocument } from '@/components/reports/report-pdf-document';
 
 import RevenueSummary from '@/components/reports/revenue-summary';
 import { SalesReport } from '@/components/reports/sales-report';
@@ -52,6 +60,7 @@ import { JobCard } from '@/types/job-card';
 import { Booking } from '@/types/booking';
 import { InventoryItem } from '@/types/inventory';
 import { StaffMember } from '@/types/staff';
+import { WorkshopSettings } from '@/types/settings';
 
 const toSafeDate = (value: unknown): Date => {
   if (!value) return new Date(0);
@@ -115,12 +124,18 @@ export default function ReportsPage() {
     return query(collection(db, 'users'));
   }, [db, isAuthorized]);
 
+  const settingsRef = useMemoFirebase(() => {
+    if (!db) return null;
+    return doc(db, 'settings', 'workshop') as DocumentReference<WorkshopSettings>;
+  }, [db]);
+
   const { data: payments, loading: payLoading } = useCollection<Payment>(paymentsQuery as any);
   const { data: invoices, loading: invLoading } = useCollection<Invoice>(invoicesQuery as any);
   const { data: jobCards, loading: jobLoading } = useCollection<JobCard>(jobsQuery as any);
   const { data: bookings, loading: bookLoading } = useCollection<Booking>(bookingsQuery as any);
   const { data: inventory, loading: stockLoading } = useCollection<InventoryItem>(inventoryQuery as any);
   const { data: staff, loading: staffLoading } = useCollection<StaffMember>(usersQuery as any);
+  const { data: settings, loading: settingsLoading } = useDoc<WorkshopSettings>(settingsRef as any);
 
   const isDataLoading = authLoading || 
     (!!paymentsQuery && payLoading) || 
@@ -128,7 +143,8 @@ export default function ReportsPage() {
     (!!jobsQuery && jobLoading) || 
     (!!bookingsQuery && bookLoading) || 
     (!!inventoryQuery && stockLoading) || 
-    (!!usersQuery && staffLoading);
+    (!!usersQuery && staffLoading) ||
+    settingsLoading;
 
   // Default tab calibration based on role authority
   useEffect(() => {
@@ -207,8 +223,126 @@ export default function ReportsPage() {
     return { gross, net, efficiency, activeJobs };
   }, [filteredData]);
 
-  const handleExport = (type: 'PDF' | 'CSV') => {
-    alert(`Certified ${type} Ledger Export process initialized for active filter interval.`);
+  const [isExporting, setIsExporting] = useState<'excel' | 'csv' | 'pdf' | null>(null);
+  const { toast } = useToast();
+
+  const handleExportPDF = async () => {
+    if (!filteredData) {
+      toast({
+        title: "Export Notice",
+        description: "Report data is still synchronizing. Please try again in a moment.",
+      });
+      return;
+    }
+    try {
+      setIsExporting('pdf');
+      const blob = await pdf(
+        <ReportPDFDocument
+          invoices={filteredData.filteredInvoices}
+          payments={filteredData.filteredPayments}
+          jobCards={filteredData.filteredJobs}
+          dateRange={dateRange}
+          settings={settings || null}
+          userRole={currentRole}
+        />
+      ).toBlob();
+
+      const dateSuffix = dateRange?.from
+        ? dateRange.to
+          ? `${format(dateRange.from, 'yyyyMMdd')}_${format(dateRange.to, 'yyyyMMdd')}`
+          : `${format(dateRange.from, 'yyyyMMdd')}`
+        : 'All_Time';
+
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `Makros_Intelligence_Report_${dateSuffix}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      document.body.removeChild(anchor);
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF Ledger Export Generated",
+        description: `Exported certified PDF report for ${dateRange?.from ? 'the active date interval' : 'all records'}.`,
+      });
+    } catch (err) {
+      console.error('Failed to export PDF report:', err);
+      toast({
+        title: "Export Failed",
+        description: "An error occurred while compiling the PDF document.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const handleExportExcel = async () => {
+    if (!filteredData) {
+      toast({
+        title: "Export Notice",
+        description: "Report data is still synchronizing. Please try again in a moment.",
+      });
+      return;
+    }
+    try {
+      setIsExporting('excel');
+      await exportAccountingExcel({
+        invoices: filteredData.filteredInvoices,
+        payments: filteredData.filteredPayments,
+        jobCards: filteredData.filteredJobs,
+        inventory: inventory || [],
+        dateRange,
+        userRole: currentRole,
+        activeTab,
+      });
+      toast({
+        title: "Excel Ledger Export Generated",
+        description: `Exported ${filteredData.filteredInvoices.length} invoices and ${filteredData.filteredPayments.length} payments for the selected interval.`,
+      });
+    } catch (err) {
+      console.error('Failed to export Excel report:', err);
+      toast({
+        title: "Export Failed",
+        description: "An error occurred while compiling the Excel workbook.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(null);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    if (!filteredData) {
+      toast({
+        title: "Export Notice",
+        description: "Report data is still synchronizing. Please try again in a moment.",
+      });
+      return;
+    }
+    try {
+      setIsExporting('csv');
+      await exportAccountingCSV({
+        invoices: filteredData.filteredInvoices,
+        payments: filteredData.filteredPayments,
+        dateRange,
+        userRole: currentRole,
+      });
+      toast({
+        title: "CSV Export Downloaded",
+        description: `Exported ${filteredData.filteredInvoices.length} invoices to CSV for the selected date interval.`,
+      });
+    } catch (err) {
+      console.error('Failed to export CSV report:', err);
+      toast({
+        title: "Export Failed",
+        description: "An error occurred while generating the CSV file.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsExporting(null);
+    }
   };
 
   if (authLoading || isDataLoading) return <LoadingState />;
@@ -248,15 +382,63 @@ export default function ReportsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          <div className="flex bg-muted/50 p-1.5 rounded-2xl border border-border/50 shrink-0 shadow-inner">
-            <Button variant="ghost" size="icon" onClick={() => window.print()} className="h-10 w-10 rounded-xl hover:bg-background">
+          <div className="flex items-center bg-muted/50 p-1.5 rounded-2xl border border-border/50 shrink-0 shadow-inner gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => window.print()}
+              className="h-10 w-10 rounded-xl hover:bg-background transition-all"
+              title="Print Ledger Summary"
+            >
               <Printer className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleExport('PDF')} className="h-10 w-10 rounded-xl hover:bg-background">
-              <FileText className="h-4 w-4" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={isExporting !== null}
+              className="h-10 px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-2 text-amber-600 hover:text-amber-700 dark:text-amber-400"
+              title="Export Forensic Ledger to PDF (.pdf)"
+            >
+              {isExporting === 'pdf' ? (
+                <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+              ) : (
+                <FileText className="h-4 w-4 text-amber-500" />
+              )}
+              <span className="hidden sm:inline">PDF</span>
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => handleExport('CSV')} className="h-10 w-10 rounded-xl hover:bg-background">
-              <Download className="h-4 w-4" />
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={isExporting !== null}
+              className="h-10 px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+              title="Export Accounting Ledger to Excel (.xlsx)"
+            >
+              {isExporting === 'excel' ? (
+                <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+              ) : (
+                <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+              )}
+              <span className="hidden sm:inline">Excel</span>
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportCSV}
+              disabled={isExporting !== null}
+              className="h-10 px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-2 text-primary hover:text-primary/80"
+              title="Export Accounting Ledger to CSV (.csv)"
+            >
+              {isExporting === 'csv' ? (
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              ) : (
+                <Download className="h-4 w-4 text-primary" />
+              )}
+              <span className="hidden sm:inline">CSV</span>
             </Button>
           </div>
           <DateRangePicker date={dateRange} setDate={setDateRange} className="flex-1 lg:flex-none" />
