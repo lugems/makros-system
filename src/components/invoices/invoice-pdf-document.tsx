@@ -9,12 +9,9 @@ import { JobPart } from '@/types/job-card';
 import { WorkshopSettings } from '@/types/settings';
 
 /**
- * @fileOverview High-fidelity PDF Document Template for Makros System.
- * Utilizes local font sources and a rigid grid system to ensure forensic stability.
- * Optimized for multi-page overflow handling without footer collision.
+ * @fileOverview Customer invoice PDF template with multi-page support.
  */
 
-// 1. Register high-density local fonts
 Font.register({
   family: 'Inter',
   fonts: [
@@ -25,18 +22,16 @@ Font.register({
   ],
 });
 
-// 2. Technical Text Safety Helper
 const safeText = (value: string | number | undefined | null, maxLength: number = 500) => {
   if (value === undefined || value === null) return '';
   const str = String(value);
   return str.length > maxLength ? str.substring(0, maxLength) + '...' : str;
 };
 
-// Forensic Date Formatter for PDF environment
 const formatPdfDate = (date: any) => {
   if (!date) return 'N/A';
   let d: Date;
-  
+
   if (typeof date === 'object' && 'toDate' in date && typeof date.toDate === 'function') {
     d = date.toDate();
   } else if (typeof date === 'object' && 'seconds' in date) {
@@ -48,355 +43,313 @@ const formatPdfDate = (date: any) => {
   } else {
     return 'Pending Sync';
   }
-  
+
   if (isNaN(d.getTime())) return 'Invalid Date';
   return d.toISOString().split('T')[0];
 };
 
-// 3. Technical Styles (React-PDF Compatible)
+const NAVY = '#102A43';
+const INK = '#243B53';
+const MUTED = '#627D98';
+const BORDER = '#D9E2EC';
+const PAPER = '#F7F9FC';
+const ACCENT = '#F59E0B';
+const SUCCESS = '#138A5B';
+
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 40,
-    paddingRight: 40,
-    paddingBottom: 90, 
-    paddingLeft: 40,
+    paddingTop: 30,
+    paddingRight: 34,
+    paddingBottom: 88,
+    paddingLeft: 34,
     backgroundColor: '#FFFFFF',
     fontFamily: 'Inter',
-    color: '#0F172A',
-    fontSize: 10,
+    color: INK,
+    fontSize: 8,
+  },
+  topRule: {
+    height: 5,
+    backgroundColor: ACCENT,
+    marginBottom: 14,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    paddingBottom: 20,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  logoContainer: {
+  brand: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    width: '57%',
   },
-  logo: {
-    width: 64,
-    height: 64,
-    borderRadius: 8,
+  logoFrame: {
+    width: 50,
+    height: 50,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: PAPER,
+    padding: 4,
+    marginRight: 11,
   },
-  workshopInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
+  logo: { width: 40, height: 40, objectFit: 'contain' },
+  brandCopy: { flex: 1 },
   workshopName: {
     fontSize: 14,
     fontWeight: 900,
+    color: NAVY,
     textTransform: 'uppercase',
-    marginBottom: 2,
-    flexWrap: 'wrap',
+    marginBottom: 3,
   },
-  workshopLegal: {
-    fontSize: 8,
-    color: '#64748B',
-    textTransform: 'uppercase',
+  legalName: {
+    fontSize: 6.5,
     fontWeight: 700,
-    marginBottom: 2,
-    flexWrap: 'wrap',
+    color: MUTED,
+    textTransform: 'uppercase',
+    marginBottom: 4,
   },
-  contactText: {
-    fontSize: 7,
-    color: '#94A3B8',
-    fontWeight: 400,
-    flexWrap: 'wrap',
+  contactText: { fontSize: 6.5, color: MUTED, marginBottom: 2 },
+  titleBlock: {
+    width: '39%',
+    backgroundColor: NAVY,
+    padding: 12,
+    minHeight: 78,
   },
-  invoiceMeta: {
-    textAlign: 'right',
-    width: 180,
+  documentTitle: {
+    fontSize: 17,
+    fontWeight: 900,
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
   },
-  invoiceTitle: {
-    fontSize: 9,
+  documentNumber: { marginTop: 5, fontSize: 9, fontWeight: 700, color: '#FFFFFF' },
+  documentStatus: {
+    alignSelf: 'flex-start',
+    marginTop: 9,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    backgroundColor: ACCENT,
+    color: NAVY,
+    fontSize: 5.5,
     fontWeight: 900,
     textTransform: 'uppercase',
-    color: '#3B82F6',
-    letterSpacing: 1.5,
-    marginBottom: 4,
   },
-  documentType: {
-    fontSize: 10,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#0F172A',
-    marginBottom: 4,
-  },
-  invoiceNumber: {
-    fontSize: 18,
-    fontWeight: 900,
-    marginBottom: 4,
-    flexWrap: 'wrap',
-  },
-  metaLabelValue: {
-    fontSize: 8,
-    color: '#64748B',
-    marginBottom: 1,
-  },
-  
-  // Details Grid
-  detailsGrid: {
+  summaryBar: {
     flexDirection: 'row',
-    marginBottom: 30,
-    gap: 20,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: PAPER,
+    marginBottom: 18,
   },
-  detailCol: {
+  summaryCell: {
     flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRightWidth: 1,
+    borderRightColor: BORDER,
   },
-  sectionTitle: {
-    fontSize: 8,
+  summaryCellLast: { flex: 1, paddingVertical: 8, paddingHorizontal: 10 },
+  microLabel: {
+    fontSize: 5.5,
     fontWeight: 900,
+    color: MUTED,
+    letterSpacing: 0.7,
     textTransform: 'uppercase',
-    color: '#94A3B8',
+    marginBottom: 3,
+  },
+  summaryValue: { fontSize: 8, fontWeight: 700, color: NAVY },
+  billingGrid: { flexDirection: 'row', marginBottom: 19 },
+  billingCard: {
+    width: '49%',
+    borderTopWidth: 3,
+    borderTopColor: NAVY,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: BORDER,
+    padding: 11,
+    minHeight: 95,
+    marginRight: '2%',
+  },
+  billingCardLast: {
+    width: '49%',
+    borderTopWidth: 3,
+    borderTopColor: NAVY,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: BORDER,
+    padding: 11,
+    minHeight: 95,
+  },
+  cardTitle: {
+    fontSize: 6,
+    fontWeight: 900,
+    color: MUTED,
     letterSpacing: 1,
-    marginBottom: 6,
+    textTransform: 'uppercase',
+    marginBottom: 8,
   },
   entityName: {
-    fontSize: 11,
-    fontWeight: 700,
+    fontSize: 10.5,
+    fontWeight: 900,
+    color: NAVY,
     textTransform: 'uppercase',
-    marginBottom: 4,
-    flexWrap: 'wrap',
+    marginBottom: 5,
   },
-  entityText: {
+  detailLine: { fontSize: 7, color: MUTED, marginBottom: 3, lineHeight: 1.25 },
+  detailStrong: { fontWeight: 700, color: INK },
+  sectionHeading: { flexDirection: 'row', alignItems: 'center', marginBottom: 7 },
+  sectionNumber: {
+    width: 20,
+    height: 20,
+    paddingTop: 6,
+    marginRight: 7,
+    backgroundColor: NAVY,
+    color: '#FFFFFF',
+    fontSize: 7,
+    fontWeight: 900,
+    textAlign: 'center',
+  },
+  sectionTitle: {
+    flex: 1,
     fontSize: 8,
-    color: '#64748B',
-    marginBottom: 2,
-    flexWrap: 'wrap',
+    fontWeight: 900,
+    color: NAVY,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
   },
-
-  // Table Configuration (Fixed Widths)
+  sectionHint: { fontSize: 6, color: MUTED },
   table: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
-    borderRadius: 8,
-    overflow: 'hidden',
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderTopWidth: 1,
+    borderColor: BORDER,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
-    padding: 10,
+    backgroundColor: '#EAF0F6',
+    paddingVertical: 7,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: BORDER,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 10,
+    alignItems: 'center',
+    minHeight: 34,
+    paddingVertical: 7,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    minHeight: 35,
+    borderBottomColor: BORDER,
   },
-  colDesc: { width: '55%', paddingRight: 10 },
-  colQty: { width: '10%', textAlign: 'center' },
-  colPrice: { width: '17.5%', textAlign: 'right' },
-  colTotal: { width: '17.5%', textAlign: 'right' },
-  
-  headerText: {
-    fontSize: 7,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#64748B',
-  },
-  rowText: {
-    fontSize: 8,
-    fontWeight: 700,
-    flexWrap: 'wrap',
-  },
-  rowSubText: {
-    fontSize: 7,
-    color: '#94A3B8',
-    marginTop: 2,
-    fontStyle: 'italic',
-    flexWrap: 'wrap',
-  },
-
-  // Totals Section
-  totalsContainer: {
+  tableRowAlt: { backgroundColor: '#FAFCFE' },
+  indexCol: { width: '7%' },
+  descriptionCol: { width: '45%', paddingRight: 8 },
+  quantityCol: { width: '10%', textAlign: 'center' },
+  priceCol: { width: '19%', textAlign: 'right' },
+  totalCol: { width: '19%', textAlign: 'right' },
+  tableLabel: { fontSize: 5.5, fontWeight: 900, color: MUTED, letterSpacing: 0.5 },
+  rowIndex: { fontSize: 6.5, fontWeight: 700, color: '#9FB3C8' },
+  rowText: { fontSize: 7.5, fontWeight: 700, color: INK },
+  rowDescription: { fontSize: 7.5, fontWeight: 700, color: INK, marginBottom: 2 },
+  rowSubText: { fontSize: 6, color: MUTED },
+  totalsArea: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 20,
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginTop: 16,
   },
+  paymentSummary: {
+    width: '42%',
+    paddingTop: 4,
+  },
+  paymentSummaryTitle: {
+    fontSize: 6,
+    fontWeight: 900,
+    color: MUTED,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 7,
+  },
+  paymentSummaryText: { fontSize: 7, color: MUTED, lineHeight: 1.4 },
+  paidAmount: { marginTop: 7, fontSize: 8, fontWeight: 700, color: SUCCESS },
   totalsBox: {
-    width: 250,
-    backgroundColor: '#F8FAFC',
-    padding: 15,
-    borderRadius: 12,
+    width: '49%',
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: BORDER,
+    backgroundColor: PAPER,
   },
+  totalRows: { paddingVertical: 10, paddingHorizontal: 12 },
   totalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 6,
-    gap: 10,
+    marginBottom: 7,
   },
+  totalLabel: { fontSize: 7, fontWeight: 700, color: MUTED, textTransform: 'uppercase' },
+  totalValue: { fontSize: 8, fontWeight: 700, color: INK, textAlign: 'right' },
+  discountText: { color: SUCCESS },
   grandTotalRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#E2E8F0',
-    gap: 10,
+    borderTopColor: BORDER,
   },
-  totalLabel: {
-    fontSize: 8,
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    color: '#64748B',
-    flexShrink: 0,
-  },
-  totalValue: {
-    fontSize: 9,
-    fontWeight: 700,
-    textAlign: 'right',
-    flex: 1,
-  },
-  grandTotalLabel: {
-    fontSize: 9,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#3B82F6',
-    flexShrink: 0,
-  },
-  grandTotalValue: {
-    fontSize: 14,
-    fontWeight: 900,
-    color: '#3B82F6',
-    textAlign: 'right',
-    flex: 1,
-  },
-
-  // Settlement Specifics
-  settlementSection: {
-    marginTop: 15,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopStyle: 'dashed',
-    borderTopColor: '#E2E8F0',
-    gap: 4,
-  },
-  settledLabel: {
-    fontSize: 8,
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    color: '#64748B',
-    flexShrink: 0,
-  },
-  settledValue: {
-    fontSize: 9,
-    fontWeight: 900,
-    color: '#10B981',
-    textAlign: 'right',
-    flex: 1,
-  },
+  grandTotalLabel: { fontSize: 8, fontWeight: 900, color: NAVY, textTransform: 'uppercase' },
+  grandTotalValue: { fontSize: 12, fontWeight: 900, color: NAVY, textAlign: 'right' },
   balanceBlock: {
-    marginTop: 10,
-    backgroundColor: '#0F172A',
-    padding: 10,
-    borderRadius: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    backgroundColor: NAVY,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
   },
-  balanceLabel: {
-    fontSize: 8,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#FFFFFF',
-    opacity: 0.5,
-  },
-  balanceValue: {
-    fontSize: 12,
-    fontWeight: 900,
-    color: '#3B82F6',
-  },
-
-  // Bank & Notes
-  instructionSection: {
-    marginTop: 30,
-    flexDirection: 'row',
-    gap: 20,
-  },
-  bankSection: {
+  balanceLabel: { fontSize: 7, fontWeight: 900, color: '#BCCCDC', textTransform: 'uppercase' },
+  balanceValue: { fontSize: 13, fontWeight: 900, color: ACCENT, textAlign: 'right' },
+  instructionSection: { flexDirection: 'row', marginTop: 20 },
+  instructionCard: {
     flex: 1,
-    padding: 12,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
+    padding: 11,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
+    borderColor: BORDER,
+    minHeight: 86,
+    marginRight: 12,
   },
-  bankRow: {
-    flexDirection: 'row',
-    marginBottom: 2,
+  instructionCardLast: {
+    flex: 1,
+    padding: 11,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: '#FFFDF7',
+    minHeight: 86,
   },
-  bankLabel: {
+  instructionTitle: {
     fontSize: 6,
     fontWeight: 900,
+    color: NAVY,
+    letterSpacing: 0.8,
     textTransform: 'uppercase',
-    color: '#94A3B8',
-    width: 70,
+    marginBottom: 7,
   },
-  bankValue: {
-    fontSize: 7,
-    fontWeight: 700,
-    color: '#0F172A',
-  },
-  notesSection: {
-    flex: 1,
-    padding: 12,
-    backgroundColor: '#F1F5F9',
-    borderRadius: 12,
-  },
-  notesTitle: {
-    fontSize: 7,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#64748B',
-    marginBottom: 4,
-  },
-  notesContent: {
-    fontSize: 7,
-    color: '#475569',
-    fontStyle: 'italic',
-    lineHeight: 1.4,
-    flexWrap: 'wrap',
-  },
-
-  // Fixed Footer
+  bankRow: { flexDirection: 'row', marginBottom: 3 },
+  bankLabel: { width: 66, fontSize: 5.5, fontWeight: 900, color: MUTED, textTransform: 'uppercase' },
+  bankValue: { flex: 1, fontSize: 6.5, fontWeight: 700, color: INK },
+  notesText: { fontSize: 7, color: INK, lineHeight: 1.4 },
   footer: {
     position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
-    textAlign: 'center',
-    paddingTop: 15,
+    bottom: 22,
+    left: 34,
+    right: 34,
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopStyle: 'dashed',
-    borderTopColor: '#E2E8F0',
+    borderTopColor: BORDER,
   },
-  footerNote: {
-    fontSize: 8,
-    color: '#94A3B8',
-    fontStyle: 'italic',
-    marginBottom: 8,
-    flexWrap: 'wrap',
-  },
-  certification: {
-    fontSize: 6,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#CBD5E1',
-    letterSpacing: 2,
-  },
+  footerNote: { fontSize: 6, color: MUTED, marginBottom: 5, textAlign: 'center' },
+  footerMeta: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerText: { fontSize: 5.5, color: MUTED },
+  pageNumber: { fontSize: 6, fontWeight: 700, color: NAVY },
 });
 
 interface InvoicePDFDocumentProps {
@@ -408,16 +361,17 @@ interface InvoicePDFDocumentProps {
   documentTitle?: string;
 }
 
-export function InvoicePDFDocument({ 
-    invoice, 
-    customer, 
-    vehicle, 
-    parts, 
-    settings,
-    documentTitle = 'INVOICE'
+export function InvoicePDFDocument({
+  invoice,
+  customer,
+  vehicle,
+  parts,
+  settings,
+  documentTitle = 'INVOICE',
 }: InvoicePDFDocumentProps) {
   const currency = settings?.currency || 'Ush';
-  
+  const invoiceReference = safeText(invoice.invoiceNumber || invoice.invoiceId.slice(-8).toUpperCase());
+
   const formatValue = (val: number) => {
     return `${currency} ${Math.round(val).toLocaleString()}`;
   };
@@ -425,171 +379,198 @@ export function InvoicePDFDocument({
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* 1. Header */}
+        <View style={styles.topRule} fixed />
+
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
+          <View style={styles.brand}>
             {settings?.logoUrl ? (
+              <View style={styles.logoFrame}>
                 <Image src={settings.logoUrl} style={styles.logo} />
+              </View>
             ) : null}
-            <View style={styles.workshopInfo}>
+            <View style={styles.brandCopy}>
               <Text style={styles.workshopName}>{safeText(settings?.workshopName || 'MAKROS SYSTEM')}</Text>
-              <Text style={styles.workshopLegal}>{safeText(settings?.businessRegistrationName)}</Text>
+              <Text style={styles.legalName}>{safeText(settings?.businessRegistrationName)}</Text>
               {settings?.tin && <Text style={styles.contactText}>TIN: {safeText(settings.tin)}</Text>}
               <Text style={styles.contactText}>{safeText(settings?.address, 150)}</Text>
-              
-              <View style={{ marginTop: 4 }}>
-                  <Text style={styles.contactText}>Phone: {safeText(settings?.phone)} {settings?.additionalPhones?.join(' | ')}</Text>
-                  <Text style={styles.contactText}>Email: {safeText(settings?.email)}</Text>
-                  {settings?.website && <Text style={styles.contactText}>Web: {safeText(settings.website)}</Text>}
-              </View>
+              <Text style={styles.contactText}>Tel: {safeText(settings?.phone)} {settings?.additionalPhones?.join(' | ')}</Text>
+              <Text style={styles.contactText}>Email: {safeText(settings?.email)}</Text>
+              {settings?.website && <Text style={styles.contactText}>{safeText(settings.website)}</Text>}
             </View>
           </View>
-          <View style={styles.invoiceMeta}>
-            <Text style={styles.invoiceTitle}>Certified Document</Text>
-            <Text style={styles.documentType}>{documentTitle}</Text>
-            <Text style={styles.invoiceNumber}>#{safeText(invoice.invoiceNumber || invoice.invoiceId.slice(-8).toUpperCase())}</Text>
-            <Text style={styles.metaLabelValue}>Issue Date: {formatPdfDate(invoice.issuedAt)}</Text>
-            {invoice.dueDate && (
-                <Text style={styles.metaLabelValue}>Due Date: {safeText(invoice.dueDate)}</Text>
-            )}
+
+          <View style={styles.titleBlock}>
+            <Text style={styles.documentTitle}>{safeText(documentTitle, 30)}</Text>
+            <Text style={styles.documentNumber}>#{invoiceReference}</Text>
+            <Text style={styles.documentStatus}>{safeText(invoice.paymentStatus)}</Text>
           </View>
         </View>
 
-        {/* 2. Dossier Grid */}
-        <View style={styles.detailsGrid}>
-          <View style={styles.detailCol}>
-            <Text style={styles.sectionTitle}>Fiscal Recipient</Text>
+        <View style={styles.summaryBar}>
+          <View style={styles.summaryCell}>
+            <Text style={styles.microLabel}>Issue date</Text>
+            <Text style={styles.summaryValue}>{formatPdfDate(invoice.issuedAt)}</Text>
+          </View>
+          <View style={styles.summaryCell}>
+            <Text style={styles.microLabel}>Due date</Text>
+            <Text style={styles.summaryValue}>{invoice.dueDate ? safeText(invoice.dueDate) : 'On receipt'}</Text>
+          </View>
+          <View style={styles.summaryCell}>
+            <Text style={styles.microLabel}>Job reference</Text>
+            <Text style={styles.summaryValue}>{safeText(invoice.jobCardId.toUpperCase().slice(-8))}</Text>
+          </View>
+          <View style={styles.summaryCellLast}>
+            <Text style={styles.microLabel}>Currency</Text>
+            <Text style={styles.summaryValue}>{safeText(currency)}</Text>
+          </View>
+        </View>
+
+        <View style={styles.billingGrid}>
+          <View style={styles.billingCard}>
+            <Text style={styles.cardTitle}>Bill to</Text>
             <Text style={styles.entityName}>{safeText(customer?.fullName || 'N/A')}</Text>
-            <Text style={styles.entityText}>{safeText(customer?.phone)}</Text>
-            <Text style={styles.entityText}>{safeText(customer?.email, 100)}</Text>
-            <Text style={styles.entityText}>{safeText(customer?.address, 200)}</Text>
+            <Text style={styles.detailLine}>Tel: <Text style={styles.detailStrong}>{safeText(customer?.phone)}</Text></Text>
+            <Text style={styles.detailLine}>{safeText(customer?.email, 100)}</Text>
+            <Text style={styles.detailLine}>{safeText(customer?.address, 200)}</Text>
           </View>
-          <View style={styles.detailCol}>
-            <Text style={styles.sectionTitle}>Technical Asset</Text>
+
+          <View style={styles.billingCardLast}>
+            <Text style={styles.cardTitle}>Service vehicle</Text>
             <Text style={styles.entityName}>{safeText(vehicle?.make)} {safeText(vehicle?.model)}</Text>
-            <Text style={styles.entityText}>Number Plate: {safeText(vehicle?.numberPlate)}</Text>
-            <Text style={styles.entityText}>Year: {safeText(vehicle?.year)}</Text>
-            <Text style={styles.entityText}>VIN: {safeText(vehicle?.vin || vehicle?.chassisNumber, 50)}</Text>
+            <Text style={styles.detailLine}>Registration: <Text style={styles.detailStrong}>{safeText(vehicle?.numberPlate)}</Text></Text>
+            <Text style={styles.detailLine}>Model year: <Text style={styles.detailStrong}>{safeText(vehicle?.year)}</Text></Text>
+            <Text style={styles.detailLine}>VIN / Chassis: <Text style={styles.detailStrong}>{safeText(vehicle?.vin || vehicle?.chassisNumber, 50)}</Text></Text>
           </View>
         </View>
 
-        {/* 3. Ledger Table */}
-        <Text style={styles.sectionTitle}>Technical Ledger Entries</Text>
+        <View style={styles.sectionHeading} wrap={false}>
+          <Text style={styles.sectionNumber}>01</Text>
+          <Text style={styles.sectionTitle}>Itemized charges</Text>
+          <Text style={styles.sectionHint}>Parts and labour</Text>
+        </View>
+
         <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.headerText, styles.colDesc]}>Service Description</Text>
-            <Text style={[styles.headerText, styles.colQty]}>Qty</Text>
-            <Text style={[styles.headerText, styles.colPrice]}>Unit Price</Text>
-            <Text style={[styles.headerText, styles.colTotal]}>Total</Text>
+          <View style={styles.tableHeader} wrap={false}>
+            <Text style={[styles.indexCol, styles.tableLabel]}>NO.</Text>
+            <Text style={[styles.descriptionCol, styles.tableLabel]}>DESCRIPTION</Text>
+            <Text style={[styles.quantityCol, styles.tableLabel]}>QTY</Text>
+            <Text style={[styles.priceCol, styles.tableLabel]}>UNIT PRICE</Text>
+            <Text style={[styles.totalCol, styles.tableLabel]}>AMOUNT</Text>
           </View>
 
-          {/* Parts Rows First */}
           {parts?.map((part, i) => (
-            <View key={i} style={styles.tableRow} wrap={false}>
-              <View style={styles.colDesc}>
-                <Text style={styles.rowText}>{safeText(part.itemName || part.itemId, 150)}</Text>
-                <Text style={styles.rowSubText}>Inventory Stock Allocation</Text>
+            <View key={i} style={[styles.tableRow, ...(i % 2 ? [styles.tableRowAlt] : [])]} wrap={false}>
+              <Text style={[styles.indexCol, styles.rowIndex]}>{String(i + 1).padStart(2, '0')}</Text>
+              <View style={styles.descriptionCol}>
+                <Text style={styles.rowDescription}>{safeText(part.itemName || part.itemId, 150)}</Text>
+                <Text style={styles.rowSubText}>Inventory item</Text>
               </View>
-              <View style={styles.colQty}><Text style={styles.rowText}>{part.quantityUsed}</Text></View>
-              <View style={styles.colPrice}><Text style={styles.rowText}>{formatValue(part.unitPrice)}</Text></View>
-              <View style={styles.colTotal}><Text style={styles.rowText}>{formatValue(part.unitPrice * part.quantityUsed)}</Text></View>
+              <Text style={[styles.quantityCol, styles.rowText]}>{part.quantityUsed}</Text>
+              <Text style={[styles.priceCol, styles.rowText]}>{formatValue(part.unitPrice)}</Text>
+              <Text style={[styles.totalCol, styles.rowText]}>{formatValue(part.unitPrice * part.quantityUsed)}</Text>
             </View>
           ))}
 
-          {/* Labor Row at the Bottom, conditionally rendered */}
           {invoice.laborTotal > 0 && (
-            <View style={styles.tableRow} wrap={false}>
-              <View style={styles.colDesc}>
-                <Text style={styles.rowText}>Labor & Diagnostic Charges</Text>
-                <Text style={styles.rowSubText}>Service fees for repair and maintenance cycles.</Text>
+            <View style={[styles.tableRow, ...((parts?.length || 0) % 2 ? [styles.tableRowAlt] : [])]} wrap={false}>
+              <Text style={[styles.indexCol, styles.rowIndex]}>{String((parts?.length || 0) + 1).padStart(2, '0')}</Text>
+              <View style={styles.descriptionCol}>
+                <Text style={styles.rowDescription}>Labor &amp; Diagnostic Charges</Text>
+                <Text style={styles.rowSubText}>Repair, maintenance and diagnostic service fees</Text>
               </View>
-              <View style={styles.colQty}><Text style={styles.rowText}>1</Text></View>
-              <View style={styles.colPrice}><Text style={styles.rowText}>{formatValue(invoice.laborTotal)}</Text></View>
-              <View style={styles.colTotal}><Text style={styles.rowText}>{formatValue(invoice.laborTotal)}</Text></View>
+              <Text style={[styles.quantityCol, styles.rowText]}>1</Text>
+              <Text style={[styles.priceCol, styles.rowText]}>{formatValue(invoice.laborTotal)}</Text>
+              <Text style={[styles.totalCol, styles.rowText]}>{formatValue(invoice.laborTotal)}</Text>
             </View>
           )}
         </View>
 
-        {/* 4. Totals Block */}
-        <View style={styles.totalsContainer} wrap={false}>
+        <View style={styles.totalsArea} wrap={false}>
+          <View style={styles.paymentSummary}>
+            <Text style={styles.paymentSummaryTitle}>Payment summary</Text>
+            <Text style={styles.paymentSummaryText}>Status: {safeText(invoice.paymentStatus)}</Text>
+            <Text style={styles.paymentSummaryText}>Invoice reference: #{invoiceReference}</Text>
+            <Text style={styles.paidAmount}>Amount received: {formatValue(invoice.amountPaid)}</Text>
+          </View>
+
           <View style={styles.totalsBox}>
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Subtotal</Text>
-              <Text style={styles.totalValue}>{formatValue(invoice.laborTotal + invoice.partsTotal)}</Text>
-            </View>
-            
-            {invoice.discount > 0 && (
+            <View style={styles.totalRows}>
               <View style={styles.totalRow}>
-                <Text style={[styles.totalLabel, { color: '#10B981' }]}>Discount</Text>
-                <Text style={[styles.totalValue, { color: '#10B981' }]}>-{formatValue(invoice.discount)}</Text>
+                <Text style={styles.totalLabel}>Subtotal</Text>
+                <Text style={styles.totalValue}>{formatValue(invoice.laborTotal + invoice.partsTotal)}</Text>
               </View>
-            )}
 
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Tax Provision</Text>
-              <Text style={styles.totalValue}>{formatValue(invoice.tax)}</Text>
-            </View>
+              {invoice.discount > 0 && (
+                <View style={styles.totalRow}>
+                  <Text style={[styles.totalLabel, styles.discountText]}>Discount</Text>
+                  <Text style={[styles.totalValue, styles.discountText]}>-{formatValue(invoice.discount)}</Text>
+                </View>
+              )}
 
-            <View style={styles.grandTotalRow}>
-              <Text style={styles.grandTotalLabel}>Grand Total</Text>
-              <Text style={styles.grandTotalValue}>{formatValue(invoice.grandTotal)}</Text>
-            </View>
-
-            {/* Payment Settlement Breakdown */}
-            <View style={styles.settlementSection}>
               <View style={styles.totalRow}>
-                <Text style={styles.settledLabel}>Net Settled</Text>
-                <Text style={styles.settledValue}>{formatValue(invoice.amountPaid)}</Text>
+                <Text style={styles.totalLabel}>Tax</Text>
+                <Text style={styles.totalValue}>{formatValue(invoice.tax)}</Text>
               </View>
-              
-              <View style={styles.balanceBlock}>
-                <Text style={styles.balanceLabel}>Balance Due</Text>
-                <Text style={styles.balanceValue}>{formatValue(invoice.balance)}</Text>
+
+              <View style={styles.grandTotalRow}>
+                <Text style={styles.grandTotalLabel}>Invoice total</Text>
+                <Text style={styles.grandTotalValue}>{formatValue(invoice.grandTotal)}</Text>
               </View>
+            </View>
+
+            <View style={styles.balanceBlock}>
+              <Text style={styles.balanceLabel}>Balance due</Text>
+              <Text style={styles.balanceValue}>{formatValue(invoice.balance)}</Text>
             </View>
           </View>
         </View>
 
-        {/* 5. Instructions & Remarks */}
-        <View style={styles.instructionSection}>
+        {(settings?.bankName || invoice.notes) && (
+          <View style={styles.instructionSection}>
             {settings?.bankName && (
-                <View style={styles.bankSection} wrap={false}>
-                    <Text style={styles.sectionTitle}>Payment Instructions</Text>
-                    <View style={styles.bankRow}>
-                        <Text style={styles.bankLabel}>Bank Name:</Text>
-                        <Text style={styles.bankValue}>{safeText(settings.bankName)}</Text>
-                    </View>
-                    <View style={styles.bankRow}>
-                        <Text style={styles.bankLabel}>Branch:</Text>
-                        <Text style={styles.bankValue}>{safeText(settings.bankBranch)}</Text>
-                    </View>
-                    <View style={styles.bankRow}>
-                        <Text style={styles.bankLabel}>Account Title:</Text>
-                        <Text style={styles.bankValue}>{safeText(settings.bankAccountName)}</Text>
-                    </View>
-                    <View style={styles.bankRow}>
-                        <Text style={styles.bankLabel}>Account No:</Text>
-                        <Text style={styles.bankValue}>{safeText(settings.bankAccountNumber)}</Text>
-                    </View>
-                    <View style={styles.bankRow}>
-                        <Text style={styles.bankLabel}>SWIFT Code:</Text>
-                        <Text style={styles.bankValue}>{safeText(settings.bankSwiftCode)}</Text>
-                    </View>
+              <View style={invoice.notes ? styles.instructionCard : styles.instructionCardLast} wrap={false}>
+                <Text style={styles.instructionTitle}>Payment instructions</Text>
+                <View style={styles.bankRow}>
+                  <Text style={styles.bankLabel}>Bank</Text>
+                  <Text style={styles.bankValue}>{safeText(settings.bankName)}</Text>
                 </View>
+                <View style={styles.bankRow}>
+                  <Text style={styles.bankLabel}>Branch</Text>
+                  <Text style={styles.bankValue}>{safeText(settings.bankBranch)}</Text>
+                </View>
+                <View style={styles.bankRow}>
+                  <Text style={styles.bankLabel}>Account</Text>
+                  <Text style={styles.bankValue}>{safeText(settings.bankAccountName)}</Text>
+                </View>
+                <View style={styles.bankRow}>
+                  <Text style={styles.bankLabel}>Account no.</Text>
+                  <Text style={styles.bankValue}>{safeText(settings.bankAccountNumber)}</Text>
+                </View>
+                <View style={styles.bankRow}>
+                  <Text style={styles.bankLabel}>SWIFT</Text>
+                  <Text style={styles.bankValue}>{safeText(settings.bankSwiftCode)}</Text>
+                </View>
+              </View>
             )}
 
             {invoice.notes && (
-                <View style={styles.notesSection} wrap={false}>
-                    <Text style={styles.notesTitle}>Fiscal Remarks & Terms</Text>
-                    <Text style={styles.notesContent}>{safeText(invoice.notes, 1000)}</Text>
-                </View>
+              <View style={styles.instructionCardLast} wrap={false}>
+                <Text style={styles.instructionTitle}>Notes &amp; terms</Text>
+                <Text style={styles.notesText}>{safeText(invoice.notes, 1000)}</Text>
+              </View>
             )}
-        </View>
+          </View>
+        )}
 
-        {/* 6. Footer */}
         <View style={styles.footer} fixed>
-          <Text style={styles.footerNote}>{safeText(settings?.receiptFooterNote || 'Thank you for trusting MAKROS HOLDINGS UGANDA LIMITED.', 300)}</Text>
-          <Text style={styles.certification}>MAKROS SYSTEM FINANCIAL ANALYSIS OS • CERTIFIED DIGITAL RECORD</Text>
+          <Text style={styles.footerNote}>{safeText(settings?.receiptFooterNote || 'Thank you for your business.', 300)}</Text>
+          <View style={styles.footerMeta}>
+            <Text style={styles.footerText}>Computer-generated document - no signature required</Text>
+            <Text
+              style={styles.pageNumber}
+              render={({ pageNumber, totalPages }) => `INV ${invoiceReference}  |  PAGE ${pageNumber} OF ${totalPages}`}
+            />
+          </View>
         </View>
       </Page>
     </Document>

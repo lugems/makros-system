@@ -4,18 +4,15 @@ import React from 'react';
 import { Page, Text, View, Document, StyleSheet, Font, Image } from '@react-pdf/renderer';
 import { JobCard, JobTask, JobPart } from '@/types/job-card';
 import { Customer } from '@/types/customer';
-import { Vehicle } from '@/types/vehicle';
 import { StaffMember } from '@/types/staff';
 import { WorkshopSettings } from '@/types/settings';
 import { getMeterUnit } from '@/services/asset-resolver-service';
 
 /**
- * @fileOverview High-fidelity Job Card PDF Document Template.
- * Optimized for forensic repair documentation and technical archival.
- * Synchronized for Polymorphic Asset support (Vehicles and Plant).
+ * @fileOverview Workshop job card PDF template.
+ * Supports both vehicle and plant assets without changing the underlying data flow.
  */
 
-// Register fonts for professional technical typography
 Font.register({
   family: 'Inter',
   fonts: [
@@ -42,179 +39,302 @@ const formatPdfDate = (date: any) => {
   return d.toISOString().split('T')[0];
 };
 
+const NAVY = '#102A43';
+const INK = '#243B53';
+const MUTED = '#627D98';
+const BORDER = '#D9E2EC';
+const PAPER = '#F7F9FC';
+const ACCENT = '#F59E0B';
+
 const styles = StyleSheet.create({
   page: {
-    paddingTop: 40,
-    paddingRight: 40,
-    paddingBottom: 90,
-    paddingLeft: 40,
+    paddingTop: 30,
+    paddingRight: 34,
+    paddingBottom: 82,
+    paddingLeft: 34,
     backgroundColor: '#FFFFFF',
     fontFamily: 'Inter',
-    color: '#0F172A',
-    fontSize: 9,
+    color: INK,
+    fontSize: 8,
+  },
+  topRule: {
+    height: 5,
+    backgroundColor: ACCENT,
+    marginBottom: 14,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    paddingBottom: 20,
+    alignItems: 'flex-start',
+    marginBottom: 16,
   },
-  logoContainer: {
+  brand: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    width: '57%',
+  },
+  logoFrame: {
+    width: 50,
+    height: 50,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: PAPER,
+    padding: 4,
+    marginRight: 11,
   },
   logo: {
-    width: 54,
-    height: 54,
-    borderRadius: 8,
+    width: 40,
+    height: 40,
+    objectFit: 'contain',
   },
-  workshopInfo: {
-    marginLeft: 12,
-    flex: 1,
-  },
+  brandCopy: { flex: 1 },
   workshopName: {
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 900,
+    color: NAVY,
     textTransform: 'uppercase',
-    marginBottom: 2,
+    marginBottom: 4,
   },
   contactText: {
     fontSize: 7,
-    color: '#94A3B8',
-    fontWeight: 400,
-    marginBottom: 1,
-  },
-  dossierMeta: {
-    textAlign: 'right',
-    width: 200,
-  },
-  dossierTitle: {
-    fontSize: 9,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#023891',
-    letterSpacing: 1.5,
-    marginBottom: 4,
-  },
-  dossierID: {
-    fontSize: 16,
-    fontWeight: 900,
-    marginBottom: 4,
-  },
-  statusBadge: {
-    backgroundColor: '#F1F5F9',
-    padding: '4 8',
-    borderRadius: 4,
-    fontSize: 7,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#64748B',
-    alignSelf: 'flex-end',
-  },
-  
-  grid: {
-    flexDirection: 'row',
-    marginBottom: 30,
-    gap: 20,
-  },
-  col: {
-    flex: 1,
-  },
-  sectionHeader: {
-    fontSize: 7,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#94A3B8',
-    letterSpacing: 1,
-    marginBottom: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#F1F5F9',
-    paddingBottom: 4,
-  },
-  valBig: {
-    fontSize: 10,
-    fontWeight: 700,
-    textTransform: 'uppercase',
-    marginBottom: 4,
-  },
-  valSmall: {
-    fontSize: 7,
-    color: '#64748B',
+    color: MUTED,
     marginBottom: 2,
   },
-
-  diagnosisBox: {
-    marginBottom: 30,
-    padding: 15,
-    backgroundColor: '#F8FAFC',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#F1F5F9',
+  titleBlock: {
+    width: '39%',
+    backgroundColor: NAVY,
+    padding: 12,
+    minHeight: 68,
   },
-  diagnosisText: {
+  documentTitle: {
+    fontSize: 16,
+    fontWeight: 900,
+    color: '#FFFFFF',
+    letterSpacing: 0.7,
+  },
+  documentSubtitle: {
+    marginTop: 3,
+    fontSize: 6,
+    color: '#BCCCDC',
+    letterSpacing: 1.3,
+  },
+  documentNumber: {
+    marginTop: 9,
     fontSize: 9,
-    color: '#334155',
-    lineHeight: 1.5,
-    fontStyle: 'italic',
+    fontWeight: 700,
+    color: '#FFFFFF',
   },
-
-  table: {
-    marginTop: 10,
+  metaBar: {
+    flexDirection: 'row',
+    backgroundColor: PAPER,
     borderWidth: 1,
-    borderColor: '#F1F5F9',
-    borderRadius: 8,
-    overflow: 'hidden',
-    marginBottom: 20,
+    borderColor: BORDER,
+    marginBottom: 18,
+  },
+  metaCell: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRightWidth: 1,
+    borderRightColor: BORDER,
+  },
+  metaCellLast: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  microLabel: {
+    fontSize: 5.5,
+    fontWeight: 900,
+    color: MUTED,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 3,
+  },
+  metaValue: {
+    fontSize: 8,
+    fontWeight: 700,
+    color: NAVY,
+  },
+  statusValue: {
+    color: '#B45309',
+  },
+  infoGrid: {
+    flexDirection: 'row',
+    marginBottom: 18,
+  },
+  infoCard: {
+    width: '32%',
+    borderTopWidth: 3,
+    borderTopColor: NAVY,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: BORDER,
+    padding: 10,
+    minHeight: 88,
+    marginRight: '2%',
+  },
+  infoCardLast: {
+    width: '32%',
+    borderTopWidth: 3,
+    borderTopColor: NAVY,
+    borderRightWidth: 1,
+    borderBottomWidth: 1,
+    borderLeftWidth: 1,
+    borderColor: BORDER,
+    padding: 10,
+    minHeight: 88,
+  },
+  cardTitle: {
+    fontSize: 6,
+    fontWeight: 900,
+    color: MUTED,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 8,
+  },
+  primaryValue: {
+    fontSize: 10,
+    fontWeight: 900,
+    color: NAVY,
+    textTransform: 'uppercase',
+    marginBottom: 5,
+  },
+  detailLine: {
+    fontSize: 7,
+    color: MUTED,
+    marginBottom: 3,
+    lineHeight: 1.25,
+  },
+  detailStrong: { fontWeight: 700, color: INK },
+  concern: {
+    flexDirection: 'row',
+    marginBottom: 19,
+    borderWidth: 1,
+    borderColor: BORDER,
+    backgroundColor: '#FFFDF7',
+  },
+  concernMarker: {
+    width: 7,
+    backgroundColor: ACCENT,
+  },
+  concernBody: {
+    flex: 1,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+  },
+  concernTitle: {
+    fontSize: 6,
+    fontWeight: 900,
+    color: '#B45309',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  concernText: {
+    fontSize: 9,
+    color: INK,
+    lineHeight: 1.45,
+  },
+  section: { marginBottom: 17 },
+  sectionHeading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 7,
+  },
+  sectionNumber: {
+    width: 20,
+    height: 20,
+    backgroundColor: NAVY,
+    color: '#FFFFFF',
+    fontSize: 7,
+    fontWeight: 900,
+    textAlign: 'center',
+    paddingTop: 6,
+    marginRight: 7,
+  },
+  sectionTitle: {
+    flex: 1,
+    fontSize: 8,
+    fontWeight: 900,
+    color: NAVY,
+    letterSpacing: 0.7,
+    textTransform: 'uppercase',
+  },
+  sectionCount: {
+    fontSize: 6,
+    color: MUTED,
+  },
+  table: {
+    borderLeftWidth: 1,
+    borderRightWidth: 1,
+    borderTopWidth: 1,
+    borderColor: BORDER,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#F8FAFC',
-    padding: 8,
+    backgroundColor: '#EAF0F6',
     borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
+    borderBottomColor: BORDER,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F1F5F9',
-    minHeight: 30,
     alignItems: 'center',
+    minHeight: 29,
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: BORDER,
   },
-  colDesc: { width: '65%' },
-  colQty: { width: '15%', textAlign: 'center' },
-  colStat: { width: '20%', textAlign: 'right' },
-  
-  rowText: { fontSize: 8, fontWeight: 700 },
-  rowSubText: { fontSize: 7, color: '#94A3B8', marginTop: 1 },
-
+  tableRowAlt: { backgroundColor: '#FAFCFE' },
+  indexCol: { width: '7%' },
+  descriptionCol: { width: '58%' },
+  quantityCol: { width: '14%', textAlign: 'center' },
+  statusCol: { width: '21%', textAlign: 'right' },
+  tableLabel: {
+    fontSize: 5.5,
+    fontWeight: 900,
+    color: MUTED,
+    letterSpacing: 0.6,
+  },
+  rowIndex: { fontSize: 6.5, fontWeight: 700, color: '#9FB3C8' },
+  rowText: { fontSize: 7.5, fontWeight: 700, color: INK },
+  rowMuted: { fontSize: 6.5, color: MUTED },
+  completed: { color: '#138A5B' },
+  signoff: {
+    flexDirection: 'row',
+    marginTop: 7,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: BORDER,
+  },
+  signoffCell: { flex: 1, marginRight: 24 },
+  signoffCellLast: { flex: 1 },
+  signLine: { borderBottomWidth: 1, borderBottomColor: '#9FB3C8', height: 18 },
+  signLabel: { marginTop: 4, fontSize: 5.5, color: MUTED, textTransform: 'uppercase' },
   footer: {
     position: 'absolute',
-    bottom: 30,
-    left: 40,
-    right: 40,
-    textAlign: 'center',
-    paddingTop: 15,
+    bottom: 24,
+    left: 34,
+    right: 34,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 8,
     borderTopWidth: 1,
-    borderTopStyle: 'dashed',
-    borderTopColor: '#E2E8F0',
+    borderTopColor: BORDER,
   },
-  certification: {
-    fontSize: 6,
-    fontWeight: 900,
-    textTransform: 'uppercase',
-    color: '#CBD5E1',
-    letterSpacing: 2,
-  },
+  footerText: { fontSize: 5.5, color: MUTED },
+  pageNumber: { fontSize: 6, fontWeight: 700, color: NAVY },
 });
 
 interface JobCardPDFDocumentProps {
   jobCard: JobCard;
   customer: Customer | null;
-  vehicle: any | null; // This is the polymorphic asset (Vehicle or Plant)
+  vehicle: any | null;
   tasks: JobTask[] | null;
   parts: JobPart[] | null;
   mechanic: StaffMember | null;
@@ -222,15 +342,15 @@ interface JobCardPDFDocumentProps {
   invoiceNumber?: string;
 }
 
-export function JobCardPDFDocument({ 
-  jobCard, 
-  customer, 
-  vehicle: asset, 
-  tasks, 
-  parts, 
-  mechanic, 
+export function JobCardPDFDocument({
+  jobCard,
+  customer,
+  vehicle: asset,
+  tasks,
+  parts,
+  mechanic,
   settings,
-  invoiceNumber
+  invoiceNumber,
 }: JobCardPDFDocumentProps) {
   const isPlant = jobCard.assetType === 'Plant';
   const assetName = isPlant ? safeText(asset?.name) : `${safeText(asset?.make)} ${safeText(asset?.model)}`;
@@ -241,75 +361,105 @@ export function JobCardPDFDocument({
   const telemetryVal = isPlant ? safeText(asset?.meterReading?.toLocaleString()) : safeText(asset?.mileage?.toLocaleString());
   const technicalRefLabel = isPlant ? 'Serial S/N' : 'VIN';
   const technicalRefVal = isPlant ? safeText(asset?.serialNumber) : safeText(asset?.vin || asset?.chassisNumber);
+  const shortJobId = safeText(jobCard.jobCardId.toUpperCase().slice(-8));
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
+        <View style={styles.topRule} fixed />
+
         <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            {settings?.logoUrl && <Image src={settings.logoUrl} style={styles.logo} />}
-            <View style={styles.workshopInfo}>
+          <View style={styles.brand}>
+            {settings?.logoUrl && (
+              <View style={styles.logoFrame}>
+                <Image src={settings.logoUrl} style={styles.logo} />
+              </View>
+            )}
+            <View style={styles.brandCopy}>
               <Text style={styles.workshopName}>{safeText(settings?.workshopName || 'MAKROS SYSTEM')}</Text>
               <Text style={styles.contactText}>{safeText(settings?.address)}</Text>
               <Text style={styles.contactText}>{safeText(settings?.phone)} | {safeText(settings?.email)}</Text>
             </View>
           </View>
-          <View style={styles.dossierMeta}>
-            <Text style={styles.dossierTitle}>Certified Repair Dossier</Text>
-            <Text style={styles.dossierID}>#{safeText(jobCard.jobCardId.toUpperCase().slice(-8))}</Text>
-            {invoiceNumber && (
-                <Text style={[styles.valSmall, { color: '#023891', fontWeight: 700 }]}>Invoice: #{safeText(invoiceNumber)}</Text>
-            )}
-            <Text style={styles.valSmall}>Intake: {formatPdfDate(jobCard.createdAt)}</Text>
-            <View style={styles.statusBadge}>
-                <Text>{safeText(jobCard.status)}</Text>
-            </View>
+
+          <View style={styles.titleBlock}>
+            <Text style={styles.documentTitle}>JOB CARD</Text>
+            <Text style={styles.documentSubtitle}>WORKSHOP SERVICE RECORD</Text>
+            <Text style={styles.documentNumber}>REF / {shortJobId}</Text>
           </View>
         </View>
 
-        <View style={styles.grid}>
-          <View style={styles.col}>
-            <Text style={styles.sectionHeader}>Client Identification</Text>
-            <Text style={styles.valBig}>{safeText(customer?.fullName || 'N/A')}</Text>
-            <Text style={styles.valSmall}>Contact: {safeText(customer?.phone)}</Text>
-            <Text style={styles.valSmall}>{safeText(customer?.address)}</Text>
+        <View style={styles.metaBar}>
+          <View style={styles.metaCell}>
+            <Text style={styles.microLabel}>Date received</Text>
+            <Text style={styles.metaValue}>{formatPdfDate(jobCard.createdAt)}</Text>
           </View>
-          <View style={styles.col}>
-            <Text style={styles.sectionHeader}>{isPlant ? 'Equipment Identity' : 'Vehicle Identity'}</Text>
-            <Text style={styles.valBig}>{assetName}</Text>
-            <Text style={styles.valSmall}>{assetIDLabel}: {assetIDVal}</Text>
-            <Text style={styles.valSmall}>{telemetryLabel}: {telemetryVal} {telemetryUnit}</Text>
-            <Text style={styles.valSmall}>{technicalRefLabel}: {technicalRefVal}</Text>
+          <View style={styles.metaCell}>
+            <Text style={styles.microLabel}>Current status</Text>
+            <Text style={[styles.metaValue, styles.statusValue]}>{safeText(jobCard.status)}</Text>
           </View>
-          <View style={styles.col}>
-            <Text style={styles.sectionHeader}>Personnel</Text>
-            <Text style={styles.valBig}>{safeText(mechanic?.fullName || 'Unassigned')}</Text>
-            <Text style={styles.valSmall}>Lead Technician</Text>
-            <Text style={styles.valSmall}>{safeText(mechanic?.role || mechanic?.specialization)}</Text>
+          <View style={styles.metaCell}>
+            <Text style={styles.microLabel}>Invoice reference</Text>
+            <Text style={styles.metaValue}>{invoiceNumber ? `#${safeText(invoiceNumber)}` : 'Not invoiced'}</Text>
+          </View>
+          <View style={styles.metaCellLast}>
+            <Text style={styles.microLabel}>Asset category</Text>
+            <Text style={styles.metaValue}>{isPlant ? 'Plant / Equipment' : 'Motor Vehicle'}</Text>
           </View>
         </View>
 
-        <View style={styles.diagnosisBox}>
-          <Text style={styles.sectionHeader}>Incident & Diagnosis Log</Text>
-          <Text style={styles.diagnosisText}>&quot;{safeText(jobCard.reportedIssue, 1000)}&quot;</Text>
+        <View style={styles.infoGrid}>
+          <View style={styles.infoCard}>
+            <Text style={styles.cardTitle}>Customer</Text>
+            <Text style={styles.primaryValue}>{safeText(customer?.fullName || 'N/A')}</Text>
+            <Text style={styles.detailLine}>Tel: <Text style={styles.detailStrong}>{safeText(customer?.phone)}</Text></Text>
+            <Text style={styles.detailLine}>{safeText(customer?.address)}</Text>
+          </View>
+
+          <View style={styles.infoCard}>
+            <Text style={styles.cardTitle}>{isPlant ? 'Equipment' : 'Vehicle'}</Text>
+            <Text style={styles.primaryValue}>{assetName}</Text>
+            <Text style={styles.detailLine}>{assetIDLabel}: <Text style={styles.detailStrong}>{assetIDVal}</Text></Text>
+            <Text style={styles.detailLine}>{telemetryLabel}: <Text style={styles.detailStrong}>{telemetryVal} {telemetryUnit}</Text></Text>
+            <Text style={styles.detailLine}>{technicalRefLabel}: <Text style={styles.detailStrong}>{technicalRefVal}</Text></Text>
+          </View>
+
+          <View style={styles.infoCardLast}>
+            <Text style={styles.cardTitle}>Assigned technician</Text>
+            <Text style={styles.primaryValue}>{safeText(mechanic?.fullName || 'Unassigned')}</Text>
+            <Text style={styles.detailLine}>Role: <Text style={styles.detailStrong}>{safeText(mechanic?.role || mechanic?.specialization)}</Text></Text>
+            <Text style={styles.detailLine}>Responsibility: Lead technician</Text>
+          </View>
+        </View>
+
+        <View style={styles.concern}>
+          <View style={styles.concernMarker} />
+          <View style={styles.concernBody}>
+            <Text style={styles.concernTitle}>Customer concern / reported fault</Text>
+            <Text style={styles.concernText}>{safeText(jobCard.reportedIssue, 1000)}</Text>
+          </View>
         </View>
 
         {tasks && tasks.length > 0 && (
-          <View wrap={false}>
-            <Text style={styles.sectionHeader}>Technical Roadmap (Tasks)</Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeading} wrap={false}>
+              <Text style={styles.sectionNumber}>01</Text>
+              <Text style={styles.sectionTitle}>Work scope</Text>
+              <Text style={styles.sectionCount}>{tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}</Text>
+            </View>
             <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.colDesc, { fontSize: 7, fontWeight: 900, color: '#64748B' }]}>DESCRIPTION</Text>
-                <Text style={[styles.colQty, { fontSize: 7, fontWeight: 900, color: '#64748B' }]}>HOURS</Text>
-                <Text style={[styles.colStat, { fontSize: 7, fontWeight: 900, color: '#64748B' }]}>STATUS</Text>
+              <View style={styles.tableHeader} wrap={false}>
+                <Text style={[styles.indexCol, styles.tableLabel]}>NO.</Text>
+                <Text style={[styles.descriptionCol, styles.tableLabel]}>TASK DESCRIPTION</Text>
+                <Text style={[styles.quantityCol, styles.tableLabel]}>HOURS</Text>
+                <Text style={[styles.statusCol, styles.tableLabel]}>STATUS</Text>
               </View>
               {tasks.map((task, i) => (
-                <View key={i} style={styles.tableRow} wrap={false}>
-                  <View style={styles.colDesc}>
-                    <Text style={styles.rowText}>{safeText(task.taskDescription)}</Text>
-                  </View>
-                  <View style={styles.colQty}><Text style={styles.rowText}>{task.estimatedHours}</Text></View>
-                  <View style={styles.colStat}><Text style={[styles.rowText, { color: task.status === 'Completed' ? '#10B981' : '#64748B' }]}>{task.status}</Text></View>
+                <View key={i} style={[styles.tableRow, ...(i % 2 ? [styles.tableRowAlt] : [])]} wrap={false}>
+                  <Text style={[styles.indexCol, styles.rowIndex]}>{String(i + 1).padStart(2, '0')}</Text>
+                  <Text style={[styles.descriptionCol, styles.rowText]}>{safeText(task.taskDescription)}</Text>
+                  <Text style={[styles.quantityCol, styles.rowText]}>{task.estimatedHours}</Text>
+                  <Text style={[styles.statusCol, styles.rowText, ...(task.status === 'Completed' ? [styles.completed] : [])]}>{task.status}</Text>
                 </View>
               ))}
             </View>
@@ -317,30 +467,48 @@ export function JobCardPDFDocument({
         )}
 
         {parts && parts.length > 0 && (
-          <View wrap={false}>
-            <Text style={styles.sectionHeader}>Material Allocation (Parts)</Text>
+          <View style={styles.section}>
+            <View style={styles.sectionHeading} wrap={false}>
+              <Text style={styles.sectionNumber}>02</Text>
+              <Text style={styles.sectionTitle}>Parts issued</Text>
+              <Text style={styles.sectionCount}>{parts.length} {parts.length === 1 ? 'item' : 'items'}</Text>
+            </View>
             <View style={styles.table}>
-              <View style={styles.tableHeader}>
-                <Text style={[styles.colDesc, { fontSize: 7, fontWeight: 900, color: '#64748B' }]}>ITEM DESCRIPTION</Text>
-                <Text style={[styles.colQty, { fontSize: 7, fontWeight: 900, color: '#64748B' }]}>QTY</Text>
-                <Text style={[styles.colStat, { fontSize: 7, fontWeight: 900, color: '#64748B' }]}>REF</Text>
+              <View style={styles.tableHeader} wrap={false}>
+                <Text style={[styles.indexCol, styles.tableLabel]}>NO.</Text>
+                <Text style={[styles.descriptionCol, styles.tableLabel]}>ITEM DESCRIPTION</Text>
+                <Text style={[styles.quantityCol, styles.tableLabel]}>QTY</Text>
+                <Text style={[styles.statusCol, styles.tableLabel]}>STOCK REF.</Text>
               </View>
               {parts.map((part, i) => (
-                <View key={i} style={styles.tableRow} wrap={false}>
-                  <View style={styles.colDesc}>
-                    <Text style={styles.rowText}>{safeText(part.itemName || part.itemId)}</Text>
-                  </View>
-                  <View style={styles.colQty}><Text style={styles.rowText}>{part.quantityUsed}</Text></View>
-                  <View style={styles.colStat}><Text style={styles.valSmall}>{safeText(part.itemId.slice(-6).toUpperCase())}</Text></View>
+                <View key={i} style={[styles.tableRow, ...(i % 2 ? [styles.tableRowAlt] : [])]} wrap={false}>
+                  <Text style={[styles.indexCol, styles.rowIndex]}>{String(i + 1).padStart(2, '0')}</Text>
+                  <Text style={[styles.descriptionCol, styles.rowText]}>{safeText(part.itemName || part.itemId)}</Text>
+                  <Text style={[styles.quantityCol, styles.rowText]}>{part.quantityUsed}</Text>
+                  <Text style={[styles.statusCol, styles.rowMuted]}>{safeText(part.itemId.slice(-6).toUpperCase())}</Text>
                 </View>
               ))}
             </View>
           </View>
         )}
 
+        <View style={styles.signoff} wrap={false}>
+          <View style={styles.signoffCell}>
+            <View style={styles.signLine} />
+            <Text style={styles.signLabel}>Technician signature / date</Text>
+          </View>
+          <View style={styles.signoffCellLast}>
+            <View style={styles.signLine} />
+            <Text style={styles.signLabel}>Customer approval / date</Text>
+          </View>
+        </View>
+
         <View style={styles.footer} fixed>
-          <Text style={styles.valSmall}>Certified by Makros System Professional Workshop OS</Text>
-          <Text style={styles.certification}>INTERNAL TECHNICAL RECORD • DO NOT USE FOR BILLING</Text>
+          <Text style={styles.footerText}>Internal workshop record - not valid as an invoice</Text>
+          <Text
+            style={styles.pageNumber}
+            render={({ pageNumber, totalPages }) => `JOB ${shortJobId}  |  PAGE ${pageNumber} OF ${totalPages}`}
+          />
         </View>
       </Page>
     </Document>
