@@ -67,7 +67,7 @@ export function RoleSwitcher() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="fixed bottom-20 md:bottom-4 right-4 z-50 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col gap-2">
           <p className="text-[8px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right px-2">God Mode Switcher</p>
           <Select value={role} onValueChange={(value) => handleRoleChange(value as UserRole)}>

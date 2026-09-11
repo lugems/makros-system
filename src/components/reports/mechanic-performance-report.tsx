@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
-import { Activity, Wrench, CheckCircle2, ShieldCheck, TrendingUp } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Activity, Wrench, ShieldCheck } from 'lucide-react';
 import { JobCardStatus } from '@/types/job-card';
 import { cn } from '@/lib/utils';
 
@@ -66,14 +67,14 @@ const MechanicPerformanceReport = ({ jobCards, staff, specificUserId }: Mechanic
   }, [jobCards, staff, specificUserId]);
 
   return (
-    <Card className="rounded-[2.5rem] border-border/50 bg-card overflow-hidden shadow-sm premium-shadow h-full">
-      <CardHeader className="bg-muted/30 border-b p-8 space-y-1">
-        <div className="flex items-center justify-between">
+    <Card className="rounded-2xl sm:rounded-[2.5rem] border-border/50 bg-card overflow-hidden shadow-sm premium-shadow h-full">
+      <CardHeader className="bg-muted/30 border-b p-4 sm:p-8 space-y-1">
+        <div className="flex items-center justify-between gap-2">
           <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
               <Activity className="h-4 w-4 text-indigo-500" /> Operational Efficiency
           </CardTitle>
-          <Badge className="bg-indigo-500/10 text-indigo-600 border-none text-[8px] font-black uppercase px-3 py-1">
-             Performance Index Active
+          <Badge className="bg-indigo-500/10 text-indigo-600 border-none text-[8px] font-black uppercase px-2.5 sm:px-3 py-1 shrink-0">
+             Active Index
           </Badge>
         </div>
         <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">
@@ -81,7 +82,60 @@ const MechanicPerformanceReport = ({ jobCards, staff, specificUserId }: Mechanic
         </p>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile Technician Card View */}
+        <div className="block sm:hidden divide-y divide-border/50">
+            {mechanics.map((mechanic) => (
+                <div key={mechanic.userId} className="p-4 space-y-4 hover:bg-muted/20 transition-colors">
+                    <div className="flex items-center gap-3.5">
+                        <div className="relative shrink-0">
+                            <Avatar className="h-11 w-11 ring-2 ring-primary/10 shadow-md">
+                                <AvatarImage src={`https://picsum.photos/seed/${mechanic.userId}/200/200`} />
+                                <AvatarFallback className="font-black text-xs bg-primary/5 text-primary">{mechanic.fullName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            {mechanic.efficiency >= 85 && (
+                                <div className="absolute -top-1 -right-1 h-4 w-4 bg-green-500 rounded-full flex items-center justify-center border-2 border-background shadow">
+                                    <ShieldCheck className="h-2 w-2 text-white" />
+                                </div>
+                            )}
+                        </div>
+                        <div className="space-y-0.5 min-w-0 flex-1">
+                            <p className="text-sm font-black uppercase tracking-tight truncate leading-tight">{mechanic.fullName}</p>
+                            <div className="flex items-center gap-1.5 text-[9px] text-muted-foreground font-bold">
+                                <span className="font-mono">ID: {mechanic.userId.slice(-6).toUpperCase()}</span>
+                                <span>•</span>
+                                <span className="truncate">{mechanic.specialization || 'General'}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-center bg-muted/30 p-2.5 rounded-xl">
+                        <div>
+                            <span className="text-lg font-black leading-none tabular-nums">{mechanic.completedCount}</span>
+                            <span className="text-[8px] font-black text-muted-foreground uppercase block mt-1">Settled Jobs</span>
+                        </div>
+                        <div className="border-l border-border/50">
+                            <span className="text-lg font-black leading-none text-primary tabular-nums">{mechanic.activeCount}</span>
+                            <span className="text-[8px] font-black text-primary uppercase block mt-1">In-Bay Active</span>
+                        </div>
+                    </div>
+
+                    <div className="space-y-1.5 pt-1">
+                        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider">
+                            <span className="text-muted-foreground">Efficiency</span>
+                            <span className={cn(
+                                "tabular-nums",
+                                mechanic.efficiency >= 80 ? "text-green-600" : 
+                                mechanic.efficiency >= 50 ? "text-amber-600" : "text-destructive"
+                            )}>{mechanic.efficiency}%</span>
+                        </div>
+                        <Progress value={mechanic.efficiency} className="h-2 rounded-full bg-muted shadow-inner" />
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/10 border-none uppercase text-[9px] font-black tracking-[0.3em]">
@@ -149,8 +203,9 @@ const MechanicPerformanceReport = ({ jobCards, staff, specificUserId }: Mechanic
             </TableBody>
           </Table>
         </div>
+
         {mechanics.length === 0 && (
-            <div className="py-32 text-center opacity-30 italic text-sm text-muted-foreground flex flex-col items-center justify-center space-y-4">
+            <div className="py-20 sm:py-32 text-center opacity-30 italic text-sm text-muted-foreground flex flex-col items-center justify-center space-y-4">
                 <div className="h-16 w-16 rounded-3xl bg-muted flex items-center justify-center border border-border/50">
                     <Wrench className="h-8 w-8" />
                 </div>
@@ -161,13 +216,11 @@ const MechanicPerformanceReport = ({ jobCards, staff, specificUserId }: Mechanic
             </div>
         )}
       </CardContent>
-      <div className="bg-muted/30 px-8 py-5 border-t flex items-center justify-center">
-          <p className="text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.5em]">Forensic Personnel Analysis Trace Active</p>
+      <div className="bg-muted/30 px-4 sm:px-8 py-4 sm:py-5 border-t flex items-center justify-center">
+          <p className="text-[8px] sm:text-[9px] font-black text-muted-foreground/30 uppercase tracking-[0.3em] sm:tracking-[0.5em] text-center">Forensic Personnel Analysis Trace Active</p>
       </div>
     </Card>
   );
 };
 
 export default MechanicPerformanceReport;
-
-import { Badge } from '@/components/ui/badge';

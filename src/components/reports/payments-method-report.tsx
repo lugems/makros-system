@@ -1,10 +1,9 @@
-
 'use client';
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { PieChart as PieChartIcon, CreditCard, Banknote, Smartphone, Wallet } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
+import { PieChart as PieChartIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
 import { CurrencyFormat } from '@/components/shared/currency-format';
 
 interface PaymentsMethodReportProps {
@@ -32,24 +31,24 @@ export function PaymentsMethodReport({ payments }: PaymentsMethodReportProps) {
   const COLORS = ['#3b82f6', '#10b981', '#6366f1', '#f59e0b'];
 
   return (
-    <Card className="rounded-[2rem] border-border/50 bg-card overflow-hidden shadow-sm premium-shadow">
-      <CardHeader className="bg-muted/30 border-b p-6 space-y-1">
+    <Card className="rounded-2xl sm:rounded-[2rem] border-border/50 bg-card overflow-hidden shadow-sm premium-shadow h-full">
+      <CardHeader className="bg-muted/30 border-b p-4 sm:p-6 space-y-1">
         <CardTitle className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
             <PieChartIcon className="h-4 w-4 text-primary" /> Settlement Channels
         </CardTitle>
         <p className="text-[10px] font-bold text-muted-foreground/60 uppercase">Treasury Intake by Payment Protocol</p>
       </CardHeader>
-      <CardContent className="p-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="h-[240px] w-full">
+      <CardContent className="p-4 sm:p-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 items-center">
+            <div className="h-[200px] sm:h-[240px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                         <Pie
                             data={chartData}
                             cx="50%"
                             cy="50%"
-                            innerRadius={60}
-                            outerRadius={80}
+                            innerRadius={50}
+                            outerRadius={75}
                             paddingAngle={5}
                             dataKey="value"
                         >
@@ -64,7 +63,7 @@ export function PaymentsMethodReport({ payments }: PaymentsMethodReportProps) {
                     </PieChart>
                 </ResponsiveContainer>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
                 {chartData.map((item, idx) => (
                     <div key={item.name} className="flex items-center justify-between group">
                         <div className="flex items-center gap-3">

@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { CurrencyFormat } from "@/components/shared/currency-format";
 import { FormattedDate } from "@/components/shared/formatted-date";
-import { Banknote, Wallet, TrendingUp, History, Fingerprint, Receipt, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Banknote, Wallet, TrendingUp, History, Fingerprint, Receipt } from 'lucide-react';
 import { Invoice } from "@/types/invoice";
 import { cn } from "@/lib/utils";
 
@@ -24,59 +24,118 @@ export function SalesReport({ invoices }: SalesReportProps) {
     const collectionRate = metrics.totalBilled > 0 ? (metrics.totalCollected / metrics.totalBilled) * 100 : 100;
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <Card className="bg-card border-border/50 rounded-3xl overflow-hidden premium-shadow">
-                    <CardHeader className="pb-2">
+        <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                <Card className="bg-card border-border/50 rounded-2xl sm:rounded-3xl overflow-hidden premium-shadow">
+                    <CardHeader className="p-4 sm:p-6 pb-2">
                         <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                             <Banknote className="h-3.5 w-3.5" /> Gross Billed
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p className="text-3xl font-black tracking-tighter">
+                    <CardContent className="p-4 sm:p-6 pt-0">
+                        <p className="text-2xl sm:text-3xl font-black tracking-tighter">
                             <CurrencyFormat value={metrics.totalBilled} />
                         </p>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Total Authorized Billings</p>
+                        <p className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase mt-1">Total Authorized Billings</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-card border-border/50 rounded-3xl overflow-hidden premium-shadow">
-                    <CardHeader className="pb-2">
+                <Card className="bg-card border-border/50 rounded-2xl sm:rounded-3xl overflow-hidden premium-shadow">
+                    <CardHeader className="p-4 sm:p-6 pb-2">
                         <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                             <Wallet className="h-3.5 w-3.5 text-green-500" /> Net Collected
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p className="text-3xl font-black tracking-tighter text-green-600">
+                    <CardContent className="p-4 sm:p-6 pt-0">
+                        <p className="text-2xl sm:text-3xl font-black tracking-tighter text-green-600">
                             <CurrencyFormat value={metrics.totalCollected} />
                         </p>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Realized Fiscal Liquidity ({collectionRate.toFixed(0)}%)</p>
+                        <p className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase mt-1">Realized Fiscal Liquidity ({collectionRate.toFixed(0)}%)</p>
                     </CardContent>
                 </Card>
 
-                <Card className="bg-card border-border/50 rounded-3xl overflow-hidden premium-shadow">
-                    <CardHeader className="pb-2">
+                <Card className="bg-card border-border/50 rounded-2xl sm:rounded-3xl overflow-hidden premium-shadow">
+                    <CardHeader className="p-4 sm:p-6 pb-2">
                         <CardTitle className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                             <TrendingUp className="h-3.5 w-3.5 text-primary" /> Tax Provision
                         </CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p className="text-3xl font-black tracking-tighter text-primary">
+                    <CardContent className="p-4 sm:p-6 pt-0">
+                        <p className="text-2xl sm:text-3xl font-black tracking-tighter text-primary">
                             <CurrencyFormat value={metrics.totalTax} />
                         </p>
-                        <p className="text-[9px] font-bold text-muted-foreground uppercase mt-1">Cumulative VAT Obligation</p>
+                        <p className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase mt-1">Cumulative VAT Obligation</p>
                     </CardContent>
                 </Card>
             </div>
 
-            <Card className="rounded-3xl border-border/50 bg-card overflow-hidden premium-shadow">
-                <CardHeader className="bg-muted/30 border-b px-6 py-4 flex flex-row items-center justify-between">
+            <Card className="rounded-2xl sm:rounded-3xl border-border/50 bg-card overflow-hidden premium-shadow">
+                <CardHeader className="bg-muted/30 border-b p-4 sm:px-6 sm:py-4 flex flex-row items-center justify-between">
                     <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                         <History className="h-3.5 w-3.5" /> Recent Fiscal Traces
                     </CardTitle>
                     <Badge className="bg-primary/10 text-primary border-none text-[8px] font-black">CERTIFIED_LEDGER_SYNC</Badge>
                 </CardHeader>
-                <div className="overflow-x-auto">
+
+                {/* Mobile Card List View */}
+                <div className="block md:hidden divide-y divide-border/50">
+                    {invoices.slice(0, 15).map((invoice) => (
+                        <div key={invoice.invoiceId} className="p-4 space-y-3 hover:bg-muted/20 transition-colors">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="h-9 w-9 rounded-xl bg-background border flex items-center justify-center text-muted-foreground shadow-sm shrink-0">
+                                        <Receipt className="h-4 w-4" />
+                                    </div>
+                                    <div className="space-y-0.5">
+                                        <div className="flex items-center gap-1.5">
+                                            <Fingerprint className="h-3 w-3 text-primary opacity-50" />
+                                            <span className="text-xs font-black uppercase">{invoice.invoiceNumber || invoice.invoiceId.slice(-6)}</span>
+                                        </div>
+                                        <p className="text-[9px] font-bold text-muted-foreground uppercase">
+                                            <FormattedDate date={invoice.issuedAt} formatString="dd MMM yyyy" />
+                                        </p>
+                                    </div>
+                                </div>
+                                <Badge variant="outline" className={cn(
+                                    "text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded shadow-sm shrink-0 border-primary/10",
+                                    invoice.paymentStatus === 'Paid' ? "bg-green-500/10 text-green-600" : "bg-primary/5 text-primary"
+                                )}>
+                                    {invoice.paymentStatus}
+                                </Badge>
+                            </div>
+
+                            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/40 text-center">
+                                <div className="bg-muted/30 rounded-xl p-2">
+                                    <span className="text-[8px] font-black uppercase text-muted-foreground block">Billed</span>
+                                    <span className="text-xs font-black text-foreground">
+                                        <CurrencyFormat value={invoice.grandTotal} abbreviate />
+                                    </span>
+                                </div>
+                                <div className="bg-green-500/5 rounded-xl p-2">
+                                    <span className="text-[8px] font-black uppercase text-green-600/70 block">Settled</span>
+                                    <span className="text-xs font-black text-green-600">
+                                        <CurrencyFormat value={invoice.amountPaid} abbreviate />
+                                    </span>
+                                </div>
+                                <div className="bg-destructive/5 rounded-xl p-2">
+                                    <span className="text-[8px] font-black uppercase text-destructive/70 block">Balance</span>
+                                    <span className="text-xs font-black text-destructive">
+                                        <CurrencyFormat value={invoice.balance} abbreviate />
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                    {invoices.length === 0 && (
+                        <div className="py-16 text-center opacity-40 italic text-xs text-muted-foreground flex flex-col items-center">
+                            <Banknote className="h-8 w-8 mb-2" />
+                            No financial traces detected in the active interval.
+                        </div>
+                    )}
+                </div>
+
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow className="bg-muted/50 border-none uppercase text-[9px] font-black tracking-[0.2em]">

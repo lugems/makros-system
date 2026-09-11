@@ -270,16 +270,17 @@ export default function PaymentsPage() {
             )}
 
             <Drawer open={isMobile && !!selectedPaymentId} onOpenChange={(open) => !open && setSelectedPaymentId(null)}>
-                <DrawerContent className="max-h-[92dvh] flex flex-col">
-                    <DrawerHeader className="border-b shrink-0 px-8 py-6">
-                        <DrawerTitle className="text-left font-black uppercase tracking-tight">Receipt Dossier</DrawerTitle>
-                        <DrawerDescription className="text-left text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">Forensic breakdown and certified receipt for the selected entry.</DrawerDescription>
+                <DrawerContent className="max-h-[92dvh] flex flex-col p-0">
+                    <DrawerHeader className="border-b shrink-0 px-6 py-4">
+                        <DrawerTitle className="text-left font-black uppercase tracking-tight text-base sm:text-lg">Receipt Dossier</DrawerTitle>
+                        <DrawerDescription className="text-left text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">Forensic breakdown and certified receipt for the selected entry.</DrawerDescription>
                     </DrawerHeader>
                     <div className="flex-1 min-h-0 overflow-y-auto">
                         {selectedPayment && (
                             <ReceiptPreview 
                                 payment={selectedPayment} 
                                 onPreview={setPreviewingPayment}
+                                onClose={() => setSelectedPaymentId(null)}
                             />
                         )}
                     </div>
@@ -287,7 +288,7 @@ export default function PaymentsPage() {
             </Drawer>
 
             <Dialog open={isRecordOpen} onOpenChange={setIsRecordOpen}>
-                <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden p-0 sm:max-w-[480px] border-border/50 bg-background rounded-3xl">
+                <DialogContent className="flex max-h-[90dvh] flex-col overflow-visible p-0 sm:max-w-[480px] border-border/50 bg-background rounded-3xl">
                     <DialogHeader className="px-8 pt-8 pb-4 text-left border-b">
                         <DialogTitle className="text-2xl font-black uppercase tracking-tight">Collection Entry</DialogTitle>
                     </DialogHeader>

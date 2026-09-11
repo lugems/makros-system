@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from '@/components/ui/button';
-import { Package, AlertTriangle, Fingerprint, ShieldCheck, Truck, ArrowRight } from 'lucide-react';
+import { Package, Fingerprint, ShieldCheck, Truck, ArrowRight } from 'lucide-react';
 import { LowStockBadge } from '@/components/inventory/low-stock-badge';
 import { InventoryItem } from '@/types/inventory';
 import { cn } from '@/lib/utils';
@@ -36,20 +35,55 @@ const InventoryReport = ({ inventory }: InventoryReportProps) => {
   }, [inventory]);
 
   return (
-    <Card className="rounded-[2.5rem] border-border/50 bg-card overflow-hidden shadow-sm premium-shadow h-full">
-      <CardHeader className="bg-muted/30 border-b p-8 space-y-1">
-        <div className="flex items-center justify-between">
+    <Card className="rounded-2xl sm:rounded-[2.5rem] border-border/50 bg-card overflow-hidden shadow-sm premium-shadow h-full">
+      <CardHeader className="bg-muted/30 border-b p-4 sm:p-8 space-y-1">
+        <div className="flex items-center justify-between gap-2">
             <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                 <Package className="h-4 w-4 text-orange-500" /> Supply Chain
             </CardTitle>
-            <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-200 text-[8px] font-black uppercase px-3 py-1">
-                Registry Shortages: {criticalItems.length}
+            <Badge variant="outline" className="bg-orange-500/10 text-orange-600 border-orange-200 text-[8px] font-black uppercase px-2.5 sm:px-3 py-1 shrink-0">
+                Shortages: {criticalItems.length}
             </Badge>
         </div>
         <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Critical Inventory Replenishment Roadmap</p>
       </CardHeader>
       <CardContent className="p-0">
-        <div className="overflow-x-auto">
+        {/* Mobile Inventory Card View */}
+        <div className="block sm:hidden divide-y divide-border/50">
+            {criticalItems.map((item) => (
+                <div key={item.itemId} className="p-4 space-y-3 hover:bg-muted/20 transition-colors">
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            <div className={cn(
+                                "h-9 w-9 rounded-xl flex items-center justify-center border shadow-sm shrink-0",
+                                item.quantity === 0 ? "bg-red-500/10 text-red-600 border-red-200" : "bg-background border-border/50"
+                            )}>
+                                <Package className="h-4 w-4" />
+                            </div>
+                            <div className="space-y-0.5 min-w-0">
+                                <p className="text-xs font-black uppercase tracking-tight truncate">{item.itemName}</p>
+                                <div className="flex items-center gap-1.5 text-[9px] font-mono font-bold text-muted-foreground">
+                                    <Fingerprint className="h-3 w-3 text-primary opacity-50" />
+                                    <span>REF: {item.itemId.slice(-6).toUpperCase()}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <LowStockBadge quantity={item.quantity} lowStockThreshold={item.reorderLevel} />
+                    </div>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-border/40 text-[10px]">
+                        <span className="text-[9px] font-black uppercase text-muted-foreground">Vendor</span>
+                        <div className="flex items-center gap-1.5 font-black uppercase text-foreground/80">
+                            <Truck className="h-3 w-3 opacity-50" />
+                            <span>{item.supplierId || 'Direct Supply'}</span>
+                        </div>
+                    </div>
+                </div>
+            ))}
+        </div>
+
+        {/* Desktop Table View */}
+        <div className="hidden sm:block overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/10 border-none uppercase text-[9px] font-black tracking-[0.3em] text-muted-foreground">
@@ -97,9 +131,9 @@ const InventoryReport = ({ inventory }: InventoryReportProps) => {
         </div>
         
         {criticalItems.length === 0 && (
-            <div className="py-32 text-center opacity-40 italic text-sm text-muted-foreground flex flex-col items-center justify-center space-y-4">
-                <div className="h-20 w-20 rounded-[2rem] bg-green-500/5 border border-green-500/10 flex items-center justify-center">
-                    <ShieldCheck className="h-12 w-12 text-green-500/50" />
+            <div className="py-20 sm:py-32 text-center opacity-40 italic text-sm text-muted-foreground flex flex-col items-center justify-center space-y-4">
+                <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-[2rem] bg-green-500/5 border border-green-500/10 flex items-center justify-center">
+                    <ShieldCheck className="h-8 w-8 sm:h-12 sm:w-12 text-green-500/50" />
                 </div>
                 <div className="space-y-1">
                     <p className="font-black uppercase tracking-[0.2em] text-foreground">Supply Chain Nominal</p>
@@ -108,8 +142,8 @@ const InventoryReport = ({ inventory }: InventoryReportProps) => {
             </div>
         )}
 
-        <div className="p-6 bg-muted/10 border-t flex justify-center no-print">
-            <Button variant="ghost" size="sm" className="text-[9px] font-black uppercase tracking-widest gap-2 opacity-50 hover:opacity-100 transition-opacity">
+        <div className="p-4 sm:p-6 bg-muted/10 border-t flex justify-center no-print">
+            <Button variant="ghost" size="sm" className="text-[9px] font-black uppercase tracking-widest gap-2 opacity-60 hover:opacity-100 transition-opacity">
                 Export Procurement List <ArrowRight className="h-3 w-3" />
             </Button>
         </div>

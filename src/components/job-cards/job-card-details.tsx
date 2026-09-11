@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useFirestore, useDoc, useCollection, useMemoFirebase } from '@/firebase';
-import { doc, collection, query, orderBy, serverTimestamp, where, limit } from 'firebase/firestore';
+import { collection, doc, query, orderBy, where, DocumentReference, Query } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { 
     Wrench, 
@@ -29,14 +29,13 @@ import {
     MessageSquare,
     Download,
     FileText,
-    Hammer,
     Receipt,
-    Binary,
-    Calendar,
-    MapPin,
+    Settings,
     Gauge,
-    ChevronRight,
-    Fingerprint
+    ExternalLink,
+    Landmark,
+    Binary,
+    Calendar
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -44,13 +43,29 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { CurrencyFormat } from '@/components/shared/currency-format';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { RelatedCommunications } from '@/components/communications/related-communications';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { CommunicationForm } from '@/components/communications/communication-form';
+import { createCommunicationLog } from '@/services/communications-service';
+import { useToast } from '@/hooks/use-toast';
+import { updateJobStatus, removePartFromJobCardTransaction, updateJobCard, updateJobTaskStatus, deleteJobTask } from '@/services/job-cards-service';
+import { generateInvoiceTransaction } from '@/services/invoices-service';
+import { cn } from '@/lib/utils';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
+import { Switch } from '@/components/ui/switch';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { JobCardPDFDocument } from './job-card-pdf-document';
 import { FormattedDate } from '@/components/shared/formatted-date';
+import { CurrencyFormat } from '@/components/shared/currency-format';
 import { LoadingState } from '@/components/shared/loading-state';
 import { JobStatusBadge } from './job-status-badge';
 import { AddJobTaskDialog } from './add-job-task-dialog';
-import { EditJobTaskDialog } from './edit-job-task-dialog';
 import { AddJobPartDialog } from './add-job-part-dialog';
+import { EditJobTaskDialog } from './edit-job-task-dialog';
 import { JobCardPhotoUpload } from './job-card-photo-upload';
 import { JobCard, JobTask, JobPart, JobCardStatus } from '@/types/job-card';
 import { Customer } from '@/types/customer';
@@ -60,48 +75,14 @@ import { StaffMember } from '@/types/staff';
 import { WorkshopSettings } from '@/types/settings';
 import { Invoice } from '@/types/invoice';
 import { useAuth } from '@/contexts/auth-context';
-import { useToast } from '@/hooks/use-toast';
-import { updateJobStatus, removePartFromJobCardTransaction, updateJobCard, updateJobTaskStatus, deleteJobTask } from '@/services/job-cards-service';
-import { generateInvoiceTransaction } from '@/services/invoices-service';
-import { cn } from '@/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RelatedCommunications } from '@/components/communications/related-communications';
-import { CommunicationForm } from '@/components/communications/communication-form';
-import { createCommunicationLog } from '@/services/communications-service';
-import { PDFDownloadLink } from '@react-pdf/renderer';
-import { JobCardPDFDocument } from './job-card-pdf-document';
-import { getMeterUnit } from '@/services/asset-resolver-service';
 
-const TECHNICIAN_ROLES = [
-  "Senior Mechanic / Lead Mechanic",
-  "Mechanic",
-  "Diagnostic Technician",
-  "Auto-Wiring Technician",
-  "Welding Lead Technician",
-  "Welding Technician",
-  "Auto Body / Panel Beater",
-  "Painter",
-  "Tyre & Wheel Technician",
-  "Car Wash / Detailing Technician",
-];
-
-/**
- * @fileOverview Technical Repair Dossier.
- * Synchronized with the Polymorphic Ecosystem and hardened for strict asset resolution.
- * Supports both Vehicles and Plant assets within a unified work order flow.
- */
 export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
     const { user: currentUser, role: currentRole } = useAuth();
     const db = useFirestore();
     const router = useRouter();
     const { toast } = useToast();
     
+    // 1. Technical Streams
     const jobRef = useMemoFirebase(() => {
         if (!db) return null;
         return doc(db, 'jobCards', jobCardId);
@@ -118,19 +99,20 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
         if (!db) return null;
         return query(collection(db, 'jobCards', jobCardId, 'partsUsed'), orderBy('createdAt', 'asc'));
     }, [db, jobCardId]);
-
-    // Financial Registry Cross-Reference
-    const invoicesQuery = useMemoFirebase(() => {
-        if (!db || !jobCardId) return null;
-        return query(collection(db, 'invoices'), where('jobCardId', '==', jobCardId), limit(1));
-    }, [db, jobCardId]);
     
     const { data: tasks, loading: tasksLoading } = useCollection<JobTask>(tasksQuery as any);
     const { data: parts, loading: partsLoading } = useCollection<JobPart>(partsQuery as any);
-    const { data: linkedInvoices } = useCollection<Invoice>(invoicesQuery as any);
 
-    const linkedInvoice = linkedInvoices?.[0];
+    // 2. Financial Registry Cross-Reference
+    const invoicesQuery = useMemoFirebase(() => {
+        if (!db) return null;
+        return query(collection(db, 'invoices'), where('jobCardId', '==', jobCardId)) as Query<Invoice>;
+    }, [db, jobCardId]);
+    const { data: linkedInvoices } = useCollection<Invoice>(invoicesQuery);
+    
+    const linkedInvoice = linkedInvoices?.[0] || null;
 
+    // 3. Contextual Registry Streams
     const settingsRef = useMemoFirebase(() => doc(db, 'settings', 'workshop'), [db]);
     const { data: settings } = useDoc<WorkshopSettings>(settingsRef as any);
 
@@ -139,14 +121,18 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
         return doc(db, 'customers', jobCard.customerId);
     }, [db, jobCard?.customerId]);
 
-    const assetRef = useMemoFirebase(() => {
-        if (!db || !jobCard) return null;
-        const type = jobCard.assetType || 'Vehicle';
-        const id = jobCard.assetId || jobCard.vehicleId;
-        if (!id) return null;
-        const col = type === 'Vehicle' ? 'vehicles' : 'plantsAndEquipment';
-        return doc(db, col, id);
-    }, [db, jobCard]);
+    // Unified Discovery Fallback for Assets
+    const isPlant = jobCard?.assetType === 'Plant';
+    
+    const vehRef = useMemoFirebase(() => {
+        if (!db || !jobCard?.vehicleId) return null;
+        return doc(db, 'vehicles', jobCard.vehicleId);
+    }, [db, jobCard?.vehicleId]);
+
+    const plantRef = useMemoFirebase(() => {
+        if (!db || !jobCard?.vehicleId) return null;
+        return doc(db, 'plantsAndEquipment', jobCard.vehicleId);
+    }, [db, jobCard?.vehicleId]);
 
     const mechRef = useMemoFirebase(() => {
         if (!db || !jobCard?.assignedMechanicId) return null;
@@ -154,9 +140,14 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
     }, [db, jobCard?.assignedMechanicId]);
 
     const { data: customer } = useDoc<Customer>(custRef as any);
-    const { data: asset } = useDoc<any>(assetRef as any);
+    const { data: vehicleData } = useDoc<Vehicle>(vehRef as any);
+    const { data: plantData } = useDoc<PlantEquipment>(plantRef as any);
     const { data: mechanic } = useDoc<StaffMember>(mechRef as any);
 
+    // STRICT Polymorphic Resolution
+    const assetData = jobCard?.assetType === 'Plant' ? plantData : (jobCard?.assetType === 'Vehicle' ? vehicleData : (vehicleData || plantData));
+
+    // 4. Fiscal Intake Overrides
     const [applyTax, setApplyTax] = useState(false);
     const [applyDiscount, setApplyDiscount] = useState(false);
 
@@ -176,14 +167,17 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
     const [isCommFormOpen, setIsCommFormOpen] = useState(false);
     const [isCommSubmitting, setIsCommSubmitting] = useState(false);
 
+    // Operational Rules Check
     const isOwner = currentRole === 'Makros System Owner';
     const isManager = currentRole === 'Workshop Manager';
     const isReceptionist = currentRole === 'Receptionist';
-    const isTechnician = TECHNICIAN_ROLES.includes(currentRole || '');
-    const isAssignedTech = currentUser?.userId === jobCard?.assignedMechanicId;
+    const isMechanic = currentRole === 'Mechanic';
+    const isAssignedMechanic = currentUser?.userId === jobCard?.assignedMechanicId;
 
     const canManageStructure = isOwner || isManager || isReceptionist;
-    const canUpdate = canManageStructure || (isTechnician && isAssignedTech);
+    const canUpdate = canManageStructure || (isMechanic && isAssignedMechanic);
+
+    const isLoading = jobLoading || tasksLoading || partsLoading;
 
     const totalPartsCost = parts?.reduce((sum, p) => sum + (p.quantityUsed * (p.unitPrice || 0)), 0) || 0;
 
@@ -252,7 +246,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
             await removePartFromJobCardTransaction(jobCardId, partId, currentUser.userId);
             toast({ title: "Allocation Revoked", description: "Stock has been restored to inventory." });
         } catch (error) {
-            toast({ variant: "destructive", title: "Action Failed", description: "Technical error during restoration." });
+            toast({ variant: "destructive", title: "Action Failed", description: "Registry interaction error." });
         } finally {
             setIsRemovingPart(null);
         }
@@ -270,7 +264,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
             deleteJobTask(jobCardId, taskId, currentUser.userId);
             toast({ title: "Task Purged", description: "Record removed from repair roadmap." });
         } catch (error) {
-            toast({ variant: "destructive", title: "Delete Failed", description: "Registry permission error." });
+            toast({ variant: "destructive", title: "Delete Failed", description: "Registry interaction error." });
         }
     };
 
@@ -282,10 +276,9 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                 ...data,
                 jobCardId,
                 customerId: jobCard?.customerId,
-                vehicleId: jobCard?.assetType === 'Vehicle' ? (jobCard.assetId || jobCard.vehicleId) : undefined,
+                vehicleId: jobCard?.vehicleId,
                 toName: customer.fullName,
-                toRole: 'Customer',
-                module: 'Job Card'
+                toRole: 'Customer'
             }, currentUser.userId);
             setIsCommFormOpen(false);
             toast({ title: "Interaction Registered", description: "Technical note committed to registry." });
@@ -296,7 +289,7 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
         }
     };
 
-    if (jobLoading || tasksLoading || partsLoading) return <LoadingState />;
+    if (isLoading) return <LoadingState />;
     if (!jobCard) return null;
 
     const canInvoice = [JobCardStatus.Completed, JobCardStatus.QualityCheck].includes(jobCard.status as any) && (isManager || isOwner || isReceptionist);
@@ -311,48 +304,48 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                 </div>
             )}
 
-            <div className="flex flex-col lg:flex-row justify-between items-start gap-8 bg-muted/20 p-8 rounded-[2.5rem] border border-border/50">
-                <div className="space-y-4 min-w-0 flex-1">
+            {/* Dossier Header */}
+            <div className="flex flex-col lg:flex-row justify-between items-start gap-6 sm:gap-8 bg-muted/20 p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] border border-border/50">
+                <div className="space-y-4 w-full lg:w-auto">
                     <Button 
                         variant="ghost" 
                         size="sm" 
                         onClick={() => router.back()} 
-                        className="-ml-3 h-8 text-[10px] font-black uppercase tracking-widest gap-2 text-muted-foreground hover:text-primary"
+                        className="-ml-3 h-8 text-[10px] font-black uppercase tracking-widest gap-2 text-muted-foreground hover:text-primary hover:bg-transparent"
                     >
                         <ArrowLeft className="h-3 w-3" /> Back
                     </Button>
-                    <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-[1.25rem] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm shrink-0">
-                            <Hash className="h-6 w-6 text-primary" />
+                    <div className="flex items-center gap-3.5 sm:gap-4">
+                        <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-[1.25rem] bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm shrink-0">
+                            <Hash className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                         </div>
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-3">
-                                <h2 className="text-3xl sm:text-4xl font-black tracking-tighter uppercase font-headline text-foreground truncate">Dossier #{jobCardId.toUpperCase().slice(-6)}</h2>
+                        <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 sm:gap-3">
+                                <h2 className="text-xl sm:text-3xl lg:text-4xl font-black tracking-tighter uppercase font-headline text-foreground truncate">Job Dossier #{jobCardId.toUpperCase().slice(-6)}</h2>
                                 {canUpdate && (
-                                    <Button variant="ghost" size="icon" onClick={openEdit} className="h-8 w-8 rounded-lg hover:bg-primary/10 text-primary shrink-0">
-                                        <Pencil className="h-4 w-4" />
+                                    <Button variant="ghost" size="icon" onClick={openEdit} className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg hover:bg-primary/10 text-primary shrink-0">
+                                        <Pencil className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                     </Button>
                                 )}
                             </div>
-                            <div className="flex items-center gap-3 mt-1 flex-wrap">
-                                <JobStatusBadge status={jobCard.status} className="h-6 text-[9px]" />
+                            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1">
+                                <JobStatusBadge status={jobCard.status} className="h-5 sm:h-6 text-[8px] sm:text-[9px]" />
                                 {linkedInvoice && (
-                                    <Badge variant="outline" className="h-6 text-[9px] font-black uppercase border-primary/20 text-primary bg-primary/5 px-3">
-                                        <Receipt className="h-3 w-3 mr-1.5 opacity-60" />
-                                        #{linkedInvoice.invoiceNumber || linkedInvoice.invoiceId.slice(-6).toUpperCase()}
+                                    <Badge variant="outline" className="h-5 sm:h-6 text-[8px] sm:text-[9px] font-black uppercase tracking-widest border-indigo-200 bg-indigo-50 text-indigo-600 flex items-center gap-1.5 shadow-sm">
+                                        <Receipt className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> Linked: #{linkedInvoice.invoiceNumber}
                                     </Badge>
                                 )}
-                                <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1.5">
-                                    <Clock className="h-3 w-3" /> Updated: <FormattedDate date={jobCard.updatedAt} />
+                                <span className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-1 sm:gap-1.5">
+                                    <Clock className="h-2.5 w-2.5 sm:h-3 sm:w-3" /> Updated: <FormattedDate date={jobCard.updatedAt} />
                                 </span>
                             </div>
                         </div>
                     </div>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                    <Button asChild variant="outline" className="flex-1 sm:flex-none h-12 px-8 font-black uppercase tracking-widest text-[10px] rounded-xl bg-background border-border/50 hover:bg-muted">
+                <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 w-full lg:w-auto">
+                    <Button asChild variant="outline" className="flex-1 sm:flex-none h-11 sm:h-12 px-5 sm:px-8 font-black uppercase tracking-widest text-[10px] rounded-xl bg-background border-border/50 hover:bg-muted transition-all">
                         <PDFDownloadLink 
-                            document={<JobCardPDFDocument jobCard={jobCard} customer={customer} vehicle={asset} tasks={tasks} parts={parts} mechanic={mechanic} settings={settings} invoiceNumber={linkedInvoice?.invoiceNumber} />} 
+                            document={<JobCardPDFDocument jobCard={jobCard} customer={customer} vehicle={assetData} tasks={tasks} parts={parts} mechanic={mechanic} settings={settings} invoiceNumber={linkedInvoice?.invoiceNumber} />} 
                             fileName={pdfFileName}
                         >
                             {({ loading }) => (
@@ -367,167 +360,163 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                     {(isManager || isOwner || isReceptionist) && (
                         <Button 
                             onClick={handleGenerateInvoice} 
-                            disabled={!canInvoice || isGenerating}
-                            className="flex-1 sm:flex-none h-12 px-8 font-black uppercase tracking-[0.2em] text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all"
+                            disabled={!canInvoice || isGenerating || !!linkedInvoice}
+                            className="flex-1 sm:flex-none h-11 sm:h-12 px-5 sm:px-8 font-black uppercase tracking-[0.2em] text-[10px] rounded-xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02]"
                         >
                             {isGenerating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FilePlus className="h-4 w-4 mr-2" />}
-                            Finalize Billing
+                            {linkedInvoice ? 'Dossier Invoiced' : 'Finalize Billing'}
                         </Button>
                     )}
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start px-4 sm:px-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
                 <div className="lg:col-span-8 space-y-10">
                     <Tabs defaultValue="roadmap" className="w-full">
                         <div className="bg-card border border-border/50 rounded-2xl p-1.5 mb-8 shadow-sm overflow-x-auto custom-scrollbar">
                             <TabsList className="bg-transparent h-auto gap-1 p-0 flex justify-start w-full min-w-max">
-                                <TabsTrigger value="roadmap" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Technical Roadmap</TabsTrigger>
-                                <TabsTrigger value="evidence" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Forensic Evidence</TabsTrigger>
-                                <TabsTrigger value="communication" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all">Interaction Ledger</TabsTrigger>
+                                <TabsTrigger value="roadmap" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Technical Roadmap</TabsTrigger>
+                                <TabsTrigger value="evidence" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Forensic Evidence</TabsTrigger>
+                                <TabsTrigger value="communication" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl px-6 py-2.5 text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap">Notes & Communication</TabsTrigger>
                             </TabsList>
                         </div>
 
                         <TabsContent value="roadmap" className="space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
+                             {/* Identification Matrix */}
                             <div className="grid md:grid-cols-2 gap-6">
                                 <Card className="rounded-3xl border-border/50 bg-card overflow-hidden shadow-sm">
                                     <CardHeader className="bg-muted/30 p-5 border-b">
                                         <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                            <User className="h-3.5 w-3.5 text-primary" /> Client Authority
+                                            <User className="h-3.5 w-3.5 text-primary" /> Ownership
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="p-6 flex items-center gap-4">
+                                    <CardContent className="p-4 sm:p-6 flex items-center gap-4">
                                         <Avatar className="h-12 w-12 ring-2 ring-primary/5 shrink-0">
                                             <AvatarFallback className="font-black text-xs bg-primary/10 text-primary uppercase">
                                                 {customer?.fullName?.split(' ').map(n => n[0]).join('') || '?'}
                                             </AvatarFallback>
                                         </Avatar>
-                                        <div className="min-w-0">
-                                            <p className="font-black text-sm uppercase tracking-tight truncate">{customer?.fullName || 'Registry Void'}</p>
-                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{customer?.phone}</p>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-black text-sm uppercase tracking-tight break-words w-full">{customer?.fullName || 'Registry Void'}</p>
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase">{customer?.phone}</p>
                                         </div>
                                     </CardContent>
                                 </Card>
-
                                 <Card className="rounded-3xl border-border/50 bg-card overflow-hidden shadow-sm">
                                     <CardHeader className="bg-muted/30 p-5 border-b">
                                         <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
-                                            {jobCard.assetType === 'Plant' ? <Hammer className="h-3.5 w-3.5 text-primary" /> : <Car className="h-3.5 w-3.5 text-primary" />}
+                                            {isPlant ? <Settings className="h-3.5 w-3.5 text-primary" /> : <Car className="h-3.5 w-3.5 text-primary" />} 
                                             Technical Asset
                                         </CardTitle>
                                     </CardHeader>
-                                    <CardContent className="p-6">
-                                        {jobCard.assetType === 'Plant' ? (
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-start gap-4">
-                                                    <div className="min-w-0">
-                                                        <p className="font-black text-sm uppercase tracking-tight truncate">{asset?.name || 'Technical Unit'}</p>
-                                                        <div className="flex items-center gap-2 mt-1.5">
-                                                            <Badge variant="outline" className="text-[9px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase">
-                                                                ID: {asset?.assetId}
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <p className="text-[9px] font-black text-muted-foreground uppercase leading-none mb-1">Status</p>
-                                                        <Badge variant="outline" className="text-[8px] font-black uppercase px-2 h-5 bg-muted/50">{asset?.status}</Badge>
-                                                    </div>
+                                    <CardContent className="p-4 sm:p-6">
+                                        <div className="flex flex-col gap-4">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="font-black text-sm uppercase tracking-tight group-hover:text-primary transition-colors break-words w-full">
+                                                        {isPlant ? ((assetData as PlantEquipment)?.name || `${assetData?.make || ''} ${assetData?.model || ''}`.trim() || 'Plant Asset') : `${assetData?.make || ''} ${assetData?.model || ''}`.trim() || 'Vehicle Asset'}
+                                                    </p>
+                                                    <Badge variant="outline" className="text-[10px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase mt-1">
+                                                        {isPlant ? `Asset ID: ${(assetData as PlantEquipment)?.assetId || 'NO_REF'}` : (assetData as Vehicle)?.numberPlate || 'NO_REF'}
+                                                    </Badge>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
-                                                    <div>
-                                                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
-                                                            <Binary className="h-2.5 w-2.5" /> Serial S/N
-                                                        </p>
-                                                        <p className="text-[10px] font-mono font-bold text-foreground truncate">{asset?.serialNumber || 'AWAITING_SYNC'}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1 justify-end">
-                                                            <Gauge className="h-2.5 w-2.5" /> Telemetry
-                                                        </p>
-                                                        <p className="text-[10px] font-black text-primary uppercase">
-                                                            {asset?.meterReading?.toLocaleString() || 0} {getMeterUnit(asset?.meterType)}
-                                                        </p>
-                                                    </div>
+                                                <div className="text-right shrink-0">
+                                                    <p className="text-[10px] font-black text-muted-foreground uppercase leading-none">Telemetry</p>
+                                                    <p className="text-xs font-black mt-1 flex items-center gap-1.5 justify-end">
+                                                        <Gauge className="h-3 w-3 opacity-40" />
+                                                        {(isPlant ? (assetData as PlantEquipment)?.currentMeterReading : (assetData as Vehicle)?.mileage)?.toLocaleString() || 0}
+                                                        <span className="text-[8px] opacity-40 ml-0.5">{isPlant ? 'HRS' : 'KM'}</span>
+                                                    </p>
                                                 </div>
                                             </div>
-                                        ) : (
-                                            <div className="space-y-4">
-                                                <div className="flex justify-between items-start gap-4">
-                                                    <div className="min-w-0">
-                                                        <p className="font-black text-sm uppercase tracking-tight truncate">{asset?.make} {asset?.model}</p>
-                                                        <div className="flex items-center gap-2 mt-1.5">
-                                                            <Badge variant="outline" className="text-[9px] font-mono font-black text-primary bg-primary/5 py-0 border-primary/10 rounded uppercase">
-                                                                {asset?.numberPlate}
-                                                            </Badge>
-                                                        </div>
-                                                    </div>
-                                                    <div className="text-right shrink-0">
-                                                        <p className="text-[9px] font-black text-muted-foreground uppercase leading-none mb-1">Mfg Year</p>
-                                                        <p className="text-xs font-black text-foreground">{asset?.year || 'N/A'}</p>
-                                                    </div>
+                                            
+                                            <Separator className="opacity-50" />
+                                            
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-1">
+                                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest flex items-center gap-1">
+                                                        <Calendar className="h-2.5 w-2.5" /> Mfg Year
+                                                    </p>
+                                                    <p className="text-[11px] font-bold">{isPlant ? ((assetData as PlantEquipment)?.yearOfManufacture || 'N/A') : ((assetData as Vehicle)?.year || (assetData as any)?.yearOfManufacture || 'N/A')}</p>
                                                 </div>
-                                                <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
-                                                    <div>
-                                                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1">
-                                                            <Fingerprint className="h-2.5 w-2.5" /> VIN / Chassis
-                                                        </p>
-                                                        <p className="text-[10px] font-mono font-bold text-foreground truncate">{asset?.vin || 'NOT_RECORDED'}</p>
-                                                    </div>
-                                                    <div className="text-right">
-                                                        <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest mb-1 flex items-center gap-1 justify-end">
-                                                            <Gauge className="h-2.5 w-2.5" /> Odometer
-                                                        </p>
-                                                        <p className="text-[10px] font-black text-primary uppercase">{asset?.mileage?.toLocaleString() || 0} KM</p>
-                                                    </div>
+                                                <div className="space-y-1 text-right">
+                                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest flex items-center justify-end gap-1">
+                                                        <Binary className="h-2.5 w-2.5" /> {isPlant ? 'Serial Number' : 'VIN / Chassis'}
+                                                    </p>
+                                                    <p className="text-[10px] font-mono font-bold truncate">
+                                                        {isPlant ? (assetData as PlantEquipment)?.serialNumber : ((assetData as Vehicle)?.vin || (assetData as Vehicle)?.chassisNumber || 'UNRECORDED')}
+                                                    </p>
                                                 </div>
                                             </div>
-                                        )}
+                                        </div>
                                     </CardContent>
                                 </Card>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="flex justify-between items-center bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl border-none relative overflow-hidden group">
+                            {/* TECHNICAL TASKS SECTION */}
+                            <div className="space-y-4 sm:space-y-6">
+                                <div className="flex justify-between items-center bg-slate-900 text-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-xl border-none relative overflow-hidden group">
                                     <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-white/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700" />
                                     <div className="space-y-0.5 relative z-10">
                                         <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                                            <Wrench className="h-4 w-4" /> Technical Roadmap
+                                            <Wrench className="h-4 w-4" /> Technical Tasks
                                         </h3>
-                                        <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Active Repair Sequence</p>
+                                        <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Active Repair Roadmap</p>
                                     </div>
-                                    {canManageStructure && <div className="relative z-10"><AddJobTaskDialog jobCardId={jobCardId} /></div>}
+                                    {canManageStructure && (
+                                        <div className="relative z-10">
+                                            <AddJobTaskDialog jobCardId={jobCardId} />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid gap-3">
                                     {tasks && tasks.length > 0 ? tasks.map(task => {
                                         const taskId = (task as any).id || task.jobTaskId;
                                         return (
-                                            <div key={taskId} className="group relative flex items-center justify-between p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all shadow-sm overflow-hidden">
-                                                <div className="flex items-center gap-5 min-w-0">
+                                            <div key={taskId} className="group relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all shadow-sm gap-3 sm:gap-4">
+                                                <div className="flex items-start sm:items-center gap-3.5 sm:gap-5 min-w-0 flex-1">
                                                     <div className={cn(
-                                                        "h-10 w-10 rounded-xl flex items-center justify-center border shrink-0 transition-all",
-                                                        task.status === 'Completed' ? "bg-green-500/10 text-green-600 border-green-200" : "bg-muted border-border/50 text-muted-foreground"
+                                                        "h-9 w-9 sm:h-10 sm:scale-100 rounded-xl flex items-center justify-center border transition-all shrink-0 mt-0.5 sm:mt-0",
+                                                        task.status === 'Completed' ? "bg-green-500/10 text-green-600 border border-green-200" : "bg-muted border border-border/50 text-muted-foreground"
                                                     )}>
-                                                        {task.status === 'Completed' ? <CheckCircle2 className="h-5 w-5" /> : <Clock className="h-5 w-5" />}
+                                                        {task.status === 'Completed' ? <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5" /> : <Clock className="h-4 w-4 sm:h-5 sm:w-5" />}
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <p className="font-black text-sm uppercase tracking-tight group-hover:text-primary transition-colors truncate">{task.taskDescription}</p>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-black text-xs sm:text-sm uppercase tracking-tight group-hover:text-primary transition-colors break-words leading-snug">{task.taskDescription}</p>
                                                         <p className="text-[9px] font-bold text-muted-foreground uppercase mt-0.5">Allocation: {task.estimatedHours} Hours</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-4 shrink-0 ml-4">
-                                                    <Badge variant="outline" className="text-[8px] font-black uppercase">{task.status}</Badge>
+                                                
+                                                <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40 shrink-0">
+                                                    <Badge variant="outline" className={cn(
+                                                        "text-[8px] font-black uppercase border-primary/10 bg-primary/5 text-primary",
+                                                        task.status === 'Completed' && "bg-green-500/5 text-green-600 border-green-200"
+                                                    )}>{task.status}</Badge>
+                                                    
                                                     {canUpdate && (
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"><MoreHorizontal className="h-4 w-4" /></Button>
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end" className="rounded-xl p-1.5 w-48 shadow-xl">
-                                                                <DropdownMenuItem onClick={() => handleTaskStatus(taskId, 'In Progress')} className="rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest"><Play className="h-3.5 w-3.5 text-blue-500" /> Start</DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleTaskStatus(taskId, 'Completed')} className="rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest"><Check className="h-3.5 w-3.5 text-green-500" /> Finalize</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleTaskStatus(taskId, 'In Progress')} className="rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest">
+                                                                    <Play className="h-3.5 w-3.5 text-blue-500" /> Start
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleTaskStatus(taskId, 'Completed')} className="rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest">
+                                                                    <Check className="h-3.5 w-3.5 text-green-500" /> Finalize
+                                                                </DropdownMenuItem>
                                                                 <DropdownMenuSeparator />
-                                                                <DropdownMenuItem onClick={() => setTaskToEdit(task)} className="rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest"><Edit className="h-3.5 w-3.5" /> Edit</DropdownMenuItem>
-                                                                {canManageStructure && <DropdownMenuItem onClick={() => handleTaskDelete(taskId)} className="rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest text-destructive"><Trash2 className="h-3.5 w-3.5" /> Purge</DropdownMenuItem>}
+                                                                <DropdownMenuItem onClick={() => setTaskToEdit(task)} className="rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest">
+                                                                    <Edit className="h-3.5 w-3.5" /> Edit
+                                                                </DropdownMenuItem>
+                                                                {canManageStructure && (
+                                                                    <DropdownMenuItem onClick={() => handleTaskDelete(taskId)} className="rounded-lg gap-2 text-[10px] font-black uppercase tracking-widest text-destructive">
+                                                                        <Trash2 className="h-3.5 w-3.5" /> Purge
+                                                                    </DropdownMenuItem>
+                                                                )}
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
                                                     )}
@@ -537,49 +526,70 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                                         );
                                     }) : (
                                         <div className="py-12 text-center border-2 border-dashed rounded-[2rem] opacity-30 bg-muted/5">
-                                            <p className="text-sm font-medium italic">No technical tasks assigned.</p>
+                                            <p className="text-sm font-medium italic text-muted-foreground">No technical tasks specified for this operation.</p>
                                         </div>
                                     )}
                                 </div>
                             </div>
 
-                            <div className="space-y-6">
-                                <div className="flex justify-between items-center bg-slate-900 text-white p-6 rounded-[2rem] shadow-xl border-none relative overflow-hidden group">
+                            {/* PARTS REGISTRY SECTION */}
+                            <div className="space-y-4 sm:space-y-6">
+                                <div className="flex justify-between items-center bg-slate-900 text-white p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-xl border-none relative overflow-hidden group">
                                     <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-white/5 rounded-full blur-2xl group-hover:scale-125 transition-transform duration-700" />
                                     <div className="space-y-0.5 relative z-10">
                                         <h3 className="text-xs font-black uppercase tracking-[0.3em] text-primary flex items-center gap-2">
-                                            <Package className="h-4 w-4" /> Material Registry
+                                            <Package className="h-4 w-4" /> Parts Registry
                                         </h3>
-                                        <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Inventory Consumption Log</p>
+                                        <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Material & Inventory Log</p>
                                     </div>
-                                    {canManageStructure && <div className="relative z-10"><AddJobPartDialog jobCardId={jobCardId} /></div>}
+                                    {canManageStructure && (
+                                        <div className="relative z-10">
+                                            <AddJobPartDialog jobCardId={jobCardId} />
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="grid gap-3">
-                                    {parts && parts.length > 0 ? parts.map(part => (
-                                        <div key={(part as any).id} className="group relative flex items-center justify-between p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all shadow-sm overflow-hidden">
-                                            <div className="flex items-center gap-5 min-w-0">
-                                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/5 text-primary shrink-0"><Package className="h-5 w-5" /></div>
-                                                <div className="min-w-0">
-                                                    <p className="font-black text-sm uppercase tracking-tight group-hover:text-primary transition-colors truncate">{part.itemName || part.itemId}</p>
-                                                    <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest">Qty: {part.quantityUsed} Units • <CurrencyFormat value={part.unitPrice} abbreviate /> / Unit</p>
+                                    {parts && parts.length > 0 ? (
+                                        <div className="grid gap-3">
+                                            {parts.map(part => (
+                                                <div key={(part as any).id} className="group relative flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 sm:p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all shadow-sm gap-3 sm:gap-4">
+                                                    <div className="flex items-start sm:items-center gap-3.5 sm:gap-5 min-w-0 flex-1">
+                                                        <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/5 text-primary shrink-0 mt-0.5 sm:mt-0">
+                                                            <Package className="h-4 w-4 sm:h-5 sm:w-5" />
+                                                        </div>
+                                                        <div className="space-y-0.5 min-w-0 flex-1">
+                                                            <p className="font-black text-xs sm:text-sm uppercase tracking-tight group-hover:text-primary transition-colors break-words leading-snug">
+                                                                {part.itemName || part.itemId}
+                                                            </p>
+                                                            <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest break-words mt-0.5">
+                                                                Qty: {part.quantityUsed} Units • <CurrencyFormat value={part.unitPrice} abbreviate /> / Unit
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center justify-between sm:justify-end gap-4 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/40 shrink-0">
+                                                        <div className="text-left sm:text-right shrink-0">
+                                                            <p className="text-xs sm:text-sm font-black text-foreground tabular-nums"><CurrencyFormat value={(part.unitPrice || 0) * part.quantityUsed} /></p>
+                                                            <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Line Total</p>
+                                                        </div>
+                                                        {canManageStructure && (
+                                                            <Button 
+                                                                variant="ghost" 
+                                                                size="icon" 
+                                                                className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 shrink-0"
+                                                                onClick={() => handleRemovePart((part as any).id)}
+                                                                disabled={isRemovingPart === (part as any).id}
+                                                            >
+                                                                {isRemovingPart === (part as any).id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                                                            </Button>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="flex items-center gap-6 shrink-0 ml-4">
-                                                <div className="text-right">
-                                                    <p className="text-sm font-black text-foreground"><CurrencyFormat value={(part.unitPrice || 0) * part.quantityUsed} /></p>
-                                                    <p className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Subtotal</p>
-                                                </div>
-                                                {canManageStructure && (
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10" onClick={() => handleRemovePart((part as any).id)} disabled={isRemovingPart === (part as any).id}>
-                                                        {isRemovingPart === (part as any).id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-4 w-4" />}
-                                                    </Button>
-                                                )}
-                                            </div>
+                                            ))}
                                         </div>
-                                    )) : (
+                                    ) : (
                                         <div className="py-12 text-center border-2 border-dashed rounded-[2rem] opacity-30 bg-muted/5">
-                                            <p className="text-sm font-medium italic">No material assets logged.</p>
+                                            <p className="text-sm font-medium italic text-muted-foreground">Inventory consumption records are currently empty.</p>
                                         </div>
                                     )}
                                 </div>
@@ -587,10 +597,13 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                         </TabsContent>
 
                         <TabsContent value="evidence" className="space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
+                             {/* Documentation */}
                             <div className="space-y-6">
                                 <div className="flex items-center gap-3 text-muted-foreground px-2">
-                                    <Camera className="h-4 w-4" />
-                                    <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Forensic Evidence Registry</h3>
+                                    <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
+                                        <Camera className="h-4 w-4" />
+                                    </div>
+                                    <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Forensic Evidence</h3>
                                 </div>
                                 <JobCardPhotoUpload jobCardId={jobCardId} />
                             </div>
@@ -598,25 +611,29 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
 
                         <TabsContent value="communication" className="space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
                             <div className="p-2">
-                                <RelatedCommunications jobCardId={jobCardId} onLogInteraction={() => setIsCommFormOpen(true)} />
+                                <RelatedCommunications 
+                                    jobCardId={jobCardId} 
+                                    onLogInteraction={() => setIsCommFormOpen(true)}
+                                />
                             </div>
                         </TabsContent>
                     </Tabs>
                 </div>
 
-                <div className="lg:col-span-4 space-y-8 sticky top-24">
+                {/* Sidebar Context */}
+                <div className="lg:col-span-4 space-y-8">
                     <Card className="rounded-[2.5rem] overflow-hidden border-border/50 bg-card shadow-sm">
                         <CardHeader className="bg-muted/30 border-b p-6">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Functional Assignment</CardTitle>
+                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Lead Technician</CardTitle>
                         </CardHeader>
                         <CardContent className="p-6 space-y-6">
                             <div className="flex items-center gap-4">
                                 <div className="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-500 border border-indigo-500/20 shadow-sm shrink-0">
                                     <Users className="h-5 w-5" />
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-black uppercase tracking-tight truncate">{mechanic?.fullName || 'Personnel Unassigned'}</p>
-                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground truncate">{mechanic?.role || 'Awaiting Sync'}</p>
+                                <div className="space-y-0.5 min-w-0 flex-1">
+                                    <p className="text-sm font-black uppercase tracking-tight truncate w-full">{mechanic?.fullName || 'Personnel Unassigned'}</p>
+                                    <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground leading-none truncate w-full">{mechanic?.role || 'Authorization Sync active'}</p>
                                 </div>
                             </div>
                         </CardContent>
@@ -624,17 +641,17 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
 
                     <Card className="rounded-[2.5rem] overflow-hidden border-border/50 bg-slate-900 text-white shadow-2xl border-none">
                         <CardHeader className="bg-white/5 border-b border-white/10 p-6">
-                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Fiscal Estimate</CardTitle>
+                            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Financial Summary</CardTitle>
                         </CardHeader>
                         <CardContent className="p-8 space-y-6">
                             <div className="space-y-4">
                                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest opacity-60">
                                     <span>Labor Yield:</span>
-                                    <span className="text-white"><CurrencyFormat value={jobCard.laborCost} /></span>
+                                    <span className="text-white tabular-nums"><CurrencyFormat value={jobCard.laborCost} /></span>
                                 </div>
                                 <div className="flex justify-between items-center text-[10px] font-bold uppercase tracking-widest opacity-60">
-                                    <span>Material Equity:</span>
-                                    <span className="text-white"><CurrencyFormat value={totalPartsCost} /></span>
+                                    <span>Parts Equity:</span>
+                                    <span className="text-white tabular-nums"><CurrencyFormat value={totalPartsCost} /></span>
                                 </div>
                             </div>
 
@@ -642,12 +659,30 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
 
                             <div className="space-y-5 py-2">
                                 <div className="flex items-center justify-between group">
-                                    <Label className="text-[9px] font-black uppercase tracking-widest text-white/50 cursor-pointer">Apply Discount ({settings?.defaultDiscount || 0}%)</Label>
-                                    <Switch checked={applyDiscount} onCheckedChange={setApplyDiscount} className="data-[state=checked]:bg-primary" />
+                                    <div className="space-y-0.5">
+                                        <Label className="text-[9px] font-black uppercase tracking-widest text-white/50 group-hover:text-white transition-colors cursor-pointer">
+                                            Apply Discount ({settings?.defaultDiscount || 0}%)
+                                        </Label>
+                                    </div>
+                                    <Switch 
+                                        checked={applyDiscount} 
+                                        onCheckedChange={setApplyDiscount}
+                                        className="data-[state=checked]:bg-primary"
+                                        disabled={!!linkedInvoice}
+                                    />
                                 </div>
                                 <div className="flex items-center justify-between group">
-                                    <Label className="text-[9px] font-black uppercase tracking-widest text-white/50 cursor-pointer">Apply Tax ({settings?.taxRate || 0}%)</Label>
-                                    <Switch checked={applyTax} onCheckedChange={setApplyTax} className="data-[state=checked]:bg-primary" />
+                                    <div className="space-y-0.5">
+                                        <Label className="text-[9px] font-black uppercase tracking-widest text-white/50 group-hover:text-white transition-colors cursor-pointer">
+                                            Apply Tax ({settings?.taxRate || 0}%)
+                                        </Label>
+                                    </div>
+                                    <Switch 
+                                        checked={applyTax} 
+                                        onCheckedChange={setApplyTax}
+                                        className="data-[state=checked]:bg-primary"
+                                        disabled={!!linkedInvoice}
+                                    />
                                 </div>
                             </div>
                             
@@ -656,88 +691,119 @@ export function JobCardDetails({ jobCardId }: { jobCardId: string }) {
                             <div className="flex justify-between items-center pt-2">
                                 <div className="space-y-1">
                                     <span className="text-[11px] font-black uppercase tracking-[0.2em] text-primary">Certified Total</span>
-                                    <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">System Forecast</p>
+                                    <p className="text-[8px] font-bold text-white/20 uppercase tracking-widest">Final Ledger Estimate</p>
                                 </div>
-                                <span className="text-3xl font-black text-white tracking-tighter leading-none"><CurrencyFormat value={previewGrandTotal} /></span>
+                                <span className="text-3xl font-black text-white tracking-tighter tabular-nums">
+                                    <CurrencyFormat value={linkedInvoice ? linkedInvoice.grandTotal : previewGrandTotal} />
+                                </span>
                             </div>
                         </CardContent>
                     </Card>
-
-                    <div className="bg-muted/30 p-6 rounded-[2rem] border border-border/50">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 mb-4">
-                            <Activity className="h-3 w-3 text-primary" /> Incident Log
-                        </p>
-                        <p className="text-[11px] font-medium leading-relaxed italic text-foreground/70 line-clamp-4">
-                            &quot;{jobCard.reportedIssue}&quot;
-                        </p>
-                    </div>
                 </div>
             </div>
 
+            {/* Execution Terminal */}
             {canUpdate && (
-                <div className="fixed bottom-6 left-6 right-6 lg:left-[calc(16rem+2.5rem)] z-40 animate-in slide-in-from-bottom-4 duration-700">
-                    <div className="max-w-[1600px] mx-auto p-5 rounded-3xl bg-background/80 backdrop-blur-xl border border-primary/20 shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-6">
-                        <div className="flex items-center gap-8">
-                            <div className="space-y-1">
-                                <p className="text-[8px] font-black uppercase tracking-[0.4em] text-primary leading-none">Operation Value</p>
-                                <p className="text-3xl font-black tracking-tighter text-foreground leading-none"><CurrencyFormat value={previewGrandTotal} /></p>
+                <div className="fixed bottom-0 left-0 right-0 p-3.5 sm:p-6 bg-background/95 backdrop-blur-xl border-t z-40 lg:left-72 shadow-2xl">
+                    <div className="max-w-[1600px] mx-auto flex items-center justify-between gap-3 sm:gap-6">
+                        <div className="flex items-center gap-3 sm:gap-8 min-w-0">
+                            <div className="space-y-0.5 sm:space-y-1 min-w-0">
+                                <p className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] text-primary truncate">Operation Yield</p>
+                                <p className="text-base sm:text-3xl font-black tracking-tight leading-none text-foreground tabular-nums truncate">
+                                    <CurrencyFormat value={linkedInvoice ? linkedInvoice.grandTotal : previewGrandTotal} />
+                                </p>
                             </div>
-                            <Separator orientation="vertical" className="h-10 opacity-30" />
-                            <div className="space-y-1">
-                                <p className="text-[8px] font-black uppercase tracking-[0.4em] text-muted-foreground leading-none">Workflow Command</p>
-                                <div className="flex gap-2 pt-1">
-                                    {jobCard.status === JobCardStatus.InProgress ? (
-                                        <Button size="sm" onClick={() => handleStatusTransition(JobCardStatus.QualityCheck)} className="bg-purple-600 h-9 px-5 font-black uppercase text-[9px] rounded-xl shadow-lg">Quality Check</Button>
-                                    ) : jobCard.status === JobCardStatus.QualityCheck ? (
-                                        <Button size="sm" onClick={() => handleStatusTransition(JobCardStatus.Completed)} className="bg-green-600 h-9 px-5 font-black uppercase text-[9px] rounded-xl shadow-lg">Complete Dossier</Button>
-                                    ) : (
-                                        <Button size="sm" onClick={() => handleStatusTransition(JobCardStatus.InProgress)} className="bg-primary h-9 px-5 font-black uppercase text-[9px] rounded-xl shadow-lg">Resume Operations</Button>
-                                    )}
-                                </div>
+                            <Separator orientation="vertical" className="h-8 sm:h-10 opacity-30 hidden sm:block" />
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3 shrink-0">
+                            <p className="text-[7px] sm:text-[8px] font-black uppercase tracking-[0.2em] text-muted-foreground hidden sm:block">Workflow Command</p>
+                            <div className="flex gap-2 shrink-0">
+                                {jobCard.status === JobCardStatus.InProgress ? (
+                                    <Button size="sm" onClick={() => handleStatusTransition(JobCardStatus.QualityCheck)} className="bg-purple-600 h-8 sm:h-9 px-3.5 sm:px-5 font-black uppercase text-[8px] sm:text-[9px] rounded-xl shadow-lg transition-all hover:scale-105 shrink-0">Quality Check</Button>
+                                ) : jobCard.status === JobCardStatus.QualityCheck ? (
+                                    <Button size="sm" onClick={() => handleStatusTransition(JobCardStatus.Completed)} className="bg-green-600 h-8 sm:h-9 px-3.5 sm:px-5 font-black uppercase text-[8px] sm:text-[9px] rounded-xl shadow-lg transition-all hover:scale-105 shrink-0">Complete Bay Load</Button>
+                                ) : (
+                                    <Button size="sm" onClick={() => handleStatusTransition(JobCardStatus.InProgress)} className="bg-primary h-8 sm:h-9 px-3.5 sm:px-5 font-black uppercase text-[8px] sm:text-[9px] rounded-xl shadow-lg transition-all hover:scale-105 shrink-0">Resume Operation</Button>
+                                )}
                             </div>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Calibration Dialog */}
             <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-                <DialogContent className="sm:max-w-[480px] rounded-[2rem] border-border/50">
-                    <DialogHeader className="p-8 border-b bg-muted/30">
+                <DialogContent className="flex max-h-[90dvh] flex-col overflow-hidden p-0 sm:max-w-[480px] border-border/50 rounded-3xl">
+                    <DialogHeader className="px-8 pt-8 pb-4 text-left border-b bg-muted/30">
                         <DialogTitle className="text-xl font-black uppercase tracking-tight">Dossier Calibration</DialogTitle>
                     </DialogHeader>
-                    <DialogBody className="p-8 space-y-6">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Base Labor Rate (Ush)</Label>
-                            <Input type="number" value={editLaborCost} onChange={(e) => setEditLaborCost(e.target.value)} className="h-12 rounded-xl bg-muted/50 border-none font-black text-primary text-xl" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Incident Report</Label>
-                            <Textarea value={editIssue} onChange={(e) => setEditIssue(e.target.value)} className="min-h-[120px] rounded-xl bg-muted/50 border-none resize-none p-4 text-sm font-medium" />
-                        </div>
+                    <DialogBody>
+                      <div className="space-y-6 px-8 py-6">
+                          <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Base Labor Yield (Ush)</Label>
+                              <Input 
+                                  type="number" 
+                                  value={editLaborCost} 
+                                  onChange={(e) => setEditLaborCost(e.target.value)}
+                                  className="h-12 rounded-xl bg-muted/30 border-none font-black text-primary text-lg tabular-nums"
+                              />
+                          </div>
+                          <div className="space-y-2">
+                              <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Incident Description</Label>
+                              <Textarea 
+                                  value={editIssue} 
+                                  onChange={(e) => setEditIssue(e.target.value)}
+                                  className="min-h-[120px] rounded-xl bg-muted/30 border-none resize-none p-5 text-sm font-medium leading-relaxed"
+                              />
+                          </div>
+                      </div>
                     </DialogBody>
                     <DialogFooter className="p-8 border-t bg-muted/10">
-                        <Button className="w-full h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20" onClick={handleSaveEdit}>Commit Calibration</Button>
+                        <Button className="w-full h-14 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 transition-all hover:scale-[1.01] text-xs" onClick={handleSaveEdit}>
+                            Commit Calibration
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
 
+            {/* Interaction Modal */}
             <Dialog open={isCommFormOpen} onOpenChange={setIsCommFormOpen}>
                 <DialogContent className="sm:max-w-[640px] p-0 border-border/50 overflow-hidden rounded-3xl shadow-2xl">
                     <DialogHeader className="p-8 border-b bg-muted/30">
                         <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm"><MessageSquare className="h-6 w-6 text-primary" /></div>
+                            <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
+                                <MessageSquare className="h-6 w-6 text-primary" />
+                            </div>
                             <div>
                                 <DialogTitle className="text-2xl font-black uppercase tracking-tight">Log Interaction</DialogTitle>
                                 <DialogDescription className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-1">Record a technical conversation trace linked to this job card.</DialogDescription>
                             </div>
                         </div>
                     </DialogHeader>
-                    <CommunicationForm onSubmit={handleLogInteraction} isSubmitting={isCommSubmitting} initialData={{ jobCardId, direction: 'Internal', channel: 'Internal Note', subject: `Technical trace for Job #${jobCardId.slice(-6).toUpperCase()}` } as any} />
+                    <CommunicationForm 
+                        onSubmit={handleLogInteraction} 
+                        isSubmitting={isCommSubmitting} 
+                        initialData={{
+                            jobCardId,
+                            customerId: jobCard?.customerId,
+                            vehicleId: jobCard?.vehicleId,
+                            direction: 'Internal',
+                            channel: 'Internal Note',
+                            subject: `Technical note for Job #${jobCardId.slice(-6).toUpperCase()}`,
+                            module: 'Job Card'
+                        } as any}
+                    />
                 </DialogContent>
             </Dialog>
 
             {taskToEdit && (
-                <EditJobTaskDialog jobCardId={jobCardId} task={taskToEdit} isOpen={!!taskToEdit} onOpenChange={(open) => !open && setTaskToEdit(null)} />
+                <EditJobTaskDialog 
+                    jobCardId={jobCardId}
+                    task={taskToEdit}
+                    isOpen={!!taskToEdit}
+                    onOpenChange={(open) => !open && setTaskToEdit(null)}
+                />
             )}
         </div>
     );

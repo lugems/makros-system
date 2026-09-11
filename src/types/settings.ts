@@ -19,6 +19,7 @@ export interface WorkshopSettings {
   bankAccountName?: string;
   bankAccountNumber?: string;
   bankSwiftCode?: string;
+  bankDetails?: string;
 
   currency: "UGX" | "USD" | "KES" | "TZS";
   timezone: string;

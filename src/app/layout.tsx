@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { SidebarShell } from '@/components/layout/sidebar-shell';
 import { AuthProvider } from '@/contexts/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
+import { ThemeSync } from '@/components/theme-sync';
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
@@ -33,10 +34,14 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#023891',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: 'cover',
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#f8fafc' },
+    { media: '(prefers-color-scheme: dark)', color: '#050811' },
+  ],
 };
 
 export default function RootLayout({
@@ -53,6 +58,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ThemeSync />
           <FirebaseClientProvider>
             <AuthProvider>
               <SidebarShell>

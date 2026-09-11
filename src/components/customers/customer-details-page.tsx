@@ -299,17 +299,17 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                         <div 
                                             key={vehicle.vehicleId}
                                             onClick={() => router.push(`/vehicles/${vehicle.vehicleId}`)}
-                                            className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all cursor-pointer flex items-center justify-between shadow-sm"
+                                            className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all cursor-pointer flex items-center justify-between shadow-sm gap-3 overflow-hidden"
                                         >
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                            <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
                                                     <Car className="h-5 w-5" />
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate" title={`${vehicle.make} ${vehicle.model}`}>
                                                         {vehicle.make} {vehicle.model}
                                                     </p>
-                                                    <Badge variant="outline" className="text-[9px] font-mono font-black mt-1 py-0 border-primary/20 text-primary bg-primary/5">
+                                                    <Badge variant="outline" className="text-[9px] font-mono font-black mt-1 py-0 border-primary/20 text-primary bg-primary/5 max-w-full truncate block w-fit">
                                                         {vehicle.numberPlate}
                                                     </Badge>
                                                 </div>
@@ -323,17 +323,17 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                         <div 
                                             key={plant.id}
                                             onClick={() => router.push(`/plants-equipment/${plant.id}`)}
-                                            className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all cursor-pointer flex items-center justify-between shadow-sm"
+                                            className="group p-5 rounded-2xl border border-border/50 bg-card hover:border-primary/40 transition-all cursor-pointer flex items-center justify-between shadow-sm gap-3 overflow-hidden"
                                         >
-                                            <div className="flex items-center gap-4">
-                                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                                            <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                <div className="h-10 w-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary group-hover:scale-110 transition-transform shrink-0">
                                                     <Hammer className="h-5 w-5" />
                                                 </div>
-                                                <div className="min-w-0">
-                                                    <p className="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate">
+                                                <div className="min-w-0 flex-1">
+                                                    <p className="text-sm font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate" title={plant.name}>
                                                         {plant.name}
                                                     </p>
-                                                    <Badge variant="outline" className="text-[9px] font-mono font-black mt-1 py-0 border-primary/20 text-primary bg-primary/5">
+                                                    <Badge variant="outline" className="text-[9px] font-mono font-black mt-1 py-0 border-primary/20 text-primary bg-primary/5 max-w-full truncate block w-fit">
                                                         {plant.assetId}
                                                     </Badge>
                                                 </div>
@@ -365,15 +365,15 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                         clientJobs.map(job => (
                                             <div 
                                                 key={job.jobCardId} 
-                                                className="flex items-center justify-between p-5 rounded-2xl border border-border/50 bg-card hover:bg-muted/5 transition-all cursor-pointer group shadow-sm"
+                                                className="flex items-center justify-between p-5 rounded-2xl border border-border/50 bg-card hover:bg-muted/5 transition-all cursor-pointer group shadow-sm gap-3 overflow-hidden"
                                                 onClick={() => router.push(`/job-cards/${job.jobCardId}`)}
                                             >
-                                                <div className="flex items-center gap-5 min-w-0">
+                                                <div className="flex items-center gap-5 min-w-0 flex-1">
                                                     <div className="h-10 w-10 rounded-xl bg-muted/50 flex items-center justify-center border border-border/50 group-hover:bg-primary group-hover:text-white transition-all shrink-0">
                                                         <Activity className="h-5 w-5" />
                                                     </div>
-                                                    <div className="space-y-1 min-w-0">
-                                                        <p className="text-xs font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate">
+                                                    <div className="space-y-1 min-w-0 flex-1">
+                                                        <p className="text-xs font-black uppercase tracking-tight group-hover:text-primary transition-colors truncate" title={job.reportedIssue}>
                                                             {job.reportedIssue}
                                                         </p>
                                                         <div className="flex items-center gap-3 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
@@ -383,7 +383,7 @@ const CustomerDetailsPage = ({ params }: { params: { customerId: string } }) => 
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <JobStatusBadge status={job.status} className="text-[8px] font-black uppercase shrink-0 ml-4" />
+                                                <JobStatusBadge status={job.status} className="text-[8px] font-black uppercase shrink-0 ml-2" />
                                             </div>
                                         ))
                                     ) : (

@@ -11,8 +11,11 @@ export default function manifest(): MetadataRoute.Manifest {
     description: 'Complete Garage Workshop Management System with AI Diagnostics',
     start_url: '/',
     display: 'standalone',
-    background_color: '#ffffff',
+    display_override: ['standalone', 'window-controls-overlay'],
+    orientation: 'any',
+    background_color: '#050811',
     theme_color: '#023891',
+    categories: ['business', 'productivity', 'utilities'],
     icons: [
       {
         src: '/favicon-16x16.png',
@@ -28,11 +31,13 @@ export default function manifest(): MetadataRoute.Manifest {
         src: '/android-chrome-192x192.png',
         sizes: '192x192',
         type: 'image/png',
+        purpose: 'any',
       },
       {
         src: '/android-chrome-512x512.png',
         sizes: '512x512',
         type: 'image/png',
+        purpose: 'maskable',
       },
     ],
   };

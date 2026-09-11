@@ -17,6 +17,7 @@ import { useFirestore, useCollection, useMemoFirebase } from "@/firebase"
 import { collection, query, where } from "firebase/firestore"
 import { CommunicationLog } from "@/types/communication"
 import { cn } from "@/lib/utils"
+import { MobileBottomNav } from "./mobile-bottom-nav"
 
 /**
  * @fileOverview Main application shell providing sidebar navigation and header services.
@@ -78,11 +79,21 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="overflow-hidden">
-        <header className="glass-header h-16 flex items-center gap-4 px-6 shrink-0">
+      <SidebarInset className="overflow-hidden flex flex-col min-h-dvh">
+        <header className="glass-header h-16 flex items-center gap-4 px-4 sm:px-6 shrink-0">
           <div className="flex items-center gap-4 flex-1">
-            <SidebarTrigger className="-ml-1" />
-            <Separator orientation="vertical" className="h-4" />
+            <SidebarTrigger className="-ml-1 hidden md:flex" />
+            
+            <div className="flex md:hidden items-center gap-2">
+              <div className="h-8 w-8 rounded-xl bg-primary flex items-center justify-center shadow-md shadow-primary/20 shrink-0">
+                <ShieldCheck className="text-white w-5 h-5" />
+              </div>
+              <span className="font-black uppercase tracking-tight text-sm font-headline">
+                Makros <span className="text-primary">System</span>
+              </span>
+            </div>
+
+            <Separator orientation="vertical" className="h-4 hidden md:block" />
             
             <div className="hidden md:flex items-center max-w-md w-full ml-2">
               <div className="relative w-full group">
@@ -95,9 +106,9 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="icon" className="relative rounded-xl text-muted-foreground hover:bg-muted transition-colors" asChild>
+              <Button variant="ghost" size="icon" className="relative rounded-xl text-muted-foreground hover:bg-muted transition-colors hidden sm:flex" asChild>
                 <Link href="/communications">
                   <Mail className="h-4 w-4" />
                 </Link>
@@ -115,19 +126,22 @@ export function SidebarShell({ children }: { children: React.ReactNode }) {
               <ThemeToggle />
             </div>
 
-            <Separator orientation="vertical" className="h-6 mx-2" />
+            <Separator orientation="vertical" className="h-6 mx-1 sm:mx-2" />
 
-            <div className="flex items-center gap-3 pl-2">
+            <div className="flex items-center gap-2 sm:gap-3 pl-1 sm:pl-2">
               <UserMenu />
             </div>
           </div>
         </header>
         
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 lg:p-10 bg-background/95 custom-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 lg:p-10 pb-28 md:pb-8 lg:pb-10 bg-background/95 custom-scrollbar">
           <div className="max-w-[1600px] mx-auto">
             {children}
           </div>
         </main>
+
+        {/* Mobile Fixed Bottom Navigation */}
+        <MobileBottomNav unreadCount={unreadCount} />
       </SidebarInset>
     </SidebarProvider>
   )

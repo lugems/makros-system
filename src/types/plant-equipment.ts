@@ -47,6 +47,7 @@ export interface PlantEquipment {
   manufacturerDetails?: string;
   meterType: MeterType;
   meterReading: number;
+  currentMeterReading?: number;
   powerType: string;
   engineNumber?: string;
   location?: string;

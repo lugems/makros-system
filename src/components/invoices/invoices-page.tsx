@@ -300,20 +300,25 @@ const InvoicesPage: React.FC = () => {
 
             {/* Responsive Mobile Drawer */}
             <Drawer open={isMobile && !!selectedInvoiceId} onOpenChange={(open) => !open && setSelectedInvoiceId(null)}>
-                <DrawerContent>
-                    <DrawerHeader className="border-b shrink-0">
+                <DrawerContent className="max-h-[92dvh] flex flex-col">
+                    <DrawerHeader className="border-b shrink-0 px-6 py-4">
                         <DrawerTitle className="text-left font-black uppercase tracking-tight">Invoice Dossier</DrawerTitle>
-                        <DrawerDescription className="sr-only">Comprehensive technical overview and status history for this financial record.</DrawerDescription>
+                        <DrawerDescription className="text-left text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Comprehensive technical overview and status history for this financial record.</DrawerDescription>
                     </DrawerHeader>
-                    {selectedInvoiceId && selectedInvoice && (
-                        <InvoiceDetails 
-                            invoice={selectedInvoice}
-                            onRecordPayment={() => setIsRecordPaymentOpen(true)}
-                            onCancel={() => handleCancelInvoice(selectedInvoice)}
-                            onEdit={(inv) => setEditingInvoice(inv)}
-                            onPreview={(inv) => setPreviewingInvoice(inv)}
-                        />
-                    )}
+                    <div className="flex-1 min-h-0 overflow-y-auto">
+                        {selectedInvoiceId && selectedInvoice && (
+                            <div className="p-2 sm:p-4">
+                                <InvoiceDetails 
+                                    invoice={selectedInvoice}
+                                    onRecordPayment={() => setIsRecordPaymentOpen(true)}
+                                    onCancel={() => handleCancelInvoice(selectedInvoice)}
+                                    onEdit={(inv) => setEditingInvoice(inv)}
+                                    onPreview={(inv) => setPreviewingInvoice(inv)}
+                                    onClose={() => setSelectedInvoiceId(null)}
+                                />
+                            </div>
+                        )}
+                    </div>
                 </DrawerContent>
             </Drawer>
 

@@ -140,7 +140,7 @@ export default function PlantsPage() {
         <div className="space-y-8 animate-in fade-in duration-700 pb-20">
             <PageHeader title="Plant & Equipment">
                 <div className="flex items-center gap-3">
-                    <div className="hidden sm:flex bg-muted/50 p-1 rounded-xl border border-border/50">
+                    <div className="flex bg-muted/50 p-1 rounded-xl border border-border/50">
                         <Button 
                             variant={viewMode === 'table' ? 'secondary' : 'ghost'} 
                             size="icon" 
@@ -160,9 +160,9 @@ export default function PlantsPage() {
                     </div>
                     <Button 
                         onClick={() => setIsCreateOpen(true)}
-                        className="gap-2 font-black uppercase tracking-[0.2em] text-[10px] h-11 px-6 shadow-lg shadow-primary/20"
+                        className="gap-2 font-black uppercase tracking-[0.2em] text-[10px] h-11 px-4 sm:px-6 shadow-lg shadow-primary/20"
                     >
-                        <Plus className="h-4 w-4" /> Enroll Plant
+                        <Plus className="h-4 w-4" /> <span className="hidden sm:inline">Enroll Plant</span><span className="sm:hidden">Enroll</span>
                     </Button>
                 </div>
             </PageHeader>

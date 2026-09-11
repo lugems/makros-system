@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format, subMonths, startOfMonth } from 'date-fns';
 import { CurrencyFormat } from '@/components/shared/currency-format';
-import { TrendingUp, Banknote, History } from 'lucide-react';
+import { TrendingUp, Banknote } from 'lucide-react';
 
 interface RevenueSummaryProps {
   payments: any[];
@@ -31,21 +31,21 @@ const RevenueSummary = ({ payments }: RevenueSummaryProps) => {
   }, [payments]);
 
   return (
-    <Card className="rounded-[2.5rem] border-border/50 bg-card overflow-hidden shadow-sm premium-shadow h-full">
-      <CardHeader className="bg-muted/30 border-b p-8 flex flex-row items-center justify-between space-y-0">
+    <Card className="rounded-2xl sm:rounded-[2.5rem] border-border/50 bg-card overflow-hidden shadow-sm premium-shadow h-full">
+      <CardHeader className="bg-muted/30 border-b p-4 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 space-y-0">
         <div className="space-y-1">
             <CardTitle className="text-sm font-black uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-2">
                 <Banknote className="h-4 w-4 text-primary" /> Financial Flow
             </CardTitle>
             <p className="text-[10px] font-bold text-muted-foreground/60 uppercase tracking-widest">Monthly Realized Revenue Trajectory</p>
         </div>
-        <div className="flex items-center gap-2 bg-primary/10 text-primary px-4 py-1.5 rounded-full border border-primary/20">
+        <div className="flex items-center gap-2 bg-primary/10 text-primary px-3 sm:px-4 py-1.5 rounded-full border border-primary/20 shrink-0">
             <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            <span className="text-[9px] font-black uppercase tracking-[0.2em]">Certified Live</span>
+            <span className="text-[8px] sm:text-[9px] font-black uppercase tracking-[0.2em]">Certified Live</span>
         </div>
       </CardHeader>
-      <CardContent className="p-8">
-        <div className="h-[340px] w-full">
+      <CardContent className="p-4 sm:p-8">
+        <div className="h-[260px] sm:h-[340px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData}>
               <defs>

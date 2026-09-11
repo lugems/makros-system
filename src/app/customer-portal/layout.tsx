@@ -148,22 +148,22 @@ export default function CustomerPortalLayout({ children }: { children: React.Rea
             </aside>
 
             {/* Mobile Header */}
-            <header className="md:hidden glass-header h-16 flex items-center justify-between px-6 shrink-0 border-b border-border/50">
+            <header className="md:hidden glass-header h-16 flex items-center justify-between px-4 sm:px-6 shrink-0 border-b border-border/50">
                 <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
+                    <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center shadow-md shadow-primary/20">
                         <ShieldCheck className="text-white w-5 h-5" />
                     </div>
-                    <span className="font-black uppercase tracking-tighter text-sm">Makros Portal</span>
+                    <span className="font-black uppercase tracking-tight text-sm font-headline">Makros <span className="text-primary">Portal</span></span>
                 </div>
                 <div className="flex items-center gap-2">
                     <ThemeToggle />
                     <Sheet open={isMobileNavOpen} onOpenChange={setIsMobileNavOpen}>
                         <SheetTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                                <Menu className="w-6 h-6" />
+                            <Button variant="ghost" size="icon" className="rounded-xl">
+                                <Menu className="w-5 h-5" />
                             </Button>
                         </SheetTrigger>
-                        <SheetContent side="left" className="p-0 w-72">
+                        <SheetContent side="right" className="p-0 w-80">
                             <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
                             <NavContent />
                         </SheetContent>
@@ -171,11 +171,69 @@ export default function CustomerPortalLayout({ children }: { children: React.Rea
                 </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto p-6 md:p-10 lg:p-12">
+            <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-10 lg:p-12 pb-28 md:pb-12">
                 <div className="max-w-6xl mx-auto">
                     {children}
                 </div>
             </main>
+
+            {/* Mobile Customer Bottom Navigation Bar */}
+            <nav 
+                aria-label="Customer Mobile Navigation"
+                className="md:hidden fixed bottom-0 inset-x-0 z-40 glass-bottom-nav select-none pb-[max(env(safe-area-inset-bottom,0px),0.5rem)] pt-1.5 px-3"
+            >
+                <div className="grid grid-cols-5 items-center justify-items-center max-w-md mx-auto">
+                    {customerNavItems.slice(0, 4).map((item) => {
+                        const Icon = item.icon;
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    "flex flex-col items-center justify-center w-full py-1 rounded-2xl transition-all duration-200 active:scale-95",
+                                    isActive ? "text-primary font-black" : "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                <div className={cn(
+                                    "relative p-1.5 rounded-xl transition-colors",
+                                    isActive && "bg-primary/10"
+                                )}>
+                                    <Icon className={cn("h-5 w-5 transition-transform", isActive && "scale-110")} />
+                                    {isActive && (
+                                        <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                                    )}
+                                </div>
+                                <span className="text-[9px] uppercase tracking-wider font-extrabold mt-0.5 truncate max-w-[60px] text-center">
+                                    {item.name.split(' ')[0]}
+                                </span>
+                            </Link>
+                        );
+                    })}
+
+                    {/* 5th Tab: Support / Menu */}
+                    <Link
+                        href="/customer-portal/messages"
+                        className={cn(
+                            "flex flex-col items-center justify-center w-full py-1 rounded-2xl transition-all duration-200 active:scale-95",
+                            pathname === '/customer-portal/messages' ? "text-primary font-black" : "text-muted-foreground hover:text-foreground"
+                        )}
+                    >
+                        <div className={cn(
+                            "relative p-1.5 rounded-xl transition-colors",
+                            pathname === '/customer-portal/messages' && "bg-primary/10"
+                        )}>
+                            <MessageSquare className={cn("h-5 w-5 transition-transform", pathname === '/customer-portal/messages' && "scale-110")} />
+                            {pathname === '/customer-portal/messages' && (
+                                <span className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary" />
+                            )}
+                        </div>
+                        <span className="text-[9px] uppercase tracking-wider font-extrabold mt-0.5 truncate">
+                            Support
+                        </span>
+                    </Link>
+                </div>
+            </nav>
         </div>
     );
 }

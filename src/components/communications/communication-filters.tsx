@@ -56,21 +56,21 @@ export function CommunicationFilters({
 }: CommunicationFiltersProps) {
   return (
     <div className="space-y-4">
-      <div className="flex flex-col lg:flex-row items-center gap-4 p-4 bg-muted/30 border border-border/50 rounded-3xl shadow-sm">
+      <div className="flex flex-col lg:flex-row items-center gap-3 sm:gap-4 p-3.5 sm:p-4 bg-muted/30 border border-border/50 rounded-2xl sm:rounded-3xl shadow-sm">
         <div className="relative flex-grow w-full lg:max-w-md group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
             placeholder="Search subject, content, plate, IDs or names..."
-            className="pl-11 bg-background h-12 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 shadow-sm border-none font-medium text-sm"
+            className="pl-10 bg-background h-11 sm:h-12 rounded-xl sm:rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 shadow-sm border-none font-medium text-xs sm:text-sm"
             onChange={(e) => onSearch(e.target.value)}
           />
         </div>
         
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          <div className="flex items-center gap-2 flex-1 md:flex-none">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+          <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[130px]">
             <Activity className="h-4 w-4 text-muted-foreground hidden sm:block" />
             <Select value={status} onValueChange={onStatusChange}>
-              <SelectTrigger className="bg-background h-12 rounded-2xl shadow-sm min-w-[140px] border-none font-bold uppercase text-[10px] tracking-widest">
+              <SelectTrigger className="bg-background h-11 sm:h-12 rounded-xl sm:rounded-2xl shadow-sm w-full sm:w-[140px] border-none font-bold uppercase text-[10px] tracking-widest">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-border/50">
@@ -80,10 +80,10 @@ export function CommunicationFilters({
             </Select>
           </div>
 
-          <div className="flex items-center gap-2 flex-1 md:flex-none">
+          <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[130px]">
             <Tag className="h-4 w-4 text-muted-foreground hidden sm:block" />
             <Select value={channel} onValueChange={onChannelChange}>
-              <SelectTrigger className="bg-background h-12 rounded-2xl shadow-sm min-w-[140px] border-none font-bold uppercase text-[10px] tracking-widest">
+              <SelectTrigger className="bg-background h-11 sm:h-12 rounded-xl sm:rounded-2xl shadow-sm w-full sm:w-[140px] border-none font-bold uppercase text-[10px] tracking-widest">
                 <SelectValue placeholder="Protocol" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-border/50">
@@ -93,10 +93,10 @@ export function CommunicationFilters({
             </Select>
           </div>
 
-          <div className="flex items-center gap-2 flex-1 md:flex-none">
+          <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[130px]">
             <AlertTriangle className="h-4 w-4 text-muted-foreground hidden sm:block" />
             <Select value={priority} onValueChange={onPriorityChange}>
-              <SelectTrigger className="bg-background h-12 rounded-2xl shadow-sm min-w-[130px] border-none font-bold uppercase text-[10px] tracking-widest">
+              <SelectTrigger className="bg-background h-11 sm:h-12 rounded-xl sm:rounded-2xl shadow-sm w-full sm:w-[130px] border-none font-bold uppercase text-[10px] tracking-widest">
                 <SelectValue placeholder="Priority" />
               </SelectTrigger>
               <SelectContent className="rounded-xl border-border/50">
@@ -108,12 +108,12 @@ export function CommunicationFilters({
         </div>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-center gap-4 p-4 bg-muted/20 border border-dashed border-border/50 rounded-3xl">
-          <div className="flex items-center gap-3 w-full lg:w-auto">
-            <div className="flex items-center gap-2 flex-1 md:flex-none">
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-3 sm:gap-4 p-3.5 sm:p-4 bg-muted/20 border border-dashed border-border/50 rounded-2xl sm:rounded-3xl">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full lg:w-auto">
+            <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[140px]">
                 <Users className="h-4 w-4 text-muted-foreground hidden sm:block" />
                 <Select value={role} onValueChange={onRoleChange}>
-                    <SelectTrigger className="bg-background h-11 rounded-2xl shadow-sm min-w-[180px] border-none font-bold uppercase text-[10px] tracking-widest">
+                    <SelectTrigger className="bg-background h-11 rounded-xl sm:rounded-2xl shadow-sm w-full sm:w-[170px] border-none font-bold uppercase text-[10px] tracking-widest">
                         <SelectValue placeholder="Filter by Role" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-border/50">
@@ -122,10 +122,10 @@ export function CommunicationFilters({
                     </SelectContent>
                 </Select>
             </div>
-            <div className="flex items-center gap-2 flex-1 md:flex-none">
+            <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[130px]">
                 <CalendarDays className="h-4 w-4 text-muted-foreground hidden sm:block" />
                 <Select value={dateInterval} onValueChange={onDateIntervalChange}>
-                    <SelectTrigger className="bg-background h-11 rounded-2xl shadow-sm min-w-[160px] border-none font-bold uppercase text-[10px] tracking-widest">
+                    <SelectTrigger className="bg-background h-11 rounded-xl sm:rounded-2xl shadow-sm w-full sm:w-[150px] border-none font-bold uppercase text-[10px] tracking-widest">
                         <SelectValue placeholder="Temporal Range" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl border-border/50">
@@ -135,18 +135,18 @@ export function CommunicationFilters({
             </div>
           </div>
           
-          <div className="flex-1 flex items-center gap-3 justify-end px-2">
-            <div className="flex items-center gap-2 text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em]">
+          <div className="flex-1 flex flex-wrap items-center gap-2 sm:gap-3 justify-between sm:justify-end px-1 pt-1 sm:pt-0">
+            <div className="flex items-center gap-1.5 text-[9px] font-black uppercase text-muted-foreground/60 tracking-[0.2em]">
                 <ArrowRightLeft className="h-3 w-3" /> Direction: 
             </div>
-            <div className="flex bg-background p-1 rounded-xl shadow-sm">
+            <div className="flex bg-background p-1 rounded-xl shadow-sm overflow-x-auto max-w-full">
                 {["all", ...DIRECTIONS].map(d => (
                     <button 
                         key={d}
                         onClick={() => onDirectionChange(d)}
                         className={cn(
-                            "px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all",
-                            direction === d ? "bg-primary text-white" : "text-muted-foreground hover:text-foreground"
+                            "px-2.5 sm:px-3 py-1.5 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all shrink-0",
+                            direction === d ? "bg-primary text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
                         )}
                     >
                         {d === 'all' ? 'Unified' : d}

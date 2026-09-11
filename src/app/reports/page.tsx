@@ -337,7 +337,7 @@ export default function ReportsPage() {
       console.error('Failed to export CSV report:', err);
       toast({
         title: "Export Failed",
-        description: "An error occurred while generating the CSV file.",
+        description: "An error occurred while compiling the CSV file.",
         variant: "destructive",
       });
     } finally {
@@ -367,27 +367,27 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-32">
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 bg-muted/20 p-8 rounded-[2.5rem] border border-border/50">
-        <div className="flex items-center gap-5">
-          <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
-            <ChartBar className="text-primary w-8 h-8" />
+    <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-700 pb-32">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 sm:gap-8 bg-muted/20 p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] border border-border/50">
+        <div className="flex items-center gap-4 sm:gap-5">
+          <div className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm shrink-0">
+            <ChartBar className="text-primary w-6 h-6 sm:w-8 sm:h-8" />
           </div>
           <div>
-            <h1 className="text-4xl font-black uppercase tracking-tighter font-headline leading-none">Intelligence Ledger</h1>
-            <p className="text-[10px] text-muted-foreground font-black uppercase tracking-[0.3em] opacity-60 mt-1.5 flex items-center gap-2">
-               <ShieldCheck className="h-3 w-3 text-green-500" /> Forensic Operational Analysis • {currentRole} Sync Active
+            <h1 className="text-2xl sm:text-4xl font-black uppercase tracking-tighter font-headline leading-tight">Intelligence Ledger</h1>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-60 mt-1 flex items-center gap-1.5 sm:gap-2">
+               <ShieldCheck className="h-3 w-3 text-green-500 shrink-0" /> Forensic Operational Analysis • {currentRole} Sync Active
             </p>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-          <div className="flex items-center bg-muted/50 p-1.5 rounded-2xl border border-border/50 shrink-0 shadow-inner gap-1">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full lg:w-auto justify-between lg:justify-end">
+          <div className="flex items-center bg-muted/50 p-1 sm:p-1.5 rounded-2xl border border-border/50 shrink-0 shadow-inner gap-1">
             <Button
               variant="ghost"
               size="icon"
               onClick={() => window.print()}
-              className="h-10 w-10 rounded-xl hover:bg-background transition-all"
+              className="h-9 w-9 sm:h-10 sm:w-10 rounded-xl hover:bg-background transition-all"
               title="Print Ledger Summary"
             >
               <Printer className="h-4 w-4" />
@@ -398,15 +398,15 @@ export default function ReportsPage() {
               size="sm"
               onClick={handleExportPDF}
               disabled={isExporting !== null}
-              className="h-10 px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-2 text-amber-600 hover:text-amber-700 dark:text-amber-400"
+              className="h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-1.5 sm:gap-2 text-amber-600 hover:text-amber-700 dark:text-amber-400"
               title="Export Forensic Ledger to PDF (.pdf)"
             >
               {isExporting === 'pdf' ? (
-                <Loader2 className="h-4 w-4 animate-spin text-amber-500" />
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-amber-500" />
               ) : (
-                <FileText className="h-4 w-4 text-amber-500" />
+                <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500" />
               )}
-              <span className="hidden sm:inline">PDF</span>
+              <span className="inline">PDF</span>
             </Button>
 
             <Button
@@ -414,15 +414,15 @@ export default function ReportsPage() {
               size="sm"
               onClick={handleExportExcel}
               disabled={isExporting !== null}
-              className="h-10 px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+              className="h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-1.5 sm:gap-2 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
               title="Export Accounting Ledger to Excel (.xlsx)"
             >
               {isExporting === 'excel' ? (
-                <Loader2 className="h-4 w-4 animate-spin text-emerald-500" />
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-emerald-500" />
               ) : (
-                <FileSpreadsheet className="h-4 w-4 text-emerald-500" />
+                <FileSpreadsheet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-emerald-500" />
               )}
-              <span className="hidden sm:inline">Excel</span>
+              <span className="inline">Excel</span>
             </Button>
 
             <Button
@@ -430,15 +430,15 @@ export default function ReportsPage() {
               size="sm"
               onClick={handleExportCSV}
               disabled={isExporting !== null}
-              className="h-10 px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-2 text-primary hover:text-primary/80"
+              className="h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl hover:bg-background transition-all text-xs font-black uppercase tracking-wider gap-1.5 sm:gap-2 text-primary hover:text-primary/80"
               title="Export Accounting Ledger to CSV (.csv)"
             >
               {isExporting === 'csv' ? (
-                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                <Loader2 className="h-3.5 w-3.5 sm:h-4 sm:w-4 animate-spin text-primary" />
               ) : (
-                <Download className="h-4 w-4 text-primary" />
+                <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-primary" />
               )}
-              <span className="hidden sm:inline">CSV</span>
+              <span className="inline">CSV</span>
             </Button>
           </div>
           <DateRangePicker date={dateRange} setDate={setDateRange} className="flex-1 lg:flex-none" />
@@ -446,64 +446,64 @@ export default function ReportsPage() {
       </header>
 
       {/* Intelligence Summary Matrix */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="dashboard-gradient-blue border-none text-white overflow-hidden relative shadow-lg shadow-blue-500/20 group rounded-[2rem]">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 p-8">
-            <CardTitle className="text-[10px] font-black uppercase tracking-[0.3em] opacity-80">Gross Yield</CardTitle>
-            <TrendingUp className="h-4 w-4 opacity-50 transition-transform group-hover:scale-110" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <Card className="dashboard-gradient-blue border-none text-white overflow-hidden relative shadow-lg shadow-blue-500/20 group rounded-2xl sm:rounded-[2rem]">
+          <CardHeader className="pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0 p-4 sm:p-8">
+            <CardTitle className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] sm:tracking-[0.3em] opacity-80">Gross Yield</CardTitle>
+            <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4 opacity-50 transition-transform group-hover:scale-110" />
           </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <p className="text-4xl font-black tracking-tighter">
+          <CardContent className="px-4 sm:px-8 pb-4 sm:pb-8">
+            <p className="text-2xl sm:text-4xl font-black tracking-tighter">
               <CurrencyFormat value={summaryMetrics.gross} abbreviate />
             </p>
-            <p className="text-[9px] font-bold uppercase mt-2 opacity-70">Interval Ledger Total</p>
+            <p className="text-[8px] sm:text-[9px] font-bold uppercase mt-1 sm:mt-2 opacity-70">Interval Ledger Total</p>
           </CardContent>
           <div className="absolute -right-4 -bottom-4 w-24 h-24 bg-white/5 rounded-full blur-3xl group-hover:scale-125 transition-transform" />
         </Card>
 
-        <Card className="bg-card border-border/50 overflow-hidden group shadow-sm rounded-[2rem]">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 p-8">
-            <CardTitle className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Net Realized</CardTitle>
-            <Wallet className="h-4 w-4 text-green-500 opacity-50" />
+        <Card className="bg-card border-border/50 overflow-hidden group shadow-sm rounded-2xl sm:rounded-[2rem]">
+          <CardHeader className="pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0 p-4 sm:p-8">
+            <CardTitle className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] sm:tracking-[0.3em]">Net Realized</CardTitle>
+            <Wallet className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-green-500 opacity-50" />
           </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <p className="text-4xl font-black tracking-tighter text-green-600">
+          <CardContent className="px-4 sm:px-8 pb-4 sm:pb-8">
+            <p className="text-2xl sm:text-4xl font-black tracking-tighter text-green-600">
               <CurrencyFormat value={summaryMetrics.net} abbreviate />
             </p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mt-2">Verified Revenue Collections</p>
+            <p className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase mt-1 sm:mt-2">Verified Revenue</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/50 overflow-hidden group shadow-sm rounded-[2rem]">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 p-8">
-            <CardTitle className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Efficiency</CardTitle>
-            <Activity className="h-4 w-4 text-indigo-500 opacity-50" />
+        <Card className="bg-card border-border/50 overflow-hidden group shadow-sm rounded-2xl sm:rounded-[2rem]">
+          <CardHeader className="pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0 p-4 sm:p-8">
+            <CardTitle className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] sm:tracking-[0.3em]">Efficiency</CardTitle>
+            <Activity className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-indigo-500 opacity-50" />
           </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <p className="text-4xl font-black tracking-tighter text-indigo-600">{summaryMetrics.efficiency}%</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mt-2">Job Completion Velocity</p>
+          <CardContent className="px-4 sm:px-8 pb-4 sm:pb-8">
+            <p className="text-2xl sm:text-4xl font-black tracking-tighter text-indigo-600">{summaryMetrics.efficiency}%</p>
+            <p className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase mt-1 sm:mt-2">Completion Velocity</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-card border-border/50 overflow-hidden group shadow-sm rounded-[2rem]">
-          <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0 p-8">
-            <CardTitle className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em]">Active Bay Load</CardTitle>
-            <Wrench className="h-4 w-4 text-orange-500 opacity-50" />
+        <Card className="bg-card border-border/50 overflow-hidden group shadow-sm rounded-2xl sm:rounded-[2rem]">
+          <CardHeader className="pb-1 sm:pb-2 flex flex-row items-center justify-between space-y-0 p-4 sm:p-8">
+            <CardTitle className="text-[9px] sm:text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] sm:tracking-[0.3em]">Bay Load</CardTitle>
+            <Wrench className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-orange-500 opacity-50" />
           </CardHeader>
-          <CardContent className="px-8 pb-8">
-            <p className="text-4xl font-black tracking-tighter text-orange-600">{summaryMetrics.activeJobs}</p>
-            <p className="text-[9px] font-bold text-muted-foreground uppercase mt-2">Current Trace Registry</p>
+          <CardContent className="px-4 sm:px-8 pb-4 sm:pb-8">
+            <p className="text-2xl sm:text-4xl font-black tracking-tighter text-orange-600">{summaryMetrics.activeJobs}</p>
+            <p className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase mt-1 sm:mt-2">Active Jobs</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Global Ledger Filter */}
-      <div className="flex items-center gap-4 p-4 bg-muted/30 border border-border/50 rounded-[1.75rem] shadow-sm">
+      <div className="flex items-center gap-4 p-3 sm:p-4 bg-muted/30 border border-border/50 rounded-2xl sm:rounded-[1.75rem] shadow-sm">
         <div className="relative flex-grow group">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+          <Search className="absolute left-3.5 sm:left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
             placeholder="Search analytical dossiers, technician terminals, or fiscal records..."
-            className="pl-11 bg-background h-12 rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 shadow-sm border-none font-medium text-sm"
+            className="pl-10 sm:pl-11 bg-background h-10 sm:h-12 rounded-xl sm:rounded-2xl focus-visible:ring-1 focus-visible:ring-primary/20 shadow-sm border-none font-medium text-xs sm:text-sm"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -515,29 +515,29 @@ export default function ReportsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="bg-card border border-border/50 rounded-[2.5rem] p-2 mb-10 overflow-x-auto shadow-sm premium-shadow">
-          <TabsList className="bg-transparent h-auto gap-2 p-0 flex justify-start w-full min-w-max">
+        <div className="bg-card border border-border/50 rounded-2xl sm:rounded-[2.5rem] p-1.5 sm:p-2 mb-6 sm:mb-10 overflow-x-auto shadow-sm premium-shadow">
+          <TabsList className="bg-transparent h-auto gap-1 sm:gap-2 p-0 flex justify-start w-full min-w-max">
             {canAccessFinancial && (
-              <TabsTrigger value="financial" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-2xl px-8 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all">
-                <Wallet className="w-4 h-4 mr-2" /> Financial Flow
+              <TabsTrigger value="financial" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl sm:rounded-2xl px-5 sm:px-8 py-2.5 sm:py-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest transition-all">
+                <Wallet className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> Financial Flow
               </TabsTrigger>
             )}
             {canAccessOperational && (
-              <TabsTrigger value="operational" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-2xl px-8 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all">
-                <Activity className="w-4 h-4 mr-2" /> Operational Yield
+              <TabsTrigger value="operational" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl sm:rounded-2xl px-5 sm:px-8 py-2.5 sm:py-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest transition-all">
+                <Activity className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> Operational Yield
               </TabsTrigger>
             )}
             {canAccessLogistics && (
-              <TabsTrigger value="logistics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-2xl px-8 py-3.5 text-[10px] font-black uppercase tracking-widest transition-all">
-                <Package className="w-4 h-4 mr-2" /> Supply Chain
+              <TabsTrigger value="logistics" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-xl sm:rounded-2xl px-5 sm:px-8 py-2.5 sm:py-3.5 text-[9px] sm:text-[10px] font-black uppercase tracking-wider sm:tracking-widest transition-all">
+                <Package className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> Supply Chain
               </TabsTrigger>
             )}
           </TabsList>
         </div>
 
         {canAccessFinancial && filteredData && (
-          <TabsContent value="financial" className="space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <TabsContent value="financial" className="space-y-6 sm:space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10">
               <RevenueSummary payments={filteredData.filteredPayments} />
               <ProfitSummaryReport invoices={filteredData.filteredInvoices} payments={filteredData.filteredPayments} />
               <div className="lg:col-span-2">
@@ -550,8 +550,8 @@ export default function ReportsPage() {
         )}
 
         {canAccessOperational && filteredData && (
-          <TabsContent value="operational" className="space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <TabsContent value="operational" className="space-y-6 sm:space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10">
               <div className="lg:col-span-2">
                 <MechanicPerformanceReport 
                   jobCards={filteredData.filteredJobs} 
@@ -560,13 +560,13 @@ export default function ReportsPage() {
                 />
               </div>
               <ServiceDemandReport bookings={bookings || []} />
-              <div className="bg-primary/5 border border-primary/10 rounded-[2.5rem] p-10 flex flex-col items-center justify-center text-center space-y-6">
-                  <div className="h-20 w-20 rounded-[2rem] bg-background border flex items-center justify-center shadow-xl">
-                      <History className="h-10 w-10 text-primary" />
+              <div className="bg-primary/5 border border-primary/10 rounded-2xl sm:rounded-[2.5rem] p-6 sm:p-10 flex flex-col items-center justify-center text-center space-y-4 sm:space-y-6">
+                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl sm:rounded-[2rem] bg-background border flex items-center justify-center shadow-xl">
+                      <History className="h-8 w-8 sm:h-10 sm:w-10 text-primary" />
                   </div>
-                  <div className="space-y-2">
-                      <h3 className="text-xl font-black uppercase tracking-tight">Interval Analytics</h3>
-                      <p className="text-sm font-medium text-muted-foreground leading-relaxed max-w-md italic">
+                  <div className="space-y-1.5 sm:space-y-2">
+                      <h3 className="text-lg sm:text-xl font-black uppercase tracking-tight">Interval Analytics</h3>
+                      <p className="text-xs sm:text-sm font-medium text-muted-foreground leading-relaxed max-w-md italic">
                         Current data represents operational traces from the active temporal window. Performance metrics are calculated using certified job completion timestamps.
                       </p>
                   </div>
@@ -576,20 +576,20 @@ export default function ReportsPage() {
         )}
 
         {canAccessLogistics && (
-          <TabsContent value="logistics" className="space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
-            <div className="grid grid-cols-1 gap-10">
+          <TabsContent value="logistics" className="space-y-6 sm:space-y-10 focus-visible:outline-none animate-in fade-in duration-500">
+            <div className="grid grid-cols-1 gap-6 sm:gap-10">
               <InventoryReport inventory={inventory || []} />
             </div>
           </TabsContent>
         )}
       </Tabs>
 
-      <footer className="bg-muted/30 px-8 py-10 border-t flex flex-col items-center justify-center rounded-[3rem] text-center space-y-3">
-        <div className="flex items-center gap-3 text-muted-foreground/40">
-          <ShieldCheck className="h-5 w-5" />
-          <p className="text-[10px] font-black uppercase tracking-[0.6em]">Makros System Analytical OS • Internal Registry Trace Active</p>
+      <footer className="bg-muted/30 p-6 sm:px-8 sm:py-10 border-t flex flex-col items-center justify-center rounded-2xl sm:rounded-[3rem] text-center space-y-2 sm:space-y-3">
+        <div className="flex items-center gap-2 sm:gap-3 text-muted-foreground/40">
+          <ShieldCheck className="h-4 w-4 sm:h-5 sm:w-5" />
+          <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.3em] sm:tracking-[0.6em]">Makros System Analytical OS • Internal Registry Trace Active</p>
         </div>
-        <p className="text-[9px] font-bold text-muted-foreground/30 uppercase tracking-[0.2em] max-w-2xl">
+        <p className="text-[8px] sm:text-[9px] font-bold text-muted-foreground/30 uppercase tracking-[0.15em] sm:tracking-[0.2em] max-w-2xl">
           Analytical data is derived from certified workshop transactions and immutable operational logs. Fiscal reports are processed using centralized tax parameters defined in the master registry.
         </p>
       </footer>

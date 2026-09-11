@@ -32,32 +32,9 @@ const ROLES: UserRole[] = [
   "Makros System Owner",
   "Workshop Manager",
   "Receptionist",
-  "Senior Mechanic / Lead Mechanic",
   "Mechanic",
-  "Diagnostic Technician",
-  "Auto-Wiring Technician",
-  "Welding Lead Technician",
-  "Welding Technician",
-  "Auto Body / Panel Beater",
-  "Painter",
-  "Tyre & Wheel Technician",
-  "Car Wash / Detailing Technician",
-  "Quality Control Officer",
   "Inventory Officer",
   "Accountant",
-];
-
-const TECHNICIAN_ROLES = [
-  "Senior Mechanic / Lead Mechanic",
-  "Mechanic",
-  "Diagnostic Technician",
-  "Auto-Wiring Technician",
-  "Welding Lead Technician",
-  "Welding Technician",
-  "Auto Body / Panel Beater",
-  "Painter",
-  "Tyre & Wheel Technician",
-  "Car Wash / Detailing Technician",
 ];
 
 export default function StaffPage() {
@@ -81,14 +58,14 @@ export default function StaffPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
-  // Authorization check - Expanded for new roles
+  // Authorization check
   const canManageRegistry = useMemo(() => 
     !!currentRole && ['Makros System Owner', 'Workshop Manager'].includes(currentRole), 
     [currentRole]
   );
 
   const canViewAllStaff = useMemo(() => 
-    !!currentRole && ['Makros System Owner', 'Workshop Manager', 'Accountant', 'Receptionist', 'Quality Control Officer', 'Inventory Officer', 'Senior Mechanic / Lead Mechanic'].includes(currentRole),
+    !!currentRole && ['Makros System Owner', 'Workshop Manager', 'Accountant', 'Receptionist'].includes(currentRole),
     [currentRole]
   );
 
@@ -96,7 +73,7 @@ export default function StaffPage() {
   const staffWithWorkload = useMemo(() => {
     if (!users) return [];
     return users.map((s) => {
-      if (TECHNICIAN_ROLES.includes(s.role)) {
+      if (s.role === 'Mechanic') {
         const activeJobs = (jobCards || []).filter(j => j.assignedMechanicId === s.userId && ['In Progress', 'Diagnosing', 'Waiting for Parts'].includes(j.status)).length;
         const completedJobs = (jobCards || []).filter(j => j.assignedMechanicId === s.userId && j.status === 'Completed').length;
         return { ...s, assignedJobs: activeJobs, completedJobs, currentWorkload: activeJobs };
@@ -105,13 +82,13 @@ export default function StaffPage() {
     });
   }, [users, jobCards]);
 
-  const mechanics = useMemo(() => staffWithWorkload.filter(s => TECHNICIAN_ROLES.includes(s.role)), [staffWithWorkload]);
+  const mechanics = useMemo(() => staffWithWorkload.filter(s => s.role === 'Mechanic'), [staffWithWorkload]);
 
   const filteredStaff = useMemo(() => {
     return staffWithWorkload
       .filter((s) => {
-          // Technicians can only see themselves and other technicians for coordination
-          if (TECHNICIAN_ROLES.includes(currentRole || '')) return s.userId === currentUser?.userId || TECHNICIAN_ROLES.includes(s.role);
+          // Mechanics can only see themselves and other mechanics for coordination
+          if (currentRole === 'Mechanic') return s.userId === currentUser?.userId || s.role === 'Mechanic';
           return true;
       })
       .filter((s) => {
@@ -142,11 +119,12 @@ export default function StaffPage() {
   // 3. Operational Actions
   const onAddStaff = useCallback(async (newStaff: Partial<StaffMember>) => {
     if (!currentUser) return;
+
     try {
       await enrollStaff(newStaff, currentUser.userId);
     } catch (error) {
       console.error("Staff enrollment error details:", error);
-      throw error;
+      throw error; // Let modal handle specific error messaging
     }
   }, [currentUser]);
 
@@ -158,7 +136,7 @@ export default function StaffPage() {
 
   if (authLoading || usersLoading || jobsLoading) return <LoadingState />;
 
-  if (!canViewAllStaff && !TECHNICIAN_ROLES.includes(currentRole || '')) {
+  if (!canViewAllStaff && currentRole !== 'Mechanic') {
     return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4 animate-in fade-in duration-500">
             <div className="h-20 w-20 rounded-[2.5rem] bg-destructive/10 flex items-center justify-center border border-destructive/20 shadow-lg shadow-destructive/10">
@@ -248,10 +226,10 @@ export default function StaffPage() {
           </div>
           
           <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-            <div className="flex items-center gap-2 flex-1 md:flex-none">
+            <div className="flex items-center gap-2 flex-1 sm:flex-none min-w-[140px]">
               <Filter className="h-4 w-4 text-muted-foreground hidden sm:block" />
               <Select onValueChange={(value) => setRoleFilter(value as UserRole | 'All')} defaultValue="All">
-                <SelectTrigger className="bg-background h-11 rounded-xl shadow-sm min-w-[160px]">
+                <SelectTrigger className="bg-background h-11 rounded-xl shadow-sm w-full sm:w-[170px]">
                   <SelectValue placeholder="All Roles" />
                 </SelectTrigger>
                 <SelectContent>
@@ -263,16 +241,18 @@ export default function StaffPage() {
               </Select>
             </div>
             
-            <Select onValueChange={(value) => setStatusFilter(value as 'Active' | 'Inactive' | 'All')} defaultValue="All">
-              <SelectTrigger className="bg-background h-11 rounded-xl shadow-sm min-w-[140px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Status</SelectItem>
-                <SelectItem value="Active">Active Duty</SelectItem>
-                <SelectItem value="Inactive">Out of Service</SelectItem>
-              </SelectContent>
-            </Select>
+            <div className="flex-1 sm:flex-none min-w-[130px]">
+              <Select onValueChange={(value) => setStatusFilter(value as 'Active' | 'Inactive' | 'All')} defaultValue="All">
+                <SelectTrigger className="bg-background h-11 rounded-xl shadow-sm w-full sm:w-[140px]">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Status</SelectItem>
+                  <SelectItem value="Active">Active Duty</SelectItem>
+                  <SelectItem value="Inactive">Out of Service</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       )}

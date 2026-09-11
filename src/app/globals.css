@@ -140,6 +140,37 @@
   @apply bg-muted-foreground/20;
 }
 
+/* Mobile Safe Area & Standalone Display Utilities */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+}
+
+.pt-safe {
+  padding-top: max(var(--safe-area-top), 0.75rem);
+}
+
+.pb-safe {
+  padding-bottom: max(var(--safe-area-bottom), 0.75rem);
+}
+
+.glass-bottom-nav {
+  @apply bg-background/85 dark:bg-card/85 backdrop-blur-2xl border-t border-border/60 shadow-[0_-4px_25px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_25px_rgba(0,0,0,0.4)];
+}
+
+/* Mobile Touch Optimization */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@supports (-webkit-touch-callout: none) {
+  .min-h-screen-safe {
+    min-height: -webkit-fill-available;
+  }
+}
+
 /* Print Overrides */
 @media print {
   .no-print {

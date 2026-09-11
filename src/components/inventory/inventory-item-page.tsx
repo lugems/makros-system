@@ -114,33 +114,33 @@ const InventoryItemPage = ({ params }: { params: { itemId: string } }) => {
     };
 
     return (
-        <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20">
+        <div className="space-y-6 sm:space-y-8 animate-in fade-in zoom-in-95 duration-500 pb-20">
             {/* Dossier Header */}
-            <div className="bg-muted/30 px-8 py-12 border-b relative overflow-hidden rounded-[2.5rem]">
+            <div className="bg-muted/30 px-4 sm:px-8 py-6 sm:py-12 border-b relative overflow-hidden rounded-2xl sm:rounded-[2.5rem]">
                 <div className="absolute top-0 right-0 p-10 opacity-5 rotate-12">
                     <Warehouse className="h-64 w-64" />
                 </div>
                 
-                <div className="flex flex-col md:flex-row justify-between items-start gap-8 relative z-10">
-                    <div className="flex flex-col md:flex-row items-center gap-8">
-                        <div className="h-32 w-32 rounded-[2rem] bg-primary/10 border-4 border-background flex items-center justify-center shadow-2xl ring-8 ring-primary/5">
-                            <Package className="h-16 w-16 text-primary" />
+                <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-start gap-6 sm:gap-8 relative z-10">
+                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-8">
+                        <div className="h-20 w-20 sm:h-32 sm:w-32 rounded-2xl sm:rounded-[2rem] bg-primary/10 border-4 border-background flex items-center justify-center shadow-2xl ring-4 sm:ring-8 ring-primary/5 shrink-0">
+                            <Package className="h-10 w-10 sm:h-16 sm:w-16 text-primary" />
                         </div>
-                        <div className="space-y-3 text-center md:text-left">
-                            <div className="flex items-center justify-center md:justify-start gap-3">
-                                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
-                                    <Fingerprint className="h-5 w-5 text-primary" />
+                        <div className="space-y-2 sm:space-y-3 text-center sm:text-left min-w-0 flex-1">
+                            <div className="flex items-center justify-center sm:justify-start gap-2 sm:gap-3">
+                                <div className="h-7 w-7 sm:h-10 sm:w-10 rounded-lg sm:rounded-xl bg-primary/10 flex items-center justify-center border border-primary/20">
+                                    <Fingerprint className="h-3.5 w-3.5 sm:h-5 sm:w-5 text-primary" />
                                 </div>
-                                <span className="text-[10px] font-mono font-black uppercase tracking-[0.4em] text-muted-foreground">
+                                <span className="text-[9px] sm:text-[10px] font-mono font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] text-muted-foreground truncate">
                                     SKU: {item.itemId.toUpperCase()}
                                 </span>
                             </div>
-                            <h1 className="text-5xl font-black tracking-tighter uppercase font-headline leading-none">
+                            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black tracking-tighter uppercase font-headline leading-tight break-words">
                                 {item.itemName}
                             </h1>
-                            <div className="flex items-center justify-center md:justify-start gap-4 pt-1">
+                            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 sm:gap-4 pt-1">
                                 <LowStockBadge quantity={item.quantity} lowStockThreshold={item.reorderLevel} />
-                                <Badge variant="outline" className="h-8 text-[10px] font-black uppercase tracking-widest px-4 border-primary/20 text-primary bg-primary/5">
+                                <Badge variant="outline" className="h-7 sm:h-8 text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-3 sm:px-4 border-primary/20 text-primary bg-primary/5">
                                     <Tag className="h-3 w-3 mr-1.5" /> {item.category || 'Uncategorized'}
                                 </Badge>
                                 <span className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
@@ -150,72 +150,72 @@ const InventoryItemPage = ({ params }: { params: { itemId: string } }) => {
                         </div>
                     </div>
 
-                    <Card className="bg-slate-900 text-white p-6 rounded-[2rem] shadow-2xl relative overflow-hidden border-none min-w-[260px]">
+                    <Card className="bg-slate-900 text-white p-5 sm:p-6 rounded-2xl sm:rounded-[2rem] shadow-2xl relative overflow-hidden border-none w-full lg:w-auto lg:min-w-[260px] shrink-0">
                         <div className="absolute -right-4 -bottom-4 h-24 w-24 bg-white/5 rounded-full blur-2xl" />
-                        <p className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4">Stock Equity (Ush)</p>
+                        <p className="text-[9px] sm:text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-3 sm:mb-4">Stock Equity (Ush)</p>
                         <div className="flex items-center gap-3">
-                            <div className="h-12 w-12 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md">
-                                <Banknote className="h-6 w-6 text-primary" />
+                            <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl sm:rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md shrink-0">
+                                <Banknote className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
                             </div>
                             <div>
-                                <p className="text-xl font-black tracking-tight"><CurrencyFormat value={totalEquity} /></p>
-                                <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest">Total Asset Valuation</p>
+                                <p className="text-lg sm:text-xl font-black tracking-tight tabular-nums"><CurrencyFormat value={totalEquity} /></p>
+                                <p className="text-[8px] sm:text-[9px] font-bold text-white/40 uppercase tracking-widest">Total Asset Valuation</p>
                             </div>
                         </div>
                     </Card>
                 </div>
             </div>
 
-            <div className="px-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
-                <div className="lg:col-span-8 space-y-10">
+            <div className="px-4 sm:px-8 grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10">
+                <div className="lg:col-span-8 space-y-6 sm:space-y-10">
                     <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3 text-muted-foreground">
-                                <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex items-center gap-2.5 sm:gap-3 text-muted-foreground">
+                                <div className="h-7 w-7 rounded-lg bg-muted flex items-center justify-center border shrink-0">
                                     <ShieldCheck className="h-4 w-4" />
                                 </div>
                                 <h3 className="font-black uppercase text-[11px] tracking-[0.2em] text-foreground">Registry Parameters</h3>
                             </div>
-                            <div className="flex gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => setIsEditing(true)} className="text-[10px] font-black uppercase tracking-widest gap-2 text-primary hover:bg-primary/10">
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)} className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest gap-1.5 text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 h-8 sm:h-9 rounded-xl">
                                     <Edit className="h-3 w-3" /> Update SKU
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => setIsDeleting(true)} className="text-[10px] font-black uppercase tracking-widest gap-2 text-destructive hover:bg-destructive/10">
+                                <Button variant="outline" size="sm" onClick={() => setIsDeleting(true)} className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest gap-1.5 text-destructive border-destructive/20 bg-destructive/5 hover:bg-destructive/10 h-8 sm:h-9 rounded-xl">
                                     <Trash2 className="h-3.5 w-3.5" /> Decommission
                                 </Button>
-                                <Button variant="ghost" size="sm" onClick={() => router.push('/inventory')} className="text-[10px] font-black uppercase tracking-widest gap-2">
-                                    <ArrowLeft className="h-3 w-3" /> Back to ledger
+                                <Button variant="ghost" size="sm" onClick={() => router.push('/inventory')} className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest gap-1.5 h-8 sm:h-9 rounded-xl">
+                                    <ArrowLeft className="h-3 w-3" /> Back
                                 </Button>
                             </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-6 bg-muted/10 p-8 rounded-[2.5rem] border border-border/50">
-                            <div className="space-y-6">
+                        <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 bg-muted/10 p-4 sm:p-8 rounded-2xl sm:rounded-[2.5rem] border border-border/50">
+                            <div className="space-y-4 sm:space-y-6">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Retail Rate (Ush)</label>
-                                    <p className="text-xl font-black text-primary flex items-center gap-2">
+                                    <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Retail Rate (Ush)</label>
+                                    <p className="text-lg sm:text-xl font-black text-primary flex items-center gap-2 tabular-nums">
                                         <CurrencyFormat value={item.sellingPrice} />
                                     </p>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cost Basis (Ush)</label>
-                                    <p className="text-sm font-bold flex items-center gap-2">
+                                    <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Cost Basis (Ush)</label>
+                                    <p className="text-xs sm:text-sm font-bold flex items-center gap-2 tabular-nums">
                                         <CurrencyFormat value={item.purchasePrice} />
                                     </p>
                                 </div>
                             </div>
-                            <div className="space-y-6">
+                            <div className="space-y-4 sm:space-y-6">
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Vendor Authority</label>
-                                    <p className="text-sm font-bold flex items-center gap-2 uppercase">
-                                        <Truck className="h-4 w-4 text-primary" />
-                                        {item.supplierId || 'NO_VENDOR_DATA'}
+                                    <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Vendor Authority</label>
+                                    <p className="text-xs sm:text-sm font-bold flex items-center gap-2 uppercase break-words">
+                                        <Truck className="h-4 w-4 text-primary shrink-0" />
+                                        <span className="break-all">{item.supplierId || 'NO_VENDOR_DATA'}</span>
                                     </p>
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Alert Threshold</label>
-                                    <p className="text-sm font-bold flex items-center gap-2 text-orange-600">
-                                        <AlertTriangle className="h-4 w-4" />
+                                    <label className="text-[9px] sm:text-[10px] font-black uppercase tracking-widest text-muted-foreground">Alert Threshold</label>
+                                    <p className="text-xs sm:text-sm font-bold flex items-center gap-2 text-orange-600">
+                                        <AlertTriangle className="h-4 w-4 shrink-0" />
                                         {item.reorderLevel} Units
                                     </p>
                                 </div>
